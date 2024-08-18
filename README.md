@@ -1,1 +1,3 @@
 # Audion
+
+The proposed product is a smartphone-based hearing aid application designed to improve the hearing experience for individuals with hearing impairments. The key innovation lies in its ability to selectively amplify the dominant speaker in a multi-speaker environment using advanced speaker diarization techniques. The application dynamically identifies and tracks the most relevant speaker, amplifies their voice, and suppresses background noise and irrelevant speech from other speakers. This solution provides a seamless and adaptive listening experience, particularly in environments where multiple people are talking.
