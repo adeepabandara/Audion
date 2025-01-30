@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#1E1E1E">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RNNoise"
+        android:textSize="28sp"
+        android:textColor="#4CAF50"
+        android:fontFamily="monospace"
+        android:layout_gravity="center"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Real-time Neural Noise Suppression"
+        android:textSize="14sp"
+        android:textColor="#BBBBBB"
+        android:fontFamily="monospace"
+        android:layout_gravity="center"
+        android:layout_marginBottom="32dp"/>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        app:cardBackgroundColor="#2D2D2D"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="AUDIO LEVELS"
+                android:textColor="#4CAF50"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:layout_marginBottom="8dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="80dp"
+                    android:layout_height="wrap_content"
+                    android:text="IN"
+                    android:textColor="#BBBBBB"
+                    android:fontFamily="monospace"/>
+
+                <ProgressBar
+                    android:id="@+id/inputLevelMeter"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                    android:progressTint="#FF5722"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="80dp"
+                    android:layout_height="wrap_content"
+                    android:text="OUT"
+                    android:textColor="#BBBBBB"
+                    android:fontFamily="monospace"/>
+
+                <ProgressBar
+                    android:id="@+id/outputLevelMeter"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                    android:progressTint="#4CAF50"/>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        app:cardBackgroundColor="#2D2D2D"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="NOISE REMOVAL"
+                    android:textColor="#4CAF50"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace"/>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/noiseRemovalSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:enabled="false"/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="METRICS"
+                android:textColor="#4CAF50"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:layout_marginBottom="8dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="VAD PROB"
+                    android:textColor="#BBBBBB"
+                    android:fontFamily="monospace"/>
+
+                <TextView
+                    android:id="@+id/vadProbability"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0%"
+                    android:textColor="#FF5722"
+                    android:fontFamily="monospace"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="NOISE RED"
+                    android:textColor="#BBBBBB"
+                    android:fontFamily="monospace"/>
+
+                <TextView
+                    android:id="@+id/noiseReduction"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0 dB"
+                    android:textColor="#4CAF50"
+                    android:fontFamily="monospace"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/toggleButton"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="Start"
+        android:textSize="12sp"
+        android:fontFamily="monospace"
+        android:layout_gravity="center"
+        app:cornerRadius="20dp"
+        style="@style/Widget.MaterialComponents.Button"/>
+
+</LinearLayout>
