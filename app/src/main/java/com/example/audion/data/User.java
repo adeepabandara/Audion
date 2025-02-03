@@ -11,12 +11,11 @@ public class User {
     private int id;
 
     private String name;
-    private int age;
+
 
     // Constructor without id (auto-generated)
-    public User(String name, int age) {
+    public User(String name) {
         this.name = name;
-        this.age = age;
     }
 
     // Getter and setter for id
@@ -35,11 +34,4 @@ public class User {
         this.name = name;
     }
 
-    // Getter and setter for age
-    public int getAge() {
-        return age;
-    }
-    public void setAge(int age) {
-        this.age = age;
-    }
 }
