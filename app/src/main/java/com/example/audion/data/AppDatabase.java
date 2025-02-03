@@ -1,5 +1,5 @@
 // File: app/src/main/java/com/example/myjavaroomapp/data/AppDatabase.java
-package com.example.androidapp.data;
+package com.example.audion.data;
 
 import androidx.room.Database;
 import androidx.room.RoomDatabase;

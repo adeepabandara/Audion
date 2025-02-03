@@ -1,14 +1,14 @@
 // File: app/src/main/java/com/example/myjavaroomapp/MainActivity.java
-package com.example.androidapp;
+package com.example.audion;
 
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.room.Room;
-import com.example.androidapp.data.AppDatabase;
-import com.example.androidapp.data.User;
-import com.example.androidapp.data.UserDao;
+import com.example.audion.data.AppDatabase;
+import com.example.audion.data.User;
+import com.example.audion.data.UserDao;
 import java.util.List;
 
 public class Db_test extends AppCompatActivity {

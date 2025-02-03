@@ -1,4 +1,4 @@
-package com.example.androidapp;
+package com.example.audion;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
     // 2) Set a click listener to launch the new Activity
     gotoAudioStreamButton.setOnClickListener(v -> {
-        Intent intent = new Intent(MainActivity.this, AudioStreamingActivity.class);
+        Intent intent = new Intent(MainActivity.this, MainActivity.class);
         startActivity(intent);
     });
 

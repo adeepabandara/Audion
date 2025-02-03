@@ -1,5 +1,5 @@
 // File: app/src/main/java/com/example/myjavaroomapp/data/User.java
-package com.example.androidapp.data;
+package com.example.audion.data;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
