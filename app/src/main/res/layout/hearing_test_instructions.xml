@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0FDFA"
+    android:padding="40dp">
+
+    <!-- Use a vertical LinearLayout to stack the elements -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Logo + Brand Name Row -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="71dp"
+            android:orientation="horizontal"
+            android:paddingBottom="4dp">
+
+            <!-- Example Logo/Icon (replace with your own) -->
+            <ImageView
+                android:id="@+id/imgLogo"
+                android:layout_width="150dp"
+                android:layout_height="59dp"
+                android:layout_gravity="start"
+                android:layout_marginRight="8dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/logo_color" />
+
+            <!-- Brand Name -->
+            <!-- <TextView
+                android:id="@+id/tvBrandName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Audion"
+                android:textColor="#1A6958"
+                android:textSize="20sp"
+                android:textStyle="bold" /> -->
+        </LinearLayout>
+
+        <!-- Greeting -->
+        <TextView
+            android:id="@+id/tvGreeting"
+            android:layout_width="wrap_content"
+            android:layout_height="84dp"
+            android:layout_marginBottom="16dp"
+            android:text="🎧 let’s get started!"
+            android:textColor="#1A6958"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
+        <!-- Intro Paragraph -->
+        <TextView
+            android:id="@+id/tvIntro"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/poppins"
+            android:lineSpacingExtra="4dp"
+            android:text="We’ll run a quick Pure Tone Hearing Test To  fine-tune Audion just for you. Find a quiet space, grab your headphones."
+            android:textColor="#4A4A4A"
+            android:textSize="14sp" />
+
+        <!-- Follow-up Paragraph -->
+        <TextView
+            android:id="@+id/tvFollowUp"
+            android:layout_width="match_parent"
+            android:layout_height="62dp"
+            android:layout_marginBottom="24dp"
+            android:fontFamily="@font/poppins"
+            android:text="To proceed, please connect wired or Bluetooth headphones"
+            android:textColor="#4A4A4A"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSubmit"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#0F766E"
+            android:fontFamily="@font/poppins_light"
+            android:paddingStart="50dp"
+            android:paddingEnd="50dp"
+            android:text="Continue to Test!"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:cornerRadius="20dp" />
+
+    </LinearLayout>
+</ScrollView>

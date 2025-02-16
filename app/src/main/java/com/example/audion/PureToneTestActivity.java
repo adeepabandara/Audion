@@ -13,12 +13,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.audion.audio.ToneGenerator;
+import com.example.audion.data.AppDatabase;
+import com.example.audion.data.HearingTestResult;
+import com.example.audion.data.HearingTestResultDao;
 
 public class PureToneTestActivity extends AppCompatActivity {
 
     // Frequencies to test
     private final int[] frequencies = {250, 500, 1000, 2000};
     private int currentFreqIndex = 0;
+
+    // Track which ear we're testing: "Right" first, then "Left"
+    private String currentEar = "Right";
 
     // UI elements
     private TextView textViewFrequency;
@@ -30,6 +36,16 @@ public class PureToneTestActivity extends AppCompatActivity {
     // Audio / thread control
     private Thread playbackThread;
     private volatile boolean stopPlayback = false;
+
+    // Keep track of the amplitude step (0..100) at which user hears the tone
+    private int lastAmplitudeStep = 0;
+
+    // Example: We'll assume there's a single user with ID=1 in your system
+    // (Or you could retrieve the real user ID from your flow)
+    private static final int DEMO_USER_ID = 1;
+
+    // DAO reference (obtained from your already-initialized DB)
+    private HearingTestResultDao hearingTestResultDao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +61,11 @@ public class PureToneTestActivity extends AppCompatActivity {
         // progress bar from 0..100
         progressBar.setMax(100);
         progressBar.setProgress(0);
+
+        // -- Get the already-initialized database and DAO --
+        // Example: If MainActivity has a static getDatabase() method:
+        AppDatabase db = MainActivity.getDatabase();
+        hearingTestResultDao = db.hearingTestResultDao();
 
         updateFrequencyLabel();
 
@@ -119,23 +140,26 @@ public class PureToneTestActivity extends AppCompatActivity {
                     // Write to AudioTrack
                     audioTrack.write(chunk, 0, chunk.length);
 
-                    // Update progress bar
+                    // Track which amplitude step we're on
+                    lastAmplitudeStep = i;
+
+                    // Because i must be effectively final for the lambda:
                     final int progressVal = i;
+                    // Update progress bar in the UI thread
                     runOnUiThread(() -> progressBar.setProgress(progressVal));
                 }
 
                 audioTrack.stop();
                 audioTrack.release();
 
-                // If we finished all 100 steps (amplitude=1.0) and haven't clicked "I Heard"
-                // then the user didn't catch it before we hit max volume
+                // If we finished all 100 steps and user hasn't clicked "I Heard"
                 if (!stopPlayback) {
                     runOnUiThread(() -> {
-                        Toast.makeText(PureToneTestActivity.this,
+                        Toast.makeText(
+                                PureToneTestActivity.this,
                                 "Max volume reached for " + freq + " Hz.\nYou can start again.",
                                 Toast.LENGTH_SHORT
                         ).show();
-
                         // Show Start again, so user can retest the same frequency
                         showStartUI();
                     });
@@ -145,33 +169,75 @@ public class PureToneTestActivity extends AppCompatActivity {
         playbackThread.start();
     }
 
+    /**
+     * Called when user clicks "I Heard".
+     * We record the amplitude step at which they heard the tone.
+     */
     private void onUserHeard() {
-        // User says "I Heard" -> stop playback, move to next frequency
         stopPlayback = true;
 
-        // Wait for the thread to finish
+        // Stop the thread if it's still alive
         if (playbackThread != null && playbackThread.isAlive()) {
             playbackThread.interrupt();
         }
-        // Next frequency
+
+        // Insert a DB record to indicate user heard it at 'lastAmplitudeStep'
+        final int freq = frequencies[currentFreqIndex];
+        HearingTestResult result = new HearingTestResult(
+                DEMO_USER_ID,
+                currentEar,       // e.g. "Right" or "Left"
+                freq,
+                lastAmplitudeStep // amplitude step at which user heard
+        );
+        hearingTestResultDao.insert(result);
+
+        // Move to next frequency
         currentFreqIndex++;
         if (currentFreqIndex >= frequencies.length) {
-            Toast.makeText(this, "All frequencies tested!", Toast.LENGTH_LONG).show();
-            finish();
+            // If we finished all frequencies for the currentEar, check if we should switch
+            if (currentEar.equals("Right")) {
+                // Switch to left ear now
+                currentEar = "Left";
+                currentFreqIndex = 0;
+                Toast.makeText(this,
+                        "Now testing LEFT ear...",
+                        Toast.LENGTH_SHORT
+                ).show();
+                updateFrequencyLabel();
+                showStartUI();
+            } else {
+                // Already did "Left" ear, so we are fully done
+                Toast.makeText(this, "All frequencies tested on BOTH ears!", Toast.LENGTH_LONG).show();
+                finish();
+            }
         } else {
             updateFrequencyLabel();
             showStartUI(); // Let user start the next frequency
         }
     }
 
+    /**
+     * Called when user clicks "I Didn't".
+     * We can record amplitude=100 (or any sentinel) to indicate they didn't hear it by max volume.
+     */
     private void onUserNotHeard() {
-        // User says "I Didn't" -> stop playback, stay on same frequency
         stopPlayback = true;
 
         if (playbackThread != null && playbackThread.isAlive()) {
             playbackThread.interrupt();
         }
-        // Show Start so user can retest the same freq
+
+        // Insert a DB record indicating user did NOT hear the tone at normal range
+        final int freq = frequencies[currentFreqIndex];
+        HearingTestResult result = new HearingTestResult(
+                DEMO_USER_ID,
+                currentEar,
+                freq,
+                100 // Indicate "didn't hear" up to step=100
+        );
+        hearingTestResultDao.insert(result);
+
+        // Show Start so user can retest the same freq, if desired
         showStartUI();
     }
 
@@ -190,9 +256,9 @@ public class PureToneTestActivity extends AppCompatActivity {
     private void updateFrequencyLabel() {
         if (currentFreqIndex < frequencies.length) {
             int freq = frequencies[currentFreqIndex];
-            textViewFrequency.setText("Testing Frequency: " + freq + " Hz");
+            textViewFrequency.setText("Testing Frequency: " + freq + " Hz (" + currentEar + " Ear)");
         } else {
-            textViewFrequency.setText("All done!");
+            textViewFrequency.setText("All done for " + currentEar + " ear!");
         }
     }
 }

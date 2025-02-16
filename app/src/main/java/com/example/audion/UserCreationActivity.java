@@ -60,7 +60,7 @@ public class UserCreationActivity extends AppCompatActivity {
         userDao.insert(newUser);
 
         // Navigate to HomeActivity
-        Intent intent = new Intent(this, HomeActivity.class);
+        Intent intent = new Intent(this, PureToneTestActivity.class);
         startActivity(intent);
 
         // Finish current activity
