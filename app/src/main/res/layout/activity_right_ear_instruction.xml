@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/leftEarInstructionLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" 
+>
+
+    <!-- ImageView to show a left-ear image -->
+
+    <!-- TextView for the instructions -->
+
+    <ImageView
+        android:id="@+id/imageViewLeftEar"
+        android:layout_width="369dp"
+        android:layout_height="368dp"
+        android:layout_margin="16dp"
+        android:src="@drawable/right_ear" />
+
+    <TextView
+        android:id="@+id/textViewRightEarInstructions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Some left ear instructions"
+        android:layout_margin="16dp" />
+
+    <!-- Button to start the test -->
+    <Button
+        android:id="@+id/buttonStartRightEarTest"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Left Ear Test"
+        android:layout_margin="16dp" />
+
+</LinearLayout>

@@ -8,22 +8,35 @@ import android.os.Bundle;
 import android.widget.TextView;
 
 import com.example.audion.data.AppDatabase;
+import com.example.audion.data.HearingTestResultDao;
 import com.example.audion.data.User;
 import com.example.audion.data.UserDao;
 
 import java.util.List;
 
+/**
+ * MainActivity:
+ * 1. Initializes the Room DB if not already.
+ * 2. Checks if a User record exists:
+ *    - if none, go to UserCreationActivity.
+ *    - if at least one, then check # of hearing test records:
+ *        => if 8, go HomeActivity
+ *        => else if (1 <= count < 8), delete them, go InstructionActivity
+ *        => else (count == 0), no need to delete, go InstructionActivity
+ */
 public class MainActivity extends AppCompatActivity {
 
-    // Store a static reference so other activities can use the same DB instance
+    // Static DB reference so other activities can reuse it
     private static AppDatabase db;
+
     private UserDao userDao;
-    private TextView outputTextView;
+    private HearingTestResultDao hearingTestResultDao;
+    private TextView outputTextView; // if you have a text view in db_check layout
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.db_check);  // Suppose you have a layout named db_check.xml
+        setContentView(R.layout.db_check);
 
         outputTextView = findViewById(R.id.outputTextView);
 
@@ -31,41 +44,57 @@ public class MainActivity extends AppCompatActivity {
         if (db == null) {
             db = Room.databaseBuilder(
                     getApplicationContext(),
-                    AppDatabase.class, 
+                    AppDatabase.class,
                     "audion-database"
             )
-            .allowMainThreadQueries()  // For demonstration only; use background threads in production
+            .allowMainThreadQueries()  // For demo only; use background threads in production
             .build();
         }
 
-        // Now get a Dao from the DB
+        // Now get DAOs
         userDao = db.userDao();
+        hearingTestResultDao = db.hearingTestResultDao();
 
         // Check if any user exists
         List<User> users = userDao.getAllUsers();
 
         if (users.isEmpty()) {
-            // No user record - navigate to user creation screen
+            // No user -> UserCreation
             Intent intent = new Intent(this, UserCreationActivity.class);
             startActivity(intent);
-            finish();  // optional
+            finish();
         } else {
-            // At least one user exists in the database
-            // Navigate to PureToneTestActivity (or any other "Home" activity)
-            Intent intent = new Intent(this, PureToneTestActivity.class);
-            startActivity(intent);
-            finish();  // optional
+            // At least one user
+            int recordCount = hearingTestResultDao.getAllResults().size();
+
+            if (recordCount == 8) {
+                // All 8 done -> Home
+                Intent intent = new Intent(this, HomeActivity.class);
+                startActivity(intent);
+                finish();
+            } else if (recordCount >= 1 && recordCount < 8) {
+                // If we have 1..7 records, delete them
+                hearingTestResultDao.deleteAll();
+                // Then go instruction
+                Intent intent = new Intent(this, GeneralInstructionActivity.class);
+                startActivity(intent);
+                finish();
+            } else {
+                // recordCount == 0 (no hearing test records yet)
+                // -> no need to delete -> go instruction
+                Intent intent = new Intent(this, GeneralInstructionActivity.class);
+                startActivity(intent);
+                finish();
+            }
         }
     }
 
-    /**
-     * Static method so other Activities can retrieve the same DB instance
-     */
+    // Provide a static accessor for other Activities
     public static AppDatabase getDatabase() {
         return db;
     }
 
-    // Optional helper method if you wanted to display user info on screen
+    // Optional helper
     private void displayUsers(List<User> users) {
         StringBuilder output = new StringBuilder();
         for (User user : users) {
@@ -73,6 +102,8 @@ public class MainActivity extends AppCompatActivity {
                   .append(user.getName())
                   .append("\n");
         }
-        outputTextView.setText(output.toString());
+        if (outputTextView != null) {
+            outputTextView.setText(output.toString());
+        }
     }
 }

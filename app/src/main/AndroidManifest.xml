@@ -22,6 +22,9 @@
           <activity android:name=".UserCreationActivity" />
           <activity android:name=".HomeActivity" />
            <activity android:name=".PureToneTestActivity" />
+           <activity android:name=".GeneralInstructionActivity" />
+           <activity android:name=".LeftEarInstructionActivity" />
+           <activity android:name=".RightEarInstructionActivity" />
         <activity
         
             android:name=".MainActivity"
