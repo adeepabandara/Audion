@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F0FDFA"
+    android:fillViewport="true"
     android:padding="40dp">
 
-    <!-- Use a vertical LinearLayout to stack the elements -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -20,7 +20,6 @@
             android:orientation="horizontal"
             android:paddingBottom="4dp">
 
-            <!-- Example Logo/Icon (replace with your own) -->
             <ImageView
                 android:id="@+id/imgLogo"
                 android:layout_width="150dp"
@@ -29,23 +28,13 @@
                 android:layout_marginRight="8dp"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/logo_color" />
-
-            <!-- Brand Name -->
-            <!-- <TextView
-                android:id="@+id/tvBrandName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Audion"
-                android:textColor="#1A6958"
-                android:textSize="20sp"
-                android:textStyle="bold" /> -->
         </LinearLayout>
 
         <!-- Greeting -->
         <TextView
             android:id="@+id/tvGreeting"
             android:layout_width="wrap_content"
-            android:layout_height="84dp"
+            android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             android:text="👋 Hi there!"
             android:textColor="#1A6958"
@@ -62,18 +51,18 @@
             android:lineSpacingExtra="4dp"
             android:text="Audion Is Designed To Help You Hear What Matters The Most—Whether It’s A Loved One’s Voice Or The Sounds Of The World Around You."
             android:textColor="#4A4A4A"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <!-- Follow-up Paragraph -->
         <TextView
             android:id="@+id/tvFollowUp"
             android:layout_width="match_parent"
-            android:layout_height="62dp"
+            android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
             android:fontFamily="@font/poppins"
             android:text="Tell Us Your Name. No Pressure, Just Your Favorite One!😊"
             android:textColor="#4A4A4A"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <!-- Name Label -->
@@ -101,20 +90,22 @@
             android:textColorHint="#999999"
             android:textSize="16sp" />
 
-    
+        <!-- Spacer to push button to the bottom -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
-        <!-- Ready Button -->
+        <!-- Ready Button (placed at the bottom) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonSubmit"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="20dp"
             android:layout_marginBottom="16dp"
             android:backgroundTint="#0F766E"
             android:fontFamily="@font/poppins_light"
-            android:paddingStart="50dp"
-            android:paddingEnd="50dp"
-            android:text="I’m Ready – Let’s Begin!"
+            android:text="Continue"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
             android:textSize="16sp"

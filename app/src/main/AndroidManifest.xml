@@ -19,12 +19,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-          <activity android:name=".UserCreationActivity" />
+          <activity android:name=".UserCreationActivity" 
+          android:windowSoftInputMode="adjustResize"/>
+
+
           <activity android:name=".HomeActivity" />
-           <activity android:name=".PureToneTestActivity" />
-           <activity android:name=".GeneralInstructionActivity" />
-           <activity android:name=".LeftEarInstructionActivity" />
-           <activity android:name=".RightEarInstructionActivity" />
+           <activity android:name=".PureToneTestActivity" 
+           android:windowSoftInputMode="adjustResize"/>
+
+           <activity android:name=".GeneralInstructionActivity" 
+           android:windowSoftInputMode="adjustResize"/>
+           <activity android:name=".LeftEarInstructionActivity" 
+           android:windowSoftInputMode="adjustResize"/>
+           <activity android:name=".RightEarInstructionActivity" 
+           android:windowSoftInputMode="adjustResize"/>
+           
         <activity
         
             android:name=".MainActivity"

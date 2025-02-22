@@ -10,12 +10,14 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.example.audion.audio.ToneGenerator;
 import com.example.audion.data.AppDatabase;
 import com.example.audion.data.HearingTestResult;
 import com.example.audion.data.HearingTestResultDao;
+import androidx.core.content.ContextCompat;
 
 public class PureToneTestActivity extends AppCompatActivity {
 
@@ -116,6 +118,8 @@ public class PureToneTestActivity extends AppCompatActivity {
             playbackThread.interrupt();
         }
 
+        markStepperCompleted(currentFreqIndex);
+
         int freq = frequencies[currentFreqIndex];
         HearingTestResult result = new HearingTestResult(
                 1,        // or get current user ID
@@ -186,4 +190,47 @@ public class PureToneTestActivity extends AppCompatActivity {
             textViewFrequency.setText("All done for " + currentEar + " ear!");
         }
     }
+
+
+    private void markStepperCompleted(int stepIndex) {
+    // Use a tick character
+    String tick = "\u2713";
+    // Define your desired tick color. You can use a resource color or a hardcoded color.
+    int tickColor = ContextCompat.getColor(this, R.color.white); // Replace with your color resource
+    // Alternatively, you could use:
+    // int tickColor = Color.RED;
+
+    switch (stepIndex) {
+        case 0:
+            ((ImageView) findViewById(R.id.step1Image))
+                    .setImageResource(R.drawable.circle_completed);
+            TextView step1Text = findViewById(R.id.step1Text);
+            step1Text.setText(tick);
+            step1Text.setTextColor(tickColor);
+            break;
+        case 1:
+            ((ImageView) findViewById(R.id.step2Image))
+                    .setImageResource(R.drawable.circle_completed);
+            TextView step2Text = findViewById(R.id.step2Text);
+            step2Text.setText(tick);
+            step2Text.setTextColor(tickColor);
+            break;
+        case 2:
+            ((ImageView) findViewById(R.id.step3Image))
+                    .setImageResource(R.drawable.circle_completed);
+            TextView step3Text = findViewById(R.id.step3Text);
+            step3Text.setText(tick);
+            step3Text.setTextColor(tickColor);
+            break;
+        case 3:
+            ((ImageView) findViewById(R.id.step4Image))
+                    .setImageResource(R.drawable.circle_completed);
+            TextView step4Text = findViewById(R.id.step4Text);
+            step4Text.setText(tick);
+            step4Text.setTextColor(tickColor);
+            break;
+    }
+}
+
+
 }

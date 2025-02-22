@@ -1,49 +1,218 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/layout_pure_tone_test"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
+    android:background="#F0FDFA"
+    android:fillViewport="true"
     android:padding="20dp">
 
-    <TextView
-        android:id="@+id/textViewFrequency"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/layout_pure_tone_test"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Testing Frequency:"
-        android:textSize="18sp"
-        android:layout_marginBottom="20dp"/>
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
 
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:progress="0"
-        android:max="100"
-        android:layout_marginBottom="20dp"/>
+        <!-- Title -->
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="Left Ear Test"
+            android:textColor="#1A6958"
+            android:textSize="32sp"
+            android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/buttonStart"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Start"
-        android:layout_marginBottom="20dp"/>
+        <!-- Stepper container -->
+        <LinearLayout
+            android:id="@+id/stepper_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="20dp">
 
-    <Button
-        android:id="@+id/buttonHeard"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="I Heard"
-        android:layout_marginBottom="10dp"
-        android:visibility="gone"/>
+            <!-- Step 1 -->
+            <FrameLayout
+                android:id="@+id/step1"
+                android:layout_width="40dp"
+                android:layout_height="40dp">
+                <ImageView
+                    android:id="@+id/step1Image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/circle_default"/>
+                <TextView
+                    android:id="@+id/step1Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="1"
+                    android:textColor="#0F766E"/>
+            </FrameLayout>
 
-    <Button
-        android:id="@+id/buttonNotHeard"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="I Didn't"
-        android:visibility="gone"/>
-</LinearLayout>
+            <!-- Dotted line -->
+            <View
+                android:layout_width="40dp"
+                android:layout_height="2dp"
+                android:layout_gravity="center_vertical"
+                android:background="@drawable/dotted_line" />
+
+            <!-- Step 2 -->
+            <FrameLayout
+                android:id="@+id/step2"
+                android:layout_width="40dp"
+                android:layout_height="40dp">
+                <ImageView
+                    android:id="@+id/step2Image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/circle_default"/>
+                <TextView
+                    android:id="@+id/step2Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="2"
+                    android:textColor="#0F766E"/>
+            </FrameLayout>
+
+            <!-- Dotted line -->
+            <View
+                android:layout_width="40dp"
+                android:layout_height="2dp"
+                android:layout_gravity="center_vertical"
+                android:background="@drawable/dotted_line"/>
+
+            <!-- Step 3 -->
+            <FrameLayout
+                android:id="@+id/step3"
+                android:layout_width="40dp"
+                android:layout_height="40dp">
+                <ImageView
+                    android:id="@+id/step3Image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/circle_default"/>
+                <TextView
+                    android:id="@+id/step3Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="3"
+                    android:textColor="#0F766E"/>
+            </FrameLayout>
+
+            <!-- Dotted line -->
+            <View
+                android:layout_width="40dp"
+                android:layout_height="2dp"
+                android:layout_gravity="center_vertical"
+                android:background="@drawable/dotted_line"/>
+
+            <!-- Step 4 -->
+            <FrameLayout
+                android:id="@+id/step4"
+                android:layout_width="40dp"
+                android:layout_height="40dp">
+                <ImageView
+                    android:id="@+id/step4Image"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/circle_default"/>
+                <TextView
+                    android:id="@+id/step4Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="4"
+                    android:textColor="#0F766E"/>
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Ear Image -->
+        <ImageView
+            android:id="@+id/imageViewEar"
+            android:layout_width="312dp"
+            android:layout_height="305dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="20dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/left_ear" />
+
+        <!-- Testing Frequency Label -->
+        <TextView
+            android:id="@+id/textViewFrequency"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Testing Frequency:"
+            android:textSize="18sp"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="310dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:max="100"
+            android:progress="0"
+            android:progressBackgroundTint="#EFEFEF"
+            android:progressTint="#0F766E" />
+
+        <!-- Spacer to push buttons to bottom -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Start Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonStart"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#0F766E"
+            android:text="Start"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:cornerRadius="20dp" />
+
+        <!-- Response Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonHeard"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="I Heard"
+                android:visibility="gone"
+                android:backgroundTint="#0F766E"
+                android:textColor="#FFFFFF"
+                app:cornerRadius="20dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonNotHeard"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="I Didn't"
+                android:visibility="gone"
+                android:backgroundTint="#D32F2F"
+                android:textColor="#FFFFFF"
+                app:cornerRadius="20dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
