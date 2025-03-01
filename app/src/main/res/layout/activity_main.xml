@@ -20,8 +20,10 @@
         android:textColor="@android:color/white"
         android:background="@drawable/circle_button_background"
         app:icon="@drawable/ic_play"
-        app:iconSize="150dp"
+        app:iconSize="130dp"
         app:iconGravity="top"
+        app:iconPadding="-25dp"
+
 
         />
 

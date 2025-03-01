@@ -8,8 +8,8 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="primary">#0F766E</color>
-    <color name="green_circle">#3F6F68</color>
-    <color name="red_circle">#E53935</color>
+    <color name="green_circle">#0F766E</color>
+    <color name="red_circle">#CD1C18</color>
 
 
 
