@@ -5,33 +5,32 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="#1E1E1E">
+    android:background="#F0FDFA">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="RNNoise"
-        android:textSize="28sp"
-        android:textColor="#4CAF50"
-        android:fontFamily="monospace"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/toggleButton"
+        style="@style/Widget.MaterialComponents.Button"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
         android:layout_gravity="center"
-        android:layout_marginBottom="4dp"/>
+        android:gravity="center"
+        android:fontFamily="monospace"
+        android:text="Start"
+        android:textSize="20sp"
+        android:textColor="@android:color/white"
+        android:background="@drawable/circle_button_background"
+        app:icon="@drawable/ic_play"
+        app:iconSize="150dp"
+        app:iconGravity="top"
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Real-time Neural Noise Suppression"
-        android:textSize="14sp"
-        android:textColor="#BBBBBB"
-        android:fontFamily="monospace"
-        android:layout_gravity="center"
-        android:layout_marginBottom="32dp"/>
+        />
+
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="#2D2D2D"
+        app:cardBackgroundColor="#FFFFFF"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp">
 
@@ -41,34 +40,30 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="AUDIO LEVELS"
-                android:textColor="#4CAF50"
-                android:textSize="12sp"
-                android:fontFamily="monospace"
-                android:layout_marginBottom="8dp"/>
+            <SeekBar
+                android:id="@+id/seekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="8dp"
+                android:orientation="horizontal">
 
                 <TextView
                     android:layout_width="80dp"
                     android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
                     android:text="IN"
-                    android:textColor="#BBBBBB"
-                    android:fontFamily="monospace"/>
+                    android:textColor="#BBBBBB" />
 
                 <ProgressBar
                     android:id="@+id/inputLevelMeter"
+                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                    android:progressTint="#FF5722"/>
+                    android:progressTint="#FF5722" />
             </LinearLayout>
 
             <LinearLayout
@@ -79,30 +74,25 @@
                 <TextView
                     android:layout_width="80dp"
                     android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
                     android:text="OUT"
-                    android:textColor="#BBBBBB"
-                    android:fontFamily="monospace"/>
+                    android:textColor="#BBBBBB" />
 
                 <ProgressBar
                     android:id="@+id/outputLevelMeter"
+                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                    android:progressTint="#4CAF50"/>
+                    android:progressTint="#4CAF50" />
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
-
-    <SeekBar
-        android:id="@+id/seekBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="#2D2D2D"
+        app:cardBackgroundColor="#FFFFFF"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp">
 
@@ -194,17 +184,6 @@
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/toggleButton"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:text="Start"
-        android:textSize="12sp"
-        android:fontFamily="monospace"
-        android:layout_gravity="center"
-        app:cornerRadius="20dp"
-        style="@style/Widget.MaterialComponents.Button"/>
 
     <Button
     android:id="@+id/gotoAudioStreamButton"

@@ -24,6 +24,8 @@ import android.widget.Toast;
 import android.content.Intent;
 
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.android.material.button.MaterialButton;
+
 
 public class HomeActivity extends AppCompatActivity {
     private static final String TAG = "HomeActivity";
@@ -78,6 +80,7 @@ public class HomeActivity extends AppCompatActivity {
     });
 
         // Initialize UI elements
+
         toggleButton = findViewById(R.id.toggleButton);
         noiseRemovalSwitch = findViewById(R.id.noiseRemovalSwitch);
         inputLevelMeter = findViewById(R.id.inputLevelMeter);
@@ -113,7 +116,28 @@ public class HomeActivity extends AppCompatActivity {
         inputLevelMeter.setMax(Short.MAX_VALUE);
         outputLevelMeter.setMax(Short.MAX_VALUE);
 
-        toggleButton.setOnClickListener(v -> toggleProcessing());
+        toggleButton.setOnClickListener(v -> {
+            MaterialButton materialButton = (MaterialButton) toggleButton;
+
+            if (materialButton.getText().toString().equals("Start")) {
+                materialButton.setText("Stop");
+                materialButton.setIconResource(R.drawable.ic_stop);
+                materialButton.setBackgroundTintList(getResources().getColorStateList(R.color.red_circle)); // 🔴 Change to red
+            } else {
+                materialButton.setText("Start");
+                materialButton.setIconResource(R.drawable.ic_play);
+                materialButton.setBackgroundTintList(getResources().getColorStateList(R.color.green_circle)); // 🟢 Change to green
+            }
+
+            toggleProcessing();
+        });
+
+
+
+
+
+
+
         noiseRemovalSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             noiseRemovalEnabled = isChecked;
         });
@@ -168,6 +192,16 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         // Initialize audio input
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         audioRecord = new AudioRecord(
                 MediaRecorder.AudioSource.MIC,
                 SAMPLE_RATE,
