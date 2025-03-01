@@ -1,32 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#1E1E1E">
+    android:padding="16dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="RNNoise"
-        android:textSize="28sp"
-        android:textColor="#4CAF50"
-        android:fontFamily="monospace"
-        android:layout_gravity="center"
-        android:layout_marginBottom="4dp"/>
+    <!-- App Title -->
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Real-time Neural Noise Suppression"
-        android:textSize="14sp"
-        android:textColor="#BBBBBB"
-        android:fontFamily="monospace"
-        android:layout_gravity="center"
-        android:layout_marginBottom="32dp"/>
+    <!-- AUDIO LEVELS Card -->
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="333dp"
+        android:orientation="vertical"
+        android:scrollbarThumbHorizontal="@android:drawable/radiobutton_off_background"
+        android:scrollbarThumbVertical="@android:drawable/radiobutton_off_background">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/toggleButton"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="322dp"
+            android:layout_height="66dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="monospace"
+            android:text="Turn On"
+            android:textSize="12sp"
+            app:backgroundTint="@color/primary"
+            app:cornerRadius="20dp" />
+
+
+
+            
+
+        <!-- Parent Layout: occupies full width and centers content horizontally -->
+
+        <LinearLayout
+            android:layout_width="319dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/rounded_mint_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="24dp"
+            android:paddingTop="12dp"
+            android:paddingRight="24dp"
+            android:paddingBottom="12dp">
+
+            <TextView
+                android:layout_width="215dp"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
+                android:fontFamily="sans-serif"
+                android:text="Noise cancellation"
+                android:textColor="#000000"
+                android:textSize="14sp" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/noiseRemovalSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:textColorLink="#009688"
+                app:thumbTint="@color/white"
+                app:trackTint="@color/grey" />
+        </LinearLayout>
+
+
+        <!-- Amplification / Volume SeekBar -->
+
+
+        <LinearLayout
+            android:layout_width="319dp"
+            android:layout_height="60dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/rounded_mint_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="24dp"
+            android:paddingTop="12dp"
+            android:paddingRight="24dp"
+            android:paddingBottom="12dp">
+
+            <ImageView
+                android:id="@+id/volumeIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginRight="12dp"
+                android:src="@drawable/volume" />
+
+            <SeekBar
+                android:id="@+id/seekBar"
+                android:layout_width="247dp"
+                android:layout_height="20dp"
+                android:max="100"
+                android:minHeight="0dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:progressDrawable="@drawable/seekbar_custom_progress"
+                android:splitTrack="false"
+                android:thumb="@drawable/seekbar_custom_thumb"
+                android:thumbOffset="0dp" />
+
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+
+    <!-- NOISE REMOVAL + METRICS Card -->
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -41,134 +128,76 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Noise Removal Switch -->
+
+            <!-- METRICS -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="monospace"
                 android:text="AUDIO LEVELS"
                 android:textColor="#4CAF50"
-                android:textSize="12sp"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
                 android:fontFamily="monospace"
-                android:layout_marginBottom="8dp"/>
+                android:text="IN"
+                android:textColor="#BBBBBB" />
 
-            <LinearLayout
+            <ProgressBar
+                android:id="@+id/inputLevelMeter"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+                android:progressTint="#FF5722" />
 
-                <TextView
-                    android:layout_width="80dp"
-                    android:layout_height="wrap_content"
-                    android:text="IN"
-                    android:textColor="#BBBBBB"
-                    android:fontFamily="monospace"/>
+            <TextView
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:text="OUT"
+                android:textColor="#BBBBBB" />
 
-                <ProgressBar
-                    android:id="@+id/inputLevelMeter"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                    android:progressTint="#FF5722"/>
-            </LinearLayout>
-
-            <LinearLayout
+            <ProgressBar
+                android:id="@+id/outputLevelMeter"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="80dp"
-                    android:layout_height="wrap_content"
-                    android:text="OUT"
-                    android:textColor="#BBBBBB"
-                    android:fontFamily="monospace"/>
-
-                <ProgressBar
-                    android:id="@+id/outputLevelMeter"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-                    android:progressTint="#4CAF50"/>
-            </LinearLayout>
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-    <SeekBar
-        android:id="@+id/seekBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="#2D2D2D"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp">
-
-
-
-
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="NOISE REMOVAL"
-                    android:textColor="#4CAF50"
-                    android:textSize="12sp"
-                    android:fontFamily="monospace"/>
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/noiseRemovalSwitch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:enabled="false"/>
-            </LinearLayout>
+                android:progressTint="#4CAF50" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="monospace"
                 android:text="METRICS"
                 android:textColor="#4CAF50"
-                android:textSize="12sp"
-                android:fontFamily="monospace"
-                android:layout_marginBottom="8dp"/>
+                android:textSize="12sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+                android:layout_marginBottom="8dp"
+                android:orientation="horizontal">
 
                 <TextView
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
                     android:text="VAD PROB"
-                    android:textColor="#BBBBBB"
-                    android:fontFamily="monospace"/>
+                    android:textColor="#BBBBBB" />
 
                 <TextView
                     android:id="@+id/vadProbability"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
                     android:text="0%"
                     android:textColor="#FF5722"
-                    android:fontFamily="monospace"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <LinearLayout
@@ -179,39 +208,31 @@
                 <TextView
                     android:layout_width="120dp"
                     android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
                     android:text="NOISE RED"
-                    android:textColor="#BBBBBB"
-                    android:fontFamily="monospace"/>
+                    android:textColor="#BBBBBB" />
 
                 <TextView
                     android:id="@+id/noiseReduction"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
                     android:text="0 dB"
                     android:textColor="#4CAF50"
-                    android:fontFamily="monospace"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/toggleButton"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:text="Start"
-        android:textSize="12sp"
-        android:fontFamily="monospace"
-        android:layout_gravity="center"
-        app:cornerRadius="20dp"
-        style="@style/Widget.MaterialComponents.Button"/>
+    <!-- Big Toggle Button -->
 
+    <!-- Existing "Go to Audio Stream" button -->
     <Button
-    android:id="@+id/gotoAudioStreamButton"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:text="Go to Audio Stream"
-    android:layout_marginTop="20dp"
-    android:layout_centerInParent="true" />
+        android:id="@+id/gotoAudioStreamButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:text="Go to Audio Stream" />
 
 </LinearLayout>
