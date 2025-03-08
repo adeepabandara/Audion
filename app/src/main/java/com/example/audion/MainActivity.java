@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
         // Now get DAOs
         userDao = db.userDao();
         hearingTestResultDao = db.hearingTestResultDao();
+        
 
         // Check if any user exists
         List<User> users = userDao.getAllUsers();

@@ -33,6 +33,10 @@
            android:windowSoftInputMode="adjustResize"/>
            <activity android:name=".RightEarInstructionActivity" 
            android:windowSoftInputMode="adjustResize"/>
+
+              <activity android:name=".HomeActivityv1" 
+           android:windowSoftInputMode="adjustResize"/>
+           
            
         <activity
         
