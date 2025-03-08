@@ -8,12 +8,9 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="primary">#0F766E</color>
-    <color name="background">#F0FDFA</color>
-    <color name="button_green">#00C853</color>
+    <color name="green_circle">#0F766E</color>
+    <color name="red_circle">#CD1C18</color>
 
-
-    <color name="button_red">#FF3B30</color>
-    <color name="grey">#EAEAEA</color>
 
 
 </resources>
