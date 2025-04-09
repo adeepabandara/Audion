@@ -21,11 +21,14 @@ import androidx.core.content.ContextCompat;
 
 public class PureToneTestActivity extends AppCompatActivity {
 
+   
+
     private final int[] frequencies = {250, 500, 1000, 2000};
     private int currentFreqIndex = 0;
 
     private String currentEar; // "LEFT" or "RIGHT"
 
+    private TextView title;
     private TextView textViewFrequency;
     private ProgressBar progressBar;
     private Button buttonStart;
@@ -37,16 +40,31 @@ public class PureToneTestActivity extends AppCompatActivity {
     private int lastAmplitudeStep = 0;
 
     private HearingTestResultDao hearingTestResultDao;
+    private int userId;
+
+   
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pure_tone_test);
+
+
+        userId = getIntent().getIntExtra("USER_ID", -1);
+        if (userId == -1) {
+            Toast.makeText(this, "Error: No user ID passed!", Toast.LENGTH_LONG).show();
+            // Optional: take an action, such as finishing the activity or going back.
+            finish();
+            return;
+        }
 
         currentEar = getIntent().getStringExtra("EAR");
         if (currentEar == null) currentEar = "LEFT"; // fallback
 
         textViewFrequency = findViewById(R.id.textViewFrequency);
+        title = findViewById(R.id.title);
         progressBar       = findViewById(R.id.progressBar);
         buttonStart       = findViewById(R.id.buttonStart);
         buttonHeard       = findViewById(R.id.buttonHeard);
@@ -121,8 +139,9 @@ public class PureToneTestActivity extends AppCompatActivity {
         markStepperCompleted(currentFreqIndex);
 
         int freq = frequencies[currentFreqIndex];
+        // Use the passed userId instead of hardcoding 1
         HearingTestResult result = new HearingTestResult(
-                1,        // or get current user ID
+                userId,        
                 currentEar,
                 freq,
                 lastAmplitudeStep
@@ -131,19 +150,18 @@ public class PureToneTestActivity extends AppCompatActivity {
 
         currentFreqIndex++;
         if (currentFreqIndex >= frequencies.length) {
-            // done with this ear
             if ("LEFT".equals(currentEar)) {
-                // after left ear -> go RightEarInstruction
                 Toast.makeText(this, "Left Ear Test Complete!", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(this, RightEarInstructionActivity.class);
+                // Forward user ID to next activity
+                intent.putExtra("USER_ID", userId);
                 startActivity(intent);
                 finish();
             } else {
-                // done right ear => entire test complete
                 Toast.makeText(this, "Right Ear Test Complete!", Toast.LENGTH_LONG).show();
                 Intent intent = new Intent(this, HomeActivity.class);
+                intent.putExtra("USER_ID", userId);
                 startActivity(intent);
-
                 finish();
             }
         } else {
@@ -151,6 +169,7 @@ public class PureToneTestActivity extends AppCompatActivity {
             showStartUI();
         }
     }
+
 
     private void onUserNotHeard() {
         stopPlayback = true;
@@ -160,7 +179,7 @@ public class PureToneTestActivity extends AppCompatActivity {
 
         int freq = frequencies[currentFreqIndex];
         HearingTestResult result = new HearingTestResult(
-                1,
+                userId,      // Use the retrieved userId
                 currentEar,
                 freq,
                 100
@@ -186,6 +205,7 @@ public class PureToneTestActivity extends AppCompatActivity {
         if (currentFreqIndex < frequencies.length) {
             int freq = frequencies[currentFreqIndex];
             textViewFrequency.setText("Testing Frequency: " + freq + " Hz (" + currentEar + " Ear)");
+            title.setText("" + currentEar + " EAR");
         } else {
             textViewFrequency.setText("All done for " + currentEar + " ear!");
         }

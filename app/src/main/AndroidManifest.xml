@@ -19,6 +19,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
           <activity android:name=".UserCreationActivity" 
           android:windowSoftInputMode="adjustResize"/>
 
@@ -34,14 +35,13 @@
            <activity android:name=".RightEarInstructionActivity" 
            android:windowSoftInputMode="adjustResize"/>
 
-            <activity android:name=".WaveformView" 
-           android:windowSoftInputMode="adjustResize"/>
 
             <activity android:name=".VariationOneActivity" 
            android:windowSoftInputMode="adjustResize"/>
 
             <activity android:name=".VariationTwoActivity" 
            android:windowSoftInputMode="adjustResize"/>
+
            
            
         <activity

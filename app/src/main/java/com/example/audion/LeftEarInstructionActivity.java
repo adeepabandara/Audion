@@ -21,12 +21,14 @@ public class LeftEarInstructionActivity extends AppCompatActivity {
         buttonStartLeftTest  = findViewById(R.id.buttonStartLeftEarTest);
 
 
-        buttonStartLeftTest.setOnClickListener(v -> {
-            // Start the PureToneTestActivity with EAR = "LEFT"
-            Intent intent = new Intent(LeftEarInstructionActivity.this, PureToneTestActivity.class);
-            intent.putExtra("EAR", "LEFT");
-            startActivity(intent);
-            finish();  // optional
-        });
+    buttonStartLeftTest.setOnClickListener(v -> {
+        Intent intent = new Intent(LeftEarInstructionActivity.this, PureToneTestActivity.class);
+        intent.putExtra("EAR", "LEFT");
+        int userId = getIntent().getIntExtra("USER_ID", -1);
+        intent.putExtra("USER_ID", userId);
+        startActivity(intent);
+        finish();
+    });
+
     }
 }

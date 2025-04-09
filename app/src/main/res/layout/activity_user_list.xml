@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Title -->
+    <TextView
+         android:id="@+id/titleTextView"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="Select a User or Add New User"
+         android:textSize="20sp"
+         android:layout_gravity="center"
+         android:paddingBottom="16dp" />
+
+    <!-- ListView for displaying users -->
+    <ListView
+         android:id="@+id/userListView"
+         android:layout_width="match_parent"
+         android:layout_height="0dp"
+         android:layout_weight="1"
+         android:dividerHeight="1dp"
+         android:divider="#CCCCCC" />
+
+    <!-- Button to add a new user -->
+    <Button
+         android:id="@+id/addUserButton"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:text="Add New User"
+         android:layout_marginTop="16dp"/>
+</LinearLayout>

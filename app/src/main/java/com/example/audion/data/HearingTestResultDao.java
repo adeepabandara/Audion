@@ -20,6 +20,10 @@ public interface HearingTestResultDao {
     @Query("SELECT * FROM hearing_test_results WHERE earSide = :earSide")
     List<HearingTestResult> getResultsForEar(String earSide);
 
+    
+    @Query("DELETE FROM hearing_test_results WHERE userId = :userId")
+    void deleteResultsForUser(int userId);
+
     @Query("DELETE FROM hearing_test_results")
     void deleteAll();
 }

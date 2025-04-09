@@ -21,12 +21,16 @@ public class RightEarInstructionActivity extends AppCompatActivity {
 
 
 
-        buttonStartRightTest.setOnClickListener(v -> {
-            // Start the PureToneTestActivity with EAR = "RIGHT"
-            Intent intent = new Intent(RightEarInstructionActivity.this, PureToneTestActivity.class);
-            intent.putExtra("EAR", "RIGHT");
-            startActivity(intent);
-            finish();  // optional
-        });
+    buttonStartRightTest.setOnClickListener(v -> {
+        Intent intent = new Intent(RightEarInstructionActivity.this, PureToneTestActivity.class);
+        intent.putExtra("EAR", "RIGHT");
+        int userId = getIntent().getIntExtra("USER_ID", -1);
+        intent.putExtra("USER_ID", userId);
+        startActivity(intent);
+        finish();
+    });
+
     }
 }
+
+

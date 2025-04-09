@@ -20,12 +20,18 @@ public class GeneralInstructionActivity extends AppCompatActivity {
         
         buttonProceed   = findViewById(R.id.buttonProceed);
         buttonProceed.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // Use GeneralInstructionActivity.this as the Context
-                Intent intent = new Intent(GeneralInstructionActivity.this, LeftEarInstructionActivity.class);
-                startActivity(intent);
-            }
-        });
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent(GeneralInstructionActivity.this, LeftEarInstructionActivity.class);
+            int userId = getIntent().getIntExtra("USER_ID", -1);
+            intent.putExtra("USER_ID", userId);
+            startActivity(intent);
+            finish();
+        }
+    });
+
     }
 }
+
+
+ 

@@ -15,7 +15,8 @@ import android.content.Intent;
 public class UserCreationActivity extends AppCompatActivity {
 
     private EditText editTextName;
-    private EditText editTextAge;
+    // If you need age later, you can keep editTextAge, but for now it’s unused
+    // private EditText editTextAge;
     private Button buttonSubmit;
 
     private AppDatabase db;
@@ -26,13 +27,13 @@ public class UserCreationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_creation);
 
-        // Initialize Room (You could also pass it via Intent or a Singleton/DI, but for simplicity:
+        // Initialize Room database (for demonstration only; use background threads in production)
         db = Room.databaseBuilder(
                 getApplicationContext(),
                 AppDatabase.class,
                 "audion-database"
         )
-        .allowMainThreadQueries() // For demonstration only
+        .allowMainThreadQueries()
         .build();
 
         userDao = db.userDao();
@@ -51,24 +52,32 @@ public class UserCreationActivity extends AppCompatActivity {
     }
 
     private void createUserAndFinish() {
-    // Get the user inputs
-    String name = editTextName.getText().toString().trim();
+        // Get the user input for the name.
+        String name = editTextName.getText().toString().trim();
 
-    if (!name.isEmpty()) {
-        // Create a new user and insert into DB
-        User newUser = new User(name);
-        userDao.insert(newUser);
+        if (!name.isEmpty()) {
+            // Create a new user and insert into DB.
+            User newUser = new User(name);
+            userDao.insert(newUser);  // This method returns void in your current setup
 
-        // Navigate to HomeActivity
-        Intent intent = new Intent(this, GeneralInstructionActivity.class);
-        startActivity(intent);
+            // Now query the inserted user; assuming names are unique (or this is sufficient for your demo).
+            User insertedUser = userDao.getUserByName(name);
+            if (insertedUser == null) {
+                Toast.makeText(this, "Error retrieving the created user", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            int newUserId = insertedUser.getId();
 
-        // Finish current activity
-        finish();
-    } else {
-        // Show a Toast message if the input is empty
-        Toast.makeText(this, "Please enter a name", Toast.LENGTH_SHORT).show();
+            // Navigate to GeneralInstructionActivity while passing the user ID.
+            Intent intent = new Intent(this, GeneralInstructionActivity.class);
+            intent.putExtra("USER_ID", newUserId);
+            startActivity(intent);
+
+            // Finish current activity.
+            finish();
+        } else {
+            // Show a Toast message if the input is empty.
+            Toast.makeText(this, "Please enter a name", Toast.LENGTH_SHORT).show();
+        }
     }
-}
-
 }
