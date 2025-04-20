@@ -6,77 +6,87 @@
     android:layout_height="match_parent"
     android:background="#F0FDFA"
     android:fillViewport="true"
-    android:padding="40dp">
+    android:padding="20dp">
 
+    <!-- Outer container centers the fixed-width inner container horizontally -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
         android:orientation="vertical">
 
-        <!-- Title -->
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="wrap_content"
+        <!-- Inner fixed-width container preserving original component styling -->
+        <LinearLayout
+            android:id="@+id/layout_pure_tone_test"
+            android:layout_width="319dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="Right Ear Test"
-            android:textColor="#1A6958"
-            android:textSize="32sp"
-            android:textStyle="bold" />
+            android:orientation="vertical">
 
-        <!-- Intro Text -->
-        <TextView
-            android:id="@+id/body"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:fontFamily="@font/poppins"
-            android:lineSpacingExtra="4dp"
-            android:text="Fantastic! Let's focus on your right ear now."
-            android:textColor="#4A4A4A"
-            android:textSize="14sp" />
+            <!-- Title (centered) -->
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:gravity="center"
+                android:text="Right Ear Test"
+                android:textColor="#1A6958"
+                android:textSize="32sp"
+                android:textStyle="bold" />
 
-        <!-- Follow-up Instruction -->
-        <TextView
-            android:id="@+id/bodyFollowUp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:fontFamily="@font/poppins"
-            android:text="Press the Start button, and listen carefully. If you hear a sound, simply press the button."
-            android:textColor="#4A4A4A"
-            android:textSize="14sp" />
+            <!-- Intro Text -->
+            <TextView
+                android:id="@+id/body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/poppins"
+                android:lineSpacingExtra="4dp"
+                android:text="Fantastic! Let's focus on your right ear now."
+                android:textColor="#4A4A4A"
+                android:textSize="14sp" />
 
-        <!-- Ear Image -->
-        <ImageView
-            android:id="@+id/imageViewEar"
-            android:layout_width="312dp"
-            android:layout_height="358dp"
-            android:layout_gravity="center"
-            android:scaleType="fitCenter"
-            android:src="@drawable/right_ear" />
+            <!-- Follow-up Instruction -->
+            <TextView
+                android:id="@+id/bodyFollowUp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:fontFamily="@font/poppins"
+                android:text="Press the Start button, and listen carefully. If you hear a sound, simply press the button."
+                android:textColor="#4A4A4A"
+                android:textSize="14sp" />
 
-        <!-- Spacer to push button to bottom -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            <!-- Ear Image -->
+            <ImageView
+                android:id="@+id/imageViewEar"
+                android:layout_width="312dp"
+                android:layout_height="325dp"
+                android:layout_gravity="center"
+                android:scaleType="fitCenter"
+                android:src="@drawable/right_ear" />
 
-        <!-- Start Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonStartRightEarTest"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="16dp"
-            android:backgroundTint="#0F766E"
-            android:fontFamily="@font/poppins_light"
-            android:text="Start"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:cornerRadius="20dp" />
+            <!-- Spacer to push button to the bottom -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
 
+            <!-- Start Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonStartRightEarTest"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="16dp"
+                android:backgroundTint="#0F766E"
+                android:fontFamily="@font/poppins_light"
+                android:text="Start"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="20dp" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

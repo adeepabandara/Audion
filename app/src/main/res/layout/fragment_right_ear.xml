@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rightEarScrollView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:id="@+id/layoutRightEarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- All sliders live inside this mint‑card container -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/rounded_mint_card"
+            android:layout_marginBottom="16dp">
+
+            <!-- 8 frequency rows (give each an id so you can reference them if needed) -->
+            <include
+                android:id="@+id/row125HzRight"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row250HzRight"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row500HzRight"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row1000HzRight"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row2000HzRight"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row3000HzRight"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row4000HzRight"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row8000HzRight"
+                layout="@layout/row_frequency_slider" />
+
+        </LinearLayout>
+
+        <!-- Save button at bottom -->
+        <Button
+            android:id="@+id/btnSaveRightEar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save Changes"
+            android:layout_marginTop="8dp"
+            android:layout_gravity="center_horizontal"/>
+
+    </LinearLayout>
+</ScrollView>

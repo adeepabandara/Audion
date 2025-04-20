@@ -8,215 +8,320 @@
     android:fillViewport="true"
     android:padding="20dp">
 
+    <!-- Outer container centers the fixed-width inner container horizontally -->
     <LinearLayout
-        android:id="@+id/layout_pure_tone_test"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal">
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
 
-        <!-- Title -->
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="Left Ear Test"
-            android:textColor="#1A6958"
-            android:textSize="32sp"
-            android:textStyle="bold" />
-
-        <!-- Stepper container -->
+        <!-- Inner fixed-width container preserving existing component styling -->
         <LinearLayout
-            android:id="@+id/stepper_container"
-            android:layout_width="match_parent"
+            android:id="@+id/layout_pure_tone_test"
+            android:layout_width="319dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginBottom="20dp">
-
-            <!-- Step 1 -->
-            <FrameLayout
-                android:id="@+id/step1"
-                android:layout_width="40dp"
-                android:layout_height="40dp">
-                <ImageView
-                    android:id="@+id/step1Image"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/circle_default"/>
-                <TextView
-                    android:id="@+id/step1Text"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:text="1"
-                    android:textColor="#0F766E"/>
-            </FrameLayout>
-
-            <!-- Dotted line -->
-            <View
-                android:layout_width="40dp"
-                android:layout_height="2dp"
-                android:layout_gravity="center_vertical"
-                android:background="@drawable/dotted_line" />
-
-            <!-- Step 2 -->
-            <FrameLayout
-                android:id="@+id/step2"
-                android:layout_width="40dp"
-                android:layout_height="40dp">
-                <ImageView
-                    android:id="@+id/step2Image"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/circle_default"/>
-                <TextView
-                    android:id="@+id/step2Text"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:text="2"
-                    android:textColor="#0F766E"/>
-            </FrameLayout>
-
-            <!-- Dotted line -->
-            <View
-                android:layout_width="40dp"
-                android:layout_height="2dp"
-                android:layout_gravity="center_vertical"
-                android:background="@drawable/dotted_line"/>
-
-            <!-- Step 3 -->
-            <FrameLayout
-                android:id="@+id/step3"
-                android:layout_width="40dp"
-                android:layout_height="40dp">
-                <ImageView
-                    android:id="@+id/step3Image"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/circle_default"/>
-                <TextView
-                    android:id="@+id/step3Text"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:text="3"
-                    android:textColor="#0F766E"/>
-            </FrameLayout>
-
-            <!-- Dotted line -->
-            <View
-                android:layout_width="40dp"
-                android:layout_height="2dp"
-                android:layout_gravity="center_vertical"
-                android:background="@drawable/dotted_line"/>
-
-            <!-- Step 4 -->
-            <FrameLayout
-                android:id="@+id/step4"
-                android:layout_width="40dp"
-                android:layout_height="40dp">
-                <ImageView
-                    android:id="@+id/step4Image"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/circle_default"/>
-                <TextView
-                    android:id="@+id/step4Text"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:text="4"
-                    android:textColor="#0F766E"/>
-            </FrameLayout>
-        </LinearLayout>
-
-        <!-- Ear Image -->
-        <ImageView
-            android:id="@+id/imageViewEar"
-            android:layout_width="312dp"
-            android:layout_height="305dp"
-            android:layout_gravity="center"
-            android:layout_marginBottom="20dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/left_ear" />
-
-        <!-- Testing Frequency Label -->
-        <TextView
-            android:id="@+id/textViewFrequency"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Testing Frequency:"
-            android:textSize="18sp"
-            android:layout_marginBottom="20dp"/>
-
-        <!-- Progress Bar -->
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="@android:style/Widget.ProgressBar.Horizontal"
-            android:layout_width="310dp"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
-            android:max="100"
-            android:progress="0"
-            android:progressBackgroundTint="#EFEFEF"
-            android:progressTint="#0F766E" />
-
-        <!-- Spacer to push buttons to bottom -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <!-- Start Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonStart"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="16dp"
-            android:backgroundTint="#0F766E"
-            android:text="Start"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:cornerRadius="20dp" />
-
-        <!-- Response Buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
             android:orientation="vertical">
 
+            <!-- Top spacing -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="13dp" />
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:gravity="center"
+                android:text="Left Ear Test"
+                android:textColor="#1A6958"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <!-- Stepper container with 8 steps -->
+            <LinearLayout
+                android:id="@+id/stepper_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="20dp">
+
+                <!-- Step 1 -->
+                <FrameLayout
+                    android:id="@+id/step1"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp">
+                    <ImageView
+                        android:id="@+id/step1Image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/circle_default" />
+                    <TextView
+                        android:id="@+id/step1Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="1"
+                        android:textColor="#0F766E" />
+                </FrameLayout>
+
+                <!-- Dotted line -->
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="2dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/dotted_line" />
+
+                <!-- Step 2 -->
+                <FrameLayout
+                    android:id="@+id/step2"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp">
+                    <ImageView
+                        android:id="@+id/step2Image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/circle_default" />
+                    <TextView
+                        android:id="@+id/step2Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="2"
+                        android:textColor="#0F766E" />
+                </FrameLayout>
+
+                <!-- Dotted line -->
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="2dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/dotted_line" />
+
+                <!-- Step 3 -->
+                <FrameLayout
+                    android:id="@+id/step3"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp">
+                    <ImageView
+                        android:id="@+id/step3Image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/circle_default" />
+                    <TextView
+                        android:id="@+id/step3Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="3"
+                        android:textColor="#0F766E" />
+                </FrameLayout>
+
+                <!-- Dotted line -->
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="2dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/dotted_line" />
+
+                <!-- Step 4 -->
+                <FrameLayout
+                    android:id="@+id/step4"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp">
+                    <ImageView
+                        android:id="@+id/step4Image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/circle_default" />
+                    <TextView
+                        android:id="@+id/step4Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="4"
+                        android:textColor="#0F766E" />
+                </FrameLayout>
+
+                <!-- Dotted line -->
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="2dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/dotted_line" />
+
+                <!-- Step 5 -->
+                <FrameLayout
+                    android:id="@+id/step5"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp">
+                    <ImageView
+                        android:id="@+id/step5Image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/circle_default" />
+                    <TextView
+                        android:id="@+id/step5Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="5"
+                        android:textColor="#0F766E" />
+                </FrameLayout>
+
+                <!-- Dotted line -->
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="2dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/dotted_line" />
+
+                <!-- Step 6 -->
+                <FrameLayout
+                    android:id="@+id/step6"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp">
+                    <ImageView
+                        android:id="@+id/step6Image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/circle_default" />
+                    <TextView
+                        android:id="@+id/step6Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="6"
+                        android:textColor="#0F766E" />
+                </FrameLayout>
+
+                <!-- Dotted line -->
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="2dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/dotted_line" />
+
+                <!-- Step 7 -->
+                <FrameLayout
+                    android:id="@+id/step7"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp">
+                    <ImageView
+                        android:id="@+id/step7Image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/circle_default" />
+                    <TextView
+                        android:id="@+id/step7Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="7"
+                        android:textColor="#0F766E" />
+                </FrameLayout>
+
+                <!-- Dotted line -->
+                <View
+                    android:layout_width="20dp"
+                    android:layout_height="2dp"
+                    android:layout_gravity="center_vertical"
+                    android:background="@drawable/dotted_line" />
+
+                <!-- Step 8 -->
+                <FrameLayout
+                    android:id="@+id/step8"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp">
+                    <ImageView
+                        android:id="@+id/step8Image"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/circle_default" />
+                    <TextView
+                        android:id="@+id/step8Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="8"
+                        android:textColor="#0F766E" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <!-- Ear Image -->
+            <ImageView
+                android:id="@+id/imageViewEar"
+                android:layout_width="312dp"
+                android:layout_height="141dp"
+                android:layout_gravity="center"
+                android:layout_marginBottom="20dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/left_ear" />
+
+            <!-- Progress Bar -->
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="310dp"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:max="100"
+                android:progress="0"
+                android:progressBackgroundTint="#EFEFEF"
+                android:progressTint="#0F766E" />
+
+            <!-- Spacer to push buttons to the bottom -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Start Button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonNotHeard"
+                android:id="@+id/buttonStart"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="20dp"
-                android:layout_marginBottom="8dp"
-                android:text="I Didn't"
-                android:backgroundTint="#D32F2F"
-                android:textColor="#FFFFFF"
-                app:cornerRadius="20dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonHeard"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="10dp"
                 android:layout_marginBottom="16dp"
-                android:text="I Heard"
                 android:backgroundTint="#0F766E"
+                android:text="Start"
+                android:textAllCaps="false"
                 android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
                 app:cornerRadius="20dp" />
 
+            <!-- Response Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonNotHeard"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="I Didn't"
+                    android:backgroundTint="#D32F2F"
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="20dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonHeard"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="16dp"
+                    android:text="I Heard"
+                    android:backgroundTint="#0F766E"
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="20dp" />
+            </LinearLayout>
         </LinearLayout>
-
-
     </LinearLayout>
 </ScrollView>

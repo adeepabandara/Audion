@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp"
+    android:paddingBottom="6dp"
+    android:paddingTop="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/btnMinus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="-"
+            android:textColor="@android:color/black"
+            android:textSize="24sp" />
+
+        <SeekBar
+            android:id="@+id/frequencySeekBar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="100"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="2dp"
+            android:progress="50" />
+
+        <TextView
+            android:id="@+id/btnPlus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="+"
+            android:textColor="@android:color/black"
+            android:textSize="24sp" />
+    </LinearLayout>
+
+    <!-- Make the Hz label sit directly under the bar -->
+<TextView
+android:id="@+id/freqLabel"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:text="Hz"
+android:textSize="14sp"
+android:gravity="center_horizontal"
+android:textColor="@android:color/black"
+android:layout_marginTop="0dp"/>
+    </LinearLayout>
