@@ -17,7 +17,7 @@
 
         <!-- Inner fixed-width container (319dp) preserving original styling -->
         <LinearLayout
-            android:layout_width="319dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
@@ -26,12 +26,13 @@
                 android:id="@+id/titleTextView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
+                android:gravity="left"
                 android:layout_marginBottom="16dp"
                 android:text="Left Ear Test"
                 android:textColor="#1A6958"
                 android:textSize="32sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                />
 
             <!-- Intro Text -->
             <TextView
@@ -75,7 +76,7 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonStartLeftEarTest"
                 android:layout_width="match_parent"
-                android:layout_height="60dp"
+                android:layout_height="56dp"
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="16dp"
                 android:backgroundTint="#0F766E"

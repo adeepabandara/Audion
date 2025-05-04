@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- ← NEW: this is your inline image -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/diarizationAnimation"
+        android:layout_width="160dp"
+        android:layout_height="148dp"
+        app:lottie_fileName="wave_loading.json"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        android:layout_gravity="center"/>
+
+    <ProgressBar
+        android:id="@+id/diarizationProgress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="240dp"
+        android:layout_gravity="center"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/diarizationStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Starting diarization…"
+        android:layout_gravity="center"
+        android:gravity="center"/>
+</LinearLayout>

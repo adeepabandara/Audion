@@ -15,14 +15,27 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
+        <!-- Profile icon on the left -->
+        <ImageView
+            android:id="@+id/ivProfileIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentStart="true"
+            android:contentDescription="@null"
+            android:tint="?attr/colorPrimary"
+            android:src="@drawable/ic_home" />
+
+        <!-- Profile name shifted to the right of the icon -->
         <TextView
             android:id="@+id/tvProfileName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/ivProfileIcon"
+            android:layout_marginStart="12dp"
             android:text="Profile Name"
             android:textAppearance="?attr/textAppearanceBody1" />
 
-        <!-- this ImageView now matches your adapter's ivTick and uses ic_tick -->
+        <!-- Tick on the right when selected -->
         <ImageView
             android:id="@+id/ivTick"
             android:layout_width="24dp"

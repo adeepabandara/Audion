@@ -24,7 +24,8 @@
 
             <!-- Inner fixed-width container preserving original component dimensions -->
             <LinearLayout
-                android:layout_width="319dp"
+                android:layout_width="match_parent"
+                android:gravity="center"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
@@ -70,6 +71,15 @@
                         app:iconSize="130dp"
                         app:iconGravity="top"
                         app:iconPadding="-25dp" />
+
+                    <TextView
+                        android:id="@+id/latencyTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Latency: -- ms"
+                        android:textSize="16sp"
+                        android:layout_margin="16dp"/>
+
                 </LinearLayout>
 
                 <Space
@@ -145,27 +155,87 @@
 
                 <!-- REPLACED: Remove Multi-Band Graph View Container -->
                 <!-- Instead, add a dropdown for selecting the hearing profile -->
-<LinearLayout
-    android:layout_width="319dp"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="16dp"
-    android:background="@drawable/rounded_mint_card"
-    android:orientation="vertical"
-    android:padding="8dp">
-    <TextView
-         android:id="@+id/tvSelectedProfile"
-         android:layout_width="match_parent"
-         android:layout_height="wrap_content"
-         android:text="Select Hearing Profile"
-         android:textSize="16sp"
-         android:drawableEnd="@drawable/ic_arrow_drop_down"
-         android:padding="8dp"/>
-</LinearLayout>
+                <LinearLayout
+                    android:id="@+id/profilePickerCard"
+                    android:layout_width="319dp"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/rounded_mint_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="24dp"
+                    android:paddingRight="24dp">
+
+                    <!-- Profile icon -->
+                    <ImageView
+                        android:id="@+id/ivProfileIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_home"
+                        android:tint="?attr/colorPrimary" />
+
+                    <!-- Profile name -->
+                    <TextView
+                        android:id="@+id/tvSelectedProfile"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:paddingStart="12dp"
+                        android:text="Select Profile"
+                        android:textColor="@android:color/black"
+                        android:textSize="16sp" />
+
+                    <!-- Dropdown arrow -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_arrow_drop_down"
+                        android:tint="?attr/colorPrimary" />
+
+                </LinearLayout>
 
 
                 <Space
                     android:layout_width="match_parent"
                     android:layout_height="22dp" />
+
+
+                <LinearLayout
+                    android:id="@+id/toggleContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="16dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnLeft"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="60dp"
+                        android:layout_weight="1"
+                        android:text="Normal"
+                        android:textAllCaps="false"
+                        android:textSize="16sp"
+                        android:layout_marginEnd="8dp"
+                        app:cornerRadius="20dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/focus"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="60dp"
+                        android:layout_weight="1"
+                        android:text="Focus"
+                        android:textAllCaps="false"
+                        android:textSize="16sp"
+                        android:layout_marginStart="8dp"
+                        app:cornerRadius="20dp"/>
+
+                </LinearLayout>
 
                 <!-- Waveform Output View Container -->
                 <LinearLayout

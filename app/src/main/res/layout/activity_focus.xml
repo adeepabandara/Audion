@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:id="@+id/mainScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottomNavigationView"
+        android:background="#F0FDFA"
+        android:fillViewport="true"
+        android:padding="20dp">
+
+
+
+
+        <LinearLayout
+            android:id="@+id/focus_root"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Top spacer -->
+            <Space
+                android:id="@+id/spaceTop"
+                android:layout_width="match_parent"
+                android:layout_height="33dp" />
+
+            <!-- INLINE AREA: scan/diarization/default/result -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <!-- your inline-content host -->
+                <FrameLayout
+                    android:id="@+id/defaultPanel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <!-- toggleButton sits on top of defaultPanel -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/toggleButton"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/circle_button_background"
+                    android:fontFamily="monospace"
+                    android:gravity="center"
+                    android:text="Start"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    app:icon="@drawable/ic_play"
+                    app:iconGravity="top"
+                    app:iconPadding="-25dp"
+                    app:iconSize="130dp" />
+
+            </FrameLayout>
+
+
+            <!-- below your defaultPanel / toggleButton FrameLayout -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/globalSpeakersRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:paddingTop="16dp"/>
+
+
+            <!-- Enrollment (Scan) button -->
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/enrollButton"
+                android:layout_width="315dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center"
+                android:backgroundTint="#0F766E"
+                android:text="Scan Environment"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                app:cornerRadius="20dp" />
+
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="25dp" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:layout_width="319dp"
+                android:layout_height="60dp"
+                android:layout_marginBottom="16dp"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/rounded_mint_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="24dp"
+                android:paddingTop="12dp"
+                android:paddingRight="24dp"
+                android:paddingBottom="12dp">
+
+                <ImageView
+                    android:id="@+id/volumeIcon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginRight="12dp"
+                    android:src="@drawable/volume" />
+
+                <SeekBar
+                    android:id="@+id/seekBar"
+                    android:layout_width="247dp"
+                    android:layout_height="20dp"
+                    android:max="100"
+                    android:minHeight="0dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:progressDrawable="@drawable/seekbar_custom_progress"
+                    android:splitTrack="false"
+                    android:thumb="@drawable/seekbar_custom_thumb"
+                    android:thumbOffset="0dp" />
+            </LinearLayout>
+
+            <!-- Enrolled Speakers List -->
+<!--            <TextView-->
+<!--                android:id="@+id/enrolledSpeakersLabel"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginTop="16dp"-->
+<!--                android:text="Enrolled Speakers:"-->
+<!--                android:textStyle="bold" />-->
+
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Stopped"
+                android:layout_gravity="center"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/enrolledSpeakersRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="8dp"
+                android:background="#F8F8F8"
+                android:padding="8dp" />
+
+            <TextView
+                android:id="@+id/noSpeakersText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No speakers enrolled. Click Scan Environment to add speakers."
+                android:textStyle="italic"
+                android:padding="8dp"
+                android:visibility="gone"/>
+
+            <!-- Mode toggle: Normal vs Focus -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="16dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/normal"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="60dp"
+                    android:text="Normal"
+                    android:textAllCaps="false"
+                    android:textSize="16sp"
+                    app:cornerRadius="20dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/focus"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="60dp"
+                    android:text="Focus"
+                    android:textAllCaps="false"
+                    android:textSize="16sp"
+                    app:cornerRadius="20dp"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+
+                <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:visibility="gone">
+    <ProgressBar
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_gravity="center"/>
+    </FrameLayout>
+
+    <include
+        android:id="@+id/bottomNavigationView"
+        layout="@layout/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"/>
+</RelativeLayout>

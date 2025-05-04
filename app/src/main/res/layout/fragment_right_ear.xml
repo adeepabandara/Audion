@@ -10,17 +10,19 @@
         android:id="@+id/layoutRightEarContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:background="#F0FDFA">
 
-        <!-- All sliders live inside this mint‑card container -->
+        <!-- Card container for all eight sliders -->
         <LinearLayout
+            android:id="@+id/cardRightEarSliders"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/rounded_mint_card"
+            android:padding="16dp"
             android:layout_marginBottom="16dp">
 
-            <!-- 8 frequency rows (give each an id so you can reference them if needed) -->
             <include
                 android:id="@+id/row125HzRight"
                 layout="@layout/row_frequency_slider" />
@@ -48,14 +50,13 @@
 
         </LinearLayout>
 
-        <!-- Save button at bottom -->
+        <!-- Save button, hidden until user changes any slider -->
         <Button
             android:id="@+id/btnSaveRightEar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Save Changes"
-            android:layout_marginTop="8dp"
+            android:visibility="gone"
             android:layout_gravity="center_horizontal"/>
-
     </LinearLayout>
 </ScrollView>

@@ -10,24 +10,28 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/playerContainer"
-        android:padding="8dp" />
+        android:padding="8dp"
+        android:background="#F0FDFA"/>
 
     <!-- Fixed mini‑player at bottom -->
+
     <LinearLayout
         android:id="@+id/playerContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@android:color/white"
-        android:padding="8dp"
         android:layout_alignParentBottom="true"
-        android:elevation="4dp">
+        android:layout_marginBottom="68dp"
+        android:background="#F0FDFA"
+        android:elevation="4dp"
+        android:orientation="vertical"
+        android:padding="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_marginBottom="24dp">
 
             <!-- Album art -->
             <ImageView
@@ -41,12 +45,12 @@
             <TextView
                 android:id="@+id/tvSongTitle"
                 android:layout_width="0dp"
-                android:layout_weight="1"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:paddingStart="12dp"
                 android:text="Title"
-                android:textSize="16sp"
-                android:textColor="#000" />
+                android:textColor="#000"
+                android:textSize="16sp" />
 
             <!-- Previous -->
             <ImageButton
@@ -54,8 +58,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:tint="?attr/colorOnSurface"
-                android:src="@android:drawable/ic_media_previous" />
+                android:src="@android:drawable/ic_media_previous"
+                android:tint="?attr/colorOnSurface" />
 
             <!-- Play/Pause -->
             <ImageButton
@@ -63,9 +67,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:tint="?attr/colorOnSurface"
                 android:padding="8dp"
-                android:src="@android:drawable/ic_media_play" />
+                android:src="@android:drawable/ic_media_play"
+                android:tint="?attr/colorOnSurface" />
 
             <!-- Next -->
             <ImageButton
@@ -73,21 +77,52 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:tint="?attr/colorOnSurface"
-                android:src="@android:drawable/ic_media_next" />
+                android:src="@android:drawable/ic_media_next"
+                android:tint="?attr/colorOnSurface" />
 
         </LinearLayout>
 
         <!-- Volume (amplification) control -->
-    <SeekBar
-        android:id="@+id/seekBarVolume"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:max="400"         
-        android:progress="200" /> 
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:layout_width="394dp"
+            android:layout_height="60dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/rounded_mint_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="24dp"
+            android:paddingTop="12dp"
+            android:paddingRight="24dp"
+            android:paddingBottom="12dp">
+
+            <ImageView
+                android:id="@+id/volumeIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginRight="12dp"
+                android:src="@drawable/volume" />
+
+            <SeekBar
+                android:id="@+id/seekBarVolume"
+                android:layout_width="326dp"
+                android:layout_height="20dp"
+                android:max="100"
+                android:minHeight="0dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:progressDrawable="@drawable/seekbar_custom_progress"
+                android:splitTrack="false"
+                android:thumb="@drawable/seekbar_custom_thumb"
+                android:thumbOffset="0dp" />
+        </LinearLayout>
     </LinearLayout>
-    
-<include
+
+    <include
     android:id="@+id/bottomNavigationView"
     layout="@layout/bottom_navigation"
     android:layout_width="match_parent"

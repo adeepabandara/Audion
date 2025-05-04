@@ -18,7 +18,7 @@
         <!-- Inner fixed-width container preserving original component styling -->
         <LinearLayout
             android:id="@+id/layout_pure_tone_test"
-            android:layout_width="319dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
@@ -28,7 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:gravity="center"
+                android:gravity="left"
                 android:text="Right Ear Test"
                 android:textColor="#1A6958"
                 android:textSize="32sp"
@@ -76,7 +76,7 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonStartRightEarTest"
                 android:layout_width="match_parent"
-                android:layout_height="60dp"
+                android:layout_height="56dp"
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="16dp"
                 android:backgroundTint="#0F766E"

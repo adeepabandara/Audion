@@ -39,9 +39,7 @@ public class MainActivity extends AppCompatActivity {
             if (user == null) {
                 // No user found, so navigate to UserCreationActivity.
                 runOnUiThread(() -> {
-                    Toast.makeText(MainActivity.this,
-                            "No user found. Please create one.",
-                            Toast.LENGTH_SHORT).show();
+            
                     Intent intent = new Intent(MainActivity.this, UserCreationActivity.class);
                     startActivity(intent);
                     finish();
@@ -62,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
                     intent = new Intent(MainActivity.this, GeneralInstructionActivity.class);
                 }
                 intent.putExtra("USER_ID", USER_ID);
+
 
                 // Launch the next Activity on the main thread.
                 runOnUiThread(() -> {

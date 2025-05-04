@@ -65,7 +65,7 @@ public class UserCreationActivity extends AppCompatActivity {
                 // In a new DB the auto-generated ID should be 1.
                 AppDatabase db = AppDatabase.getInstance(UserCreationActivity.this);
                 HearingProfileDao hpDao = db.hearingProfileDao();
-                HearingProfile defaultProfile = new HearingProfile("Default Profile", "default_icon");
+                HearingProfile defaultProfile = new HearingProfile("Standard", "default_icon");
                 long profileId = hpDao.insert(defaultProfile);
 
                 // Pass both the USER_ID and the new HEARING_PROFILE_ID through the intent.

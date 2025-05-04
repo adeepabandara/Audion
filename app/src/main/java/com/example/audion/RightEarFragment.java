@@ -1,9 +1,11 @@
 package com.example.audion.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -11,101 +13,129 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.audion.AudioStreamingService;
 import com.example.audion.R;
 import com.example.audion.data.AppDatabase;
 import com.example.audion.data.HearingTestResult;
 import com.example.audion.data.HearingTestResultDao;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class RightEarFragment extends Fragment {
-
-    private int userId;
-    private int hearingProfileId;
-
-    // Frequencies in Hz
     private static final int[] FREQUENCIES = {
-        125, 250, 500, 1000, 2000, 3000, 4000, 8000
+      125,250,500,1000,2000,3000,4000,8000
     };
 
-    // Map frequency→row container so we can find our SeekBar & label
-    private final Map<Integer, View> frequencyRowMap = new HashMap<>();
+    private int userId, profileId;
+    private boolean saveShown=false;
     private HearingTestResultDao dao;
+    private Button btnSave;
+    private final Map<Integer,View> rowMap=new HashMap<>();
 
-    public static RightEarFragment newInstance(int userId, int hearingProfileId) {
-        RightEarFragment fragment = new RightEarFragment();
-        Bundle args = new Bundle();
-        args.putInt("USER_ID", userId);
-        args.putInt("HEARING_PROFILE_ID", hearingProfileId);
-        fragment.setArguments(args);
-        return fragment;
+    public static RightEarFragment newInstance(int u,int p){
+        RightEarFragment f=new RightEarFragment();
+        Bundle b=new Bundle();
+        b.putInt("USER_ID",u);
+        b.putInt("PROFILE_ID",p);
+        f.setArguments(b);
+        return f;
     }
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             @Nullable ViewGroup  container,
-                             @Nullable Bundle     savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_right_ear, container, false);
+    @Nullable @Override
+    public View onCreateView(
+      @NonNull LayoutInflater inf,
+      @Nullable ViewGroup  ct,
+      @Nullable Bundle     bs
+    ){
+        return inf.inflate(R.layout.fragment_right_ear,ct,false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view,
-                              @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-        // 1) Pull args
-        if (getArguments() != null) {
-            userId           = getArguments().getInt("USER_ID");
-            hearingProfileId = getArguments().getInt("HEARING_PROFILE_ID", -1);
+    public void onViewCreated(
+      @NonNull View v,
+      @Nullable Bundle bs
+    ){
+        super.onViewCreated(v,bs);
+        if(getArguments()!=null){
+            userId=v.getContext().getSharedPreferences(
+              "com.example.audion.PREFERENCES",0
+            ).getInt("selectedProfileId",1);
+            profileId=getArguments().getInt("PROFILE_ID");
         }
-
-        // 2) Wire up each row by its ID in fragment_right_ear.xml
-        frequencyRowMap.put(125,  view.findViewById(R.id.row125HzRight));
-        frequencyRowMap.put(250,  view.findViewById(R.id.row250HzRight));
-        frequencyRowMap.put(500,  view.findViewById(R.id.row500HzRight));
-        frequencyRowMap.put(1000, view.findViewById(R.id.row1000HzRight));
-        frequencyRowMap.put(2000, view.findViewById(R.id.row2000HzRight));
-        frequencyRowMap.put(3000, view.findViewById(R.id.row3000HzRight));
-        frequencyRowMap.put(4000, view.findViewById(R.id.row4000HzRight));
-        frequencyRowMap.put(8000, view.findViewById(R.id.row8000HzRight));
-
-        // 3) Get our DAO
-        dao = AppDatabase.getInstance(requireContext())
-                        .hearingTestResultDao();
-
-        // 4) Load & display right‑ear test results
+        dao=AppDatabase.getInstance(requireContext()).hearingTestResultDao();
+        btnSave=v.findViewById(R.id.btnSaveRightEar);
+        btnSave.setOnClickListener(x->onSave());
+        for(int f:FREQUENCIES){
+            int resId = getResources().getIdentifier(
+              "row"+f+"HzRight","id",requireContext().getPackageName()
+            );
+            View row=v.findViewById(resId);
+            rowMap.put(f,row);
+        }
         new Thread(() -> {
-            List<HearingTestResult> allResults = dao.getResultsForUser(userId);
-            // Keep only those for this profile *and* the right ear
-            Map<Integer,Integer> freqToAmp = new HashMap<>();
-            for (HearingTestResult r : allResults) {
-                if (r.getHearingProfileId() == hearingProfileId &&
-                    "right".equalsIgnoreCase(r.getEarSide())) {
-                    freqToAmp.put(r.getFrequency(), r.getAmplitudeStep());
+            Map<Integer,Integer> map=new HashMap<>();
+            for(HearingTestResult r:dao.getResultsForUserAndProfile(userId,profileId)){
+                if("right".equalsIgnoreCase(r.getEarSide())){
+                    map.put(r.getFrequency(),r.getAmplitudeStep());
                 }
             }
+            requireActivity().runOnUiThread(() -> {
+                for(int freq:FREQUENCIES){
+                    View row=rowMap.get(freq);
+                    TextView tv=row.findViewById(R.id.freqLabel);
+                    tv.setText(freq+" Hz");
+                    SeekBar sb=row.findViewById(R.id.frequencySeekBar);
+                    int p=map.getOrDefault(freq,50);
+                    sb.setProgress(p);
+                    attachListener(sb,freq);
+                }
+            });
+        }).start();
+    }
 
-            // 5) Push into UI
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    for (int freq : FREQUENCIES) {
-                        View row = frequencyRowMap.get(freq);
-                        if (row == null) continue;
-
-                        // Label
-                        TextView label = row.findViewById(R.id.freqLabel);
-                        label.setText(freq + " Hz");
-
-                        // SeekBar
-                        SeekBar bar = row.findViewById(R.id.frequencySeekBar);
-                        int progress = freqToAmp.getOrDefault(freq, 50);
-                        bar.setProgress(progress);
-                    }
-                });
+    private void attachListener(SeekBar sb,int freq){
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            @Override public void onProgressChanged(
+              SeekBar s,int prog,boolean u
+            ){
+                if(!saveShown){
+                    btnSave.setVisibility(View.VISIBLE);
+                    saveShown=true;
+                }
+                Intent i=new Intent(requireContext(),AudioStreamingService.class);
+                i.setAction(AudioStreamingService.ACTION_UPDATE_GAIN);
+                i.putExtra(AudioStreamingService.EXTRA_EAR,"right");
+                i.putExtra(AudioStreamingService.EXTRA_FREQ,freq);
+                i.putExtra(AudioStreamingService.EXTRA_AMPL,prog);
+                requireContext().startService(i);
             }
+            @Override public void onStartTrackingTouch(SeekBar s){}
+            @Override public void onStopTrackingTouch(SeekBar s){}
+        });
+    }
+
+    private void onSave(){
+        new Thread(() -> {
+            for(int freq:FREQUENCIES){
+                View row=rowMap.get(freq);
+                int prog=((SeekBar)row.findViewById(
+                  R.id.frequencySeekBar)).getProgress();
+                HearingTestResult existing =
+                  dao.findUserEarFrequency(userId,"right",freq);
+                if(existing!=null){
+                    existing.setAmplitudeStep(prog);
+                    dao.update(existing);
+                } else {
+                    dao.insert(new HearingTestResult(
+                      userId,"right",freq,prog,profileId
+                    ));
+                }
+            }
+            requireActivity().runOnUiThread(() -> {
+                btnSave.setVisibility(View.GONE);
+                saveShown=false;
+            });
         }).start();
     }
 }

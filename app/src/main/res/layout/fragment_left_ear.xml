@@ -4,43 +4,60 @@
     android:id="@+id/leftEarScrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    >
+    android:fillViewport="true">
 
     <LinearLayout
         android:id="@+id/layoutLeftEarContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:background="#F0FDFA"
+        >
 
-        <!-- All sliders live inside this mint‑card container -->
+        <!-- Card container for all eight sliders -->
         <LinearLayout
+            android:id="@+id/cardLeftEarSliders"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/rounded_mint_card"
+            android:padding="16dp"
             android:layout_marginBottom="16dp">
 
-            <!-- 8 frequency rows -->
-            <include layout="@layout/row_frequency_slider" android:id="@+id/row125Hz" />
-            <include layout="@layout/row_frequency_slider" android:id="@+id/row250Hz" />
-            <include layout="@layout/row_frequency_slider" android:id="@+id/row500Hz" />
-            <include layout="@layout/row_frequency_slider" android:id="@+id/row1000Hz" />
-            <include layout="@layout/row_frequency_slider" android:id="@+id/row2000Hz" />
-            <include layout="@layout/row_frequency_slider" android:id="@+id/row3000Hz" />
-            <include layout="@layout/row_frequency_slider" android:id="@+id/row4000Hz" />
-            <include layout="@layout/row_frequency_slider" android:id="@+id/row8000Hz" />
+            <include
+                android:id="@+id/row125Hz"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row250Hz"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row500Hz"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row1000Hz"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row2000Hz"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row3000Hz"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row4000Hz"
+                layout="@layout/row_frequency_slider" />
+            <include
+                android:id="@+id/row8000Hz"
+                layout="@layout/row_frequency_slider" />
 
         </LinearLayout>
 
-        <!-- Save button at bottom -->
+        <!-- Save button, hidden until user changes any slider -->
         <Button
             android:id="@+id/btnSaveLeftEar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Save Changes"
-            android:layout_marginTop="8dp"
+            android:visibility="gone"
             android:layout_gravity="center_horizontal"/>
-
     </LinearLayout>
 </ScrollView>

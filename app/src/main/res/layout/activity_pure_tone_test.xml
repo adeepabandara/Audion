@@ -18,7 +18,7 @@
         <!-- Inner fixed-width container preserving existing component styling -->
         <LinearLayout
             android:id="@+id/layout_pure_tone_test"
-            android:layout_width="319dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
@@ -32,11 +32,11 @@
                 android:id="@+id/title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="48dp"
                 android:gravity="center"
                 android:text="Left Ear Test"
                 android:textColor="#1A6958"
-                android:textSize="32sp"
+                android:textSize="24sp"
                 android:textStyle="bold" />
 
             <!-- Stepper container with 8 steps -->
@@ -46,13 +46,13 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:layout_marginBottom="20dp">
+                android:layout_marginBottom="48dp">
 
                 <!-- Step 1 -->
                 <FrameLayout
                     android:id="@+id/step1"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp">
+                    android:layout_width="30dp"
+                    android:layout_height="30dp">
                     <ImageView
                         android:id="@+id/step1Image"
                         android:layout_width="match_parent"
@@ -69,7 +69,7 @@
 
                 <!-- Dotted line -->
                 <View
-                    android:layout_width="20dp"
+                    android:layout_width="15dp"
                     android:layout_height="2dp"
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/dotted_line" />
@@ -77,8 +77,8 @@
                 <!-- Step 2 -->
                 <FrameLayout
                     android:id="@+id/step2"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp">
+                    android:layout_width="30dp"
+                    android:layout_height="30dp">
                     <ImageView
                         android:id="@+id/step2Image"
                         android:layout_width="match_parent"
@@ -95,7 +95,7 @@
 
                 <!-- Dotted line -->
                 <View
-                    android:layout_width="20dp"
+                    android:layout_width="15dp"
                     android:layout_height="2dp"
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/dotted_line" />
@@ -103,8 +103,8 @@
                 <!-- Step 3 -->
                 <FrameLayout
                     android:id="@+id/step3"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp">
+                    android:layout_width="30dp"
+                    android:layout_height="30dp">
                     <ImageView
                         android:id="@+id/step3Image"
                         android:layout_width="match_parent"
@@ -121,7 +121,7 @@
 
                 <!-- Dotted line -->
                 <View
-                    android:layout_width="20dp"
+                    android:layout_width="15dp"
                     android:layout_height="2dp"
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/dotted_line" />
@@ -129,8 +129,8 @@
                 <!-- Step 4 -->
                 <FrameLayout
                     android:id="@+id/step4"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp">
+                    android:layout_width="30dp"
+                    android:layout_height="30dp">
                     <ImageView
                         android:id="@+id/step4Image"
                         android:layout_width="match_parent"
@@ -147,7 +147,7 @@
 
                 <!-- Dotted line -->
                 <View
-                    android:layout_width="20dp"
+                    android:layout_width="15dp"
                     android:layout_height="2dp"
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/dotted_line" />
@@ -155,8 +155,8 @@
                 <!-- Step 5 -->
                 <FrameLayout
                     android:id="@+id/step5"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp">
+                    android:layout_width="30dp"
+                    android:layout_height="30dp">
                     <ImageView
                         android:id="@+id/step5Image"
                         android:layout_width="match_parent"
@@ -173,7 +173,7 @@
 
                 <!-- Dotted line -->
                 <View
-                    android:layout_width="20dp"
+                    android:layout_width="15dp"
                     android:layout_height="2dp"
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/dotted_line" />
@@ -181,8 +181,8 @@
                 <!-- Step 6 -->
                 <FrameLayout
                     android:id="@+id/step6"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp">
+                    android:layout_width="30dp"
+                    android:layout_height="30dp">
                     <ImageView
                         android:id="@+id/step6Image"
                         android:layout_width="match_parent"
@@ -199,7 +199,7 @@
 
                 <!-- Dotted line -->
                 <View
-                    android:layout_width="20dp"
+                    android:layout_width="15dp"
                     android:layout_height="2dp"
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/dotted_line" />
@@ -207,8 +207,8 @@
                 <!-- Step 7 -->
                 <FrameLayout
                     android:id="@+id/step7"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp">
+                    android:layout_width="30dp"
+                    android:layout_height="30dp">
                     <ImageView
                         android:id="@+id/step7Image"
                         android:layout_width="match_parent"
@@ -225,7 +225,7 @@
 
                 <!-- Dotted line -->
                 <View
-                    android:layout_width="20dp"
+                    android:layout_width="15dp"
                     android:layout_height="2dp"
                     android:layout_gravity="center_vertical"
                     android:background="@drawable/dotted_line" />
@@ -233,8 +233,8 @@
                 <!-- Step 8 -->
                 <FrameLayout
                     android:id="@+id/step8"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp">
+                    android:layout_width="30dp"
+                    android:layout_height="30dp">
                     <ImageView
                         android:id="@+id/step8Image"
                         android:layout_width="match_parent"
@@ -254,17 +254,16 @@
             <ImageView
                 android:id="@+id/imageViewEar"
                 android:layout_width="312dp"
-                android:layout_height="141dp"
+                android:layout_height="226dp"
                 android:layout_gravity="center"
                 android:layout_marginBottom="20dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/left_ear" />
+                android:scaleType="fitCenter" />
 
             <!-- Progress Bar -->
             <ProgressBar
                 android:id="@+id/progressBar"
                 style="@android:style/Widget.ProgressBar.Horizontal"
-                android:layout_width="310dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 android:max="100"
@@ -279,6 +278,17 @@
                 android:layout_weight="1" />
 
             <!-- Start Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonNotHeard"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="0dp"
+                android:backgroundTint="#D32F2F"
+                android:text="I Didn't"
+                android:textColor="#FFFFFF"
+                app:cornerRadius="20dp" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonStart"
                 android:layout_width="match_parent"
@@ -299,17 +309,6 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonNotHeard"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginTop="20dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="I Didn't"
-                    android:backgroundTint="#D32F2F"
-                    android:textColor="#FFFFFF"
-                    app:cornerRadius="20dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonHeard"

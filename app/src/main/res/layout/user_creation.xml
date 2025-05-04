@@ -17,7 +17,7 @@
 
         <!-- Inner fixed-width container preserving original component styles -->
         <LinearLayout
-            android:layout_width="319dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
