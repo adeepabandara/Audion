@@ -6,7 +6,12 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import androidx.annotation.NonNull;
+
+import android.content.Context;
 import android.content.Intent;
 import android.Manifest;
 import android.content.SharedPreferences;
@@ -59,6 +64,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+import com.example.audion.WaveformView;
+
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 
@@ -66,6 +76,7 @@ public class FocusActivity extends AppCompatActivity
         implements DirectDiarizationManager.DiarizationListener,
                    GlobalSpeakersAdapter.SpeakerSelectionListener {
 
+    private LocalBroadcastManager lbm;
     private static final String TAG = "FocusActivity";
     private static final int PERMISSION_REQUEST_CODE = 1;
     private static final int SAMPLE_RATE = 48000;
@@ -137,6 +148,14 @@ public class FocusActivity extends AppCompatActivity
 
     // start/stop button
     private MaterialButton toggleButton;
+
+    private WaveformView focusWaveform;
+    private final BroadcastReceiver wfReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context ctx, Intent i) {
+            float level = i.getFloatExtra("outputLevel", 0f);
+            focusWaveform.addLevel(level);
+        }
+    };
     
 
     // Normal vs Focus toggle
@@ -158,6 +177,9 @@ public class FocusActivity extends AppCompatActivity
         }
 
         setContentView(R.layout.activity_focus);
+
+        focusWaveform = findViewById(R.id.focusWaveform);
+        lbm = LocalBroadcastManager.getInstance(this);
 
         defaultPanel = findViewById(R.id.defaultPanel);
         showDefaultPanel();
@@ -481,6 +503,8 @@ public class FocusActivity extends AppCompatActivity
             isProcessing = true;
             speakerIsolationEnabled = true;
             updateToggleUi(true);
+            focusWaveform.setVisibility(View.VISIBLE);
+            focusWaveform.levels.clear();
 //            statusText.setText("Focusing on " + selectedEnrolledSpeaker.getName());
 
             processThread = new ProcessThread();
@@ -511,6 +535,7 @@ public class FocusActivity extends AppCompatActivity
             audioTrack.release();
             audioTrack = null;
         }
+        focusWaveform.setVisibility(View.GONE);
         updateToggleUi(false);
     }
 
@@ -529,6 +554,20 @@ public class FocusActivity extends AppCompatActivity
             );
         }
     }
+
+
+    @Override protected void onStart() {
+        super.onStart();
+        lbm.registerReceiver(
+                wfReceiver,
+                new IntentFilter("com.example.audion.WAVEFORM_UPDATE")
+        );
+    }
+    @Override protected void onStop() {
+        super.onStop();
+        lbm.unregisterReceiver(wfReceiver);
+    }
+
 
     @Override public void onSpeakerSelected(int speakerId) { }
     @Override public void onSpeakerDeselected() { }
@@ -592,6 +631,11 @@ public class FocusActivity extends AppCompatActivity
                     outBuf[i] *= amplificationFactor;
                 }
                 audioTrack.write(outBuf, 0, r, AudioTrack.WRITE_BLOCKING);
+                float sum = 0f;
+                for (int j = 0; j < r; j++) sum += outBuf[j] * outBuf[j];
+                float rms = (float)Math.sqrt(sum / r);
+                lbm.sendBroadcast(new Intent("com.example.audion.WAVEFORM_UPDATE")
+                        .putExtra("outputLevel", rms));;
             }
         }
     }

@@ -11,7 +11,7 @@ import java.util.Queue;
 
 public class WaveformView extends View {
     private static final int MAX_LEVELS = 100;
-    private final Queue<Float> levels = new LinkedList<>();
+    final Queue<Float> levels = new LinkedList<>();
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     public WaveformView(Context ctx) {

@@ -63,6 +63,14 @@
                             app:iconPadding="-25dp"
                             app:iconTint="@null" />
 
+
+                        <com.example.audion.WaveformView
+                            android:id="@+id/focusWaveform"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:layout_marginTop="16dp"
+                            android:visibility="gone"/>
+
                         <!-- Inline content panel -->
                         <FrameLayout
                             android:id="@+id/defaultPanel"
