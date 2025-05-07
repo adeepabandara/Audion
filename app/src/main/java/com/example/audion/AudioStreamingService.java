@@ -146,11 +146,19 @@ public class AudioStreamingService extends Service {
                                     // 6) (Optional) broadcast input/output levels for your WaveformView
                     float inRms  = calculateRMS(inFloat);
                     float outRms = calculateRMS(processed);
-                    sendBroadcast(new Intent("com.example.audion.WAVEFORM_UPDATE")
-                        .putExtra("inputLevel",  inRms)
-                        .putExtra("outputLevel", outRms));
 
-                    // 7) Convert back to shorts & write to the AudioTrack
+// ── normalize into 0…1 ────────────────────────────────────────────────────────
+                    float normIn  = Math.max(0f, Math.min(1f, inRms  / Short.MAX_VALUE));
+                    float normOut = Math.max(0f, Math.min(1f, outRms / Short.MAX_VALUE));
+
+// ── broadcast *explicitly* to your app so Activity actually receives it ────────
+                    Intent wf = new Intent("com.example.audion.WAVEFORM_UPDATE")
+                            .setPackage(getPackageName())
+                            .putExtra("inputLevel",  normIn)
+                            .putExtra("outputLevel", normOut);
+                    sendBroadcast(wf);
+
+// ── (then continue your conversion/write as before) ───────────────────────────
                     for (int i = 0; i < read; i++) {
                         inBuf[i] = (short) processed[i];
                     }

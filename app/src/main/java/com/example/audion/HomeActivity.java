@@ -16,7 +16,13 @@ import android.widget.Toast;
 import android.widget.Button;
 import android.view.WindowManager;
 
+import android.content.IntentFilter;
+import android.content.Context;
+
 import android.view.Window;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
+import com.example.audion.WaveformView;
 
 
 
@@ -42,6 +48,17 @@ import java.util.List;
 import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
+
+
+    private WaveformView waveformView;
+
+
+    private final BroadcastReceiver wfReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context ctx, Intent intent) {
+            float out = intent.getFloatExtra("outputLevel", 0f);
+            waveformView.addLevel(out);
+        }
+    };
 
     private static final int REQUEST_RECORD_AUDIO = 101;
 
@@ -88,6 +105,7 @@ public class HomeActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_variation_one);
 
+
         getWindow().addFlags(
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
         );
@@ -109,6 +127,7 @@ public class HomeActivity extends AppCompatActivity {
         ivProfileIcon        = findViewById(R.id.ivProfileIcon);
         bottomNav            = findViewById(R.id.bottomNavigationView);
         amplificationSeekBar = findViewById(R.id.seekBar);
+        waveformView = findViewById(R.id.waveformView);
 
         hearingTestResultDao = AppDatabase.getInstance(this).hearingTestResultDao();
 
@@ -251,6 +270,24 @@ public class HomeActivity extends AppCompatActivity {
             Toast.makeText(this, "Microphone permission required", Toast.LENGTH_SHORT).show();
         }
     }
+
+
+    @Override protected void onStart() {
+        super.onStart();
+        // this uses ContextCompat so you don't need API-33+ compile flags
+        ContextCompat.registerReceiver(
+                this,
+                wfReceiver,
+                new IntentFilter("com.example.audion.WAVEFORM_UPDATE"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+    }
+
+    @Override protected void onStop() {
+        super.onStop();
+        unregisterReceiver(wfReceiver);
+    }
+
 
     private boolean hasMicPermission() {
         return ContextCompat.checkSelfPermission(
