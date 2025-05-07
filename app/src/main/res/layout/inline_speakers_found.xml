@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="24dp">
+    android:padding="12dp">
 
     <ImageView
         android:id="@+id/speakersFoundImage"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@drawable/ic_home" />
+        android:layout_width="153dp"
+        android:layout_height="126dp"
+        android:src="@drawable/ic_found" />
 
     <TextView
         android:id="@+id/speakersFoundTextInline"
@@ -19,5 +20,7 @@
         android:layout_marginTop="16dp"
         android:text="Found 0 speakers"
         android:textAlignment="center"
-        android:textSize="16sp" />
+        android:textStyle="italic"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"/>
 </LinearLayout>

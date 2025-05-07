@@ -2,20 +2,21 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="24dp"
+    android:padding="12dp"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
     <ImageView
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@drawable/ic_home"
-        android:contentDescription="Select a speaker"/>
+        android:layout_width="125dp"
+        android:layout_height="118dp"
+        android:contentDescription="Select a speaker"
+        android:src="@drawable/ic_scan" />
 
     <TextView
         android:layout_marginTop="12dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Please select a speaker to begin"
-        android:textSize="16sp"/>
+        android:text="Let's Look Who is out there Speaking"
+        android:textSize="16sp"
+        android:textColor="#000000" />
 </LinearLayout>

@@ -1,216 +1,221 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F0FDFA">
 
-    <ScrollView
-        android:id="@+id/mainScrollView"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@+id/bottomNavigationView"
-        android:background="#F0FDFA"
-        android:fillViewport="true"
-        android:padding="20dp">
+        android:layout_height="match_parent">
 
+        <!-- everything above the bottom buttons scrolls -->
+        <ScrollView
+            android:id="@+id/mainScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/modeToggleContainer"
+            android:fillViewport="true"
+            android:padding="20dp"
+            android:clipToPadding="false">
 
+            <LinearLayout
+                android:id="@+id/focus_root"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="top|center_horizontal">
 
+                <!-- small top spacer -->
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="16dp"/>
 
+                <!-- Start/Stop toggle + inline panel + scan button -->
+                <FrameLayout
+                    android:id="@+id/centerContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <LinearLayout
+                        android:id="@+id/centerContent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="top|center_horizontal">
+
+                        <!-- Start/Stop toggle button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/toggleButton"
+                            style="@style/Widget.MaterialComponents.Button"
+                            android:layout_width="200dp"
+                            android:layout_height="200dp"
+                            android:gravity="center"
+                            android:fontFamily="monospace"
+                            android:text="Start"
+                            android:textSize="20sp"
+                            android:textColor="@android:color/white"
+                            android:background="@drawable/circle_button_background"
+                            app:icon="@drawable/ic_play"
+                            app:iconSize="130dp"
+                            app:iconGravity="top"
+                            app:iconPadding="-25dp"
+                            app:iconTint="@null" />
+
+                        <!-- Inline content panel -->
+                        <FrameLayout
+                            android:id="@+id/defaultPanel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+
+                        <!-- Scan Environment button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/enrollButton"
+                            android:layout_width="315dp"
+                            android:layout_height="60dp"
+                            android:layout_marginTop="16dp"
+                            android:backgroundTint="#0F766E"
+                            android:text="Scan Environment"
+                            android:textAllCaps="false"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            app:cornerRadius="20dp" />
+                    </LinearLayout>
+                </FrameLayout>
+
+                <!-- optional global-speakers list -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/globalSpeakersRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="16dp"
+                    android:visibility="gone" />
+
+                <!-- Seek-bar container -->
+                <LinearLayout
+                    android:id="@+id/seekBarContainer"
+                    android:visibility="gone"
+                    android:layout_width="319dp"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/rounded_mint_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="24dp"
+                    android:paddingTop="12dp"
+                    android:paddingRight="24dp"
+                    android:paddingBottom="12dp">
+
+                    <ImageView
+                        android:id="@+id/volumeIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginRight="12dp"
+                        android:src="@drawable/volume" />
+
+                    <!-- your original custom-styled SeekBar -->
+                    <SeekBar
+                        android:id="@+id/seekBar"
+                        android:layout_width="247dp"
+                        android:layout_height="20dp"
+                        android:max="100"
+                        android:minHeight="0dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:progressDrawable="@drawable/seekbar_custom_progress"
+                        android:splitTrack="false"
+                        android:thumb="@drawable/seekbar_custom_thumb"
+                        android:thumbOffset="0dp" />
+                </LinearLayout>
+
+                <!-- enrolled speakers list -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/enrolledSpeakersRecyclerView"
+                    android:visibility="gone"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginTop="8dp"
+                    android:padding="8dp" />
+
+                <TextView
+                    android:id="@+id/noSpeakersText"
+                    android:visibility="gone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:textColor="#000000" />
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- fixed bottom controls -->
         <LinearLayout
-            android:id="@+id/focus_root"
+            android:id="@+id/modeToggleContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <!-- Top spacer -->
-            <Space
-                android:id="@+id/spaceTop"
-                android:layout_width="match_parent"
-                android:layout_height="33dp" />
-
-            <!-- INLINE AREA: scan/diarization/default/result -->
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp">
-
-                <!-- your inline-content host -->
-                <FrameLayout
-                    android:id="@+id/defaultPanel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-
-                <!-- toggleButton sits on top of defaultPanel -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/toggleButton"
-                    style="@style/Widget.MaterialComponents.Button"
-                    android:layout_width="200dp"
-                    android:layout_height="200dp"
-                    android:layout_gravity="center"
-                    android:background="@drawable/circle_button_background"
-                    android:fontFamily="monospace"
-                    android:gravity="center"
-                    android:text="Start"
-                    android:textColor="#FFFFFF"
-                    android:textSize="20sp"
-                    app:icon="@drawable/ic_play"
-                    app:iconGravity="top"
-                    app:iconPadding="-25dp"
-                    app:iconSize="130dp" />
-
-            </FrameLayout>
-
-
-            <!-- below your defaultPanel / toggleButton FrameLayout -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/globalSpeakersRecyclerView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone"
-                android:paddingTop="16dp"/>
-
-
-            <!-- Enrollment (Scan) button -->
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_above="@id/bottomNavigationView"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/enrollButton"
-                android:layout_width="315dp"
+                android:id="@+id/normal"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
                 android:layout_height="60dp"
-                android:layout_gravity="center"
-                android:backgroundTint="#0F766E"
-                android:text="Scan Environment"
+                android:layout_weight="1"
+                android:text="Normal"
                 android:textAllCaps="false"
-                android:textColor="#FFFFFF"
                 android:textSize="16sp"
-                app:cornerRadius="20dp" />
+                app:cornerRadius="20dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/outline"
+                android:backgroundTint="@android:color/transparent"
+                android:textColor="@color/primary"
+                android:layout_marginEnd="12dp"/>
 
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="25dp" />
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <LinearLayout
-                android:layout_width="319dp"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/focus"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="0dp"
                 android:layout_height="60dp"
-                android:layout_marginBottom="16dp"
-                android:layout_gravity="center_horizontal"
-                android:background="@drawable/rounded_mint_card"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingLeft="24dp"
-                android:paddingTop="12dp"
-                android:paddingRight="24dp"
-                android:paddingBottom="12dp">
-
-                <ImageView
-                    android:id="@+id/volumeIcon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginRight="12dp"
-                    android:src="@drawable/volume" />
-
-                <SeekBar
-                    android:id="@+id/seekBar"
-                    android:layout_width="247dp"
-                    android:layout_height="20dp"
-                    android:max="100"
-                    android:minHeight="0dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:progressDrawable="@drawable/seekbar_custom_progress"
-                    android:splitTrack="false"
-                    android:thumb="@drawable/seekbar_custom_thumb"
-                    android:thumbOffset="0dp" />
-            </LinearLayout>
-
-            <!-- Enrolled Speakers List -->
-<!--            <TextView-->
-<!--                android:id="@+id/enrolledSpeakersLabel"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_marginTop="16dp"-->
-<!--                android:text="Enrolled Speakers:"-->
-<!--                android:textStyle="bold" />-->
-
-            <TextView
-                android:id="@+id/statusText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Stopped"
-                android:layout_gravity="center"/>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/enrolledSpeakersRecyclerView"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_marginTop="8dp"
-                android:background="#F8F8F8"
-                android:padding="8dp" />
-
-            <TextView
-                android:id="@+id/noSpeakersText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="No speakers enrolled. Click Scan Environment to add speakers."
-                android:textStyle="italic"
-                android:padding="8dp"
-                android:visibility="gone"/>
-
-            <!-- Mode toggle: Normal vs Focus -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="16dp">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/normal"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="60dp"
-                    android:text="Normal"
-                    android:textAllCaps="false"
-                    android:textSize="16sp"
-                    app:cornerRadius="20dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/focus"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="60dp"
-                    android:text="Focus"
-                    android:textAllCaps="false"
-                    android:textSize="16sp"
-                    app:cornerRadius="20dp"/>
-            </LinearLayout>
-
+                android:layout_weight="1"
+                android:text="Focus"
+                android:textAllCaps="false"
+                android:textSize="16sp"
+                app:cornerRadius="20dp"
+                android:backgroundTint="@color/primary"
+                android:textColor="@android:color/white"/>
         </LinearLayout>
-    </ScrollView>
 
+        <include
+            android:id="@+id/bottomNavigationView"
+            layout="@layout/bottom_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"/>
 
-                <FrameLayout
+    </RelativeLayout>
+
+    <!-- full-screen loading overlay -->
+    <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#80000000"
-        android:visibility="gone">
-    <ProgressBar
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:layout_gravity="center"/>
+        android:backgroundTint="@color/white"
+        android:visibility="gone"
+        android:elevation="10dp">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/diarizationAnimation"
+            android:layout_width="160dp"
+            android:layout_height="148dp"
+            app:lottie_fileName="wave_loading.json"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            android:layout_gravity="center"/>
     </FrameLayout>
 
-    <include
-        android:id="@+id/bottomNavigationView"
-        layout="@layout/bottom_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"/>
-</RelativeLayout>
+</FrameLayout>

@@ -27,14 +27,10 @@ public class EnrolledSpeakersAdapter
     public interface OnSpeakerSelectListener {
         void onSpeakerSelected(EnrollmentActivity.EnrolledSpeaker speaker, int position);
     }
-    public interface SpeakerActionListener {
-        void onDeleteSpeaker(int position);
-    }
 
     private final Context context;
     private final List<EnrollmentActivity.EnrolledSpeaker> speakers;
     private OnSpeakerSelectListener selectListener;
-    private SpeakerActionListener actionListener;
     private AudioTrack audioTrack;
     private boolean isPlaying = false;
     private int selectedPosition = -1;
@@ -46,9 +42,6 @@ public class EnrolledSpeakersAdapter
 
     public void setOnSpeakerSelectListener(OnSpeakerSelectListener l) {
         this.selectListener = l;
-    }
-    public void setSpeakerActionListener(SpeakerActionListener l) {
-        this.actionListener = l;
     }
 
     @NonNull @Override
@@ -75,7 +68,7 @@ public class EnrolledSpeakersAdapter
 
         boolean hasAudio = sp.getAudioSamples()!=null && sp.getAudioSamples().length>0;
         holder.playButton.setEnabled(hasAudio);
-        holder.playButton.setText(isPlaying && pos==selectedPosition?"Stop":"Play");
+        holder.playButton.setText(isPlaying && pos==selectedPosition ? "Stop" : "Play");
         holder.playButton.setOnClickListener(v -> {
             if (isPlaying) {
                 stopPlayback();
@@ -105,10 +98,6 @@ public class EnrolledSpeakersAdapter
             b.setNegativeButton("Cancel",(d,w)->d.cancel());
             b.show();
         });
-
-        holder.deleteButton.setOnClickListener(v -> {
-            if (actionListener!=null) actionListener.onDeleteSpeaker(pos);
-        });
     }
 
     @Override public int getItemCount() {
@@ -117,36 +106,33 @@ public class EnrolledSpeakersAdapter
 
     private void playSpeakerAudio(float[] samples) {
         stopPlayback();
-
         boolean isFocus = context instanceof FocusActivity;
-        float gain = isFocus ? ((FocusActivity)context).getAmplificationFactor() : 1f;
-
+        float gain = isFocus
+                ? ((FocusActivity)context).getAmplificationFactor()
+                : 1f;
         try {
             int sr = 16000;
             int bufSize = Math.max(
-                AudioTrack.getMinBufferSize(sr,
-                                           AudioFormat.CHANNEL_OUT_MONO,
-                                           AudioFormat.ENCODING_PCM_FLOAT),
-                samples.length*4);
-
+                    AudioTrack.getMinBufferSize(sr,
+                            AudioFormat.CHANNEL_OUT_MONO,
+                            AudioFormat.ENCODING_PCM_FLOAT),
+                    samples.length * 4
+            );
             audioTrack = new AudioTrack.Builder()
-                .setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build())
-                .setAudioFormat(new AudioFormat.Builder()
-                    .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-                    .setSampleRate(sr)
-                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                    .build())
-                .setBufferSizeInBytes(bufSize)
-                .setTransferMode(AudioTrack.MODE_STATIC)
-                .build();
-
+                    .setAudioAttributes(new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build())
+                    .setAudioFormat(new AudioFormat.Builder()
+                            .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                            .setSampleRate(sr)
+                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                            .build())
+                    .setBufferSizeInBytes(bufSize)
+                    .setTransferMode(AudioTrack.MODE_STATIC)
+                    .build();
             audioTrack.write(samples, 0, samples.length, AudioTrack.WRITE_BLOCKING);
-            // apply dynamic amplification via AudioTrack volume
             audioTrack.setVolume(gain);
-
             audioTrack.setNotificationMarkerPosition(samples.length);
             audioTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
                 @Override public void onMarkerReached(AudioTrack t) {
@@ -159,7 +145,7 @@ public class EnrolledSpeakersAdapter
             isPlaying = true;
         } catch (Exception e) {
             Toast.makeText(context,"Play error: "+e.getMessage(),
-                           Toast.LENGTH_SHORT).show();
+                    Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -177,7 +163,6 @@ public class EnrolledSpeakersAdapter
         isPlaying = false;
     }
 
-    /** Called from Activity when amp changes during playback */
     public void updatePlaybackVolume(float gain) {
         if (audioTrack!=null && isPlaying) {
             audioTrack.setVolume(gain);
@@ -193,7 +178,7 @@ public class EnrolledSpeakersAdapter
         RadioButton speakerRadio;
         TextView    nameTextView, durationTextView;
         Button      playButton;
-        ImageButton renameButton, deleteButton;
+        ImageButton renameButton;
 
         ViewHolder(View iv) {
             super(iv);
@@ -202,7 +187,6 @@ public class EnrolledSpeakersAdapter
             durationTextView = iv.findViewById(R.id.durationTextView);
             playButton       = iv.findViewById(R.id.playButton);
             renameButton     = iv.findViewById(R.id.renameButton);
-            deleteButton     = iv.findViewById(R.id.deleteButton);
         }
     }
 }

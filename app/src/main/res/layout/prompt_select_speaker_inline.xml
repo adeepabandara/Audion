@@ -4,19 +4,19 @@
     android:gravity="center"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="24dp">
+    android:padding="12dp">
 
     <ImageView
         android:layout_width="80dp"
         android:layout_height="80dp"
-        android:src="@drawable/ic_home"
+        android:src="@drawable/ic_scan"
          />
 
     <TextView
         android:layout_marginTop="12dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Please select a speaker to begin"
+        android:text="Let's Look Who is out there Speaking"
         android:textSize="16sp"
         android:textColor="@color/black"/>
 </LinearLayout>

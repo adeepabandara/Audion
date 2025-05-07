@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="24dp">
+    android:padding="12dp">
 
     <ImageView
         android:id="@+id/noSpeakersImage"
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:src="@drawable/ic_not_found" />
-
 
     <TextView
         android:id="@+id/noSpeakersTextInline"
@@ -20,5 +20,7 @@
         android:layout_marginTop="16dp"
         android:text="No speakers detected.\nTry scanning again."
         android:textAlignment="center"
-        android:textSize="16sp" />
+        android:textStyle="italic"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"/>
 </LinearLayout>

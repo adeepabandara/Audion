@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="4dp"
-    android:layout_marginBottom="4dp"
-    android:layout_marginStart="4dp"
-    android:layout_marginEnd="4dp"
+    android:layout_margin="4dp"
     app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    app:cardElevation="2dp"
+    android:backgroundTint="@color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -36,7 +35,8 @@
                 android:layout_height="wrap_content"
                 android:text="Speaker Name"
                 android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="@android:color/black" />
 
             <TextView
                 android:id="@+id/durationTextView"
@@ -48,16 +48,7 @@
 
         </LinearLayout>
 
-        <Button
-            android:id="@+id/playButton"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp"
-            android:minWidth="80dp"
-            android:text="Play" />
-
+        <!-- Edit button first -->
         <ImageButton
             android:id="@+id/renameButton"
             android:layout_width="40dp"
@@ -69,16 +60,18 @@
             android:src="@android:drawable/ic_menu_edit"
             android:tint="#666666" />
 
-        <ImageButton
-            android:id="@+id/deleteButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_gravity="center_vertical"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Delete Speaker"
-            android:padding="8dp"
-            android:src="@android:drawable/ic_menu_delete"
-            android:tint="@android:color/holo_red_dark" />
+        <!-- Then Play button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/playButton"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:minWidth="80dp"
+            android:text="Play"
+            android:textAllCaps="false"
+            android:backgroundTint="?attr/colorPrimary"
+            android:textColor="@android:color/white"/>
 
     </LinearLayout>
 

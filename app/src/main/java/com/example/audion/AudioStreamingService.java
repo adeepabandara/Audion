@@ -26,6 +26,7 @@ public class AudioStreamingService extends Service {
     private static final String TAG         = "AudioStreamingService";
     private static final String CHANNEL_ID  = "audio_streaming_channel";
 
+
     public static final String ACTION_UPDATE_GAIN =
             "com.example.audion.ACTION_UPDATE_GAIN";
     public static final String EXTRA_EAR  = "earSide";
@@ -51,10 +52,7 @@ public class AudioStreamingService extends Service {
     private boolean isProcessing;
     private Thread processThread;
 
-    // Track total frames written vs. frames played for latency
     private long totalFramesWritten = 0;
-
-    // ear → (freq → step 0–100)
     private final Map<String,Map<Integer,Integer>> bandOverrides =
             new HashMap<>();
 
@@ -117,15 +115,12 @@ public class AudioStreamingService extends Service {
             audioRecord.startRecording();
 
             while (isProcessing) {
-                // 1) Read from mic
                 int read = audioRecord.read(inBuf, 0, RNNoise.FRAME_SIZE);
                 if (read == RNNoise.FRAME_SIZE) {
-                    // 2) Convert to float
                     for (int i = 0; i < read; i++) {
                         inFloat[i] = inBuf[i];
                     }
 
-                    // 3) Apply noise removal
                     SharedPreferences sp = getSharedPreferences(
                             PREFS_NAME, MODE_PRIVATE);
                     float globalAmp = sp.getFloat(KEY_AMPLIFICATION,1f);
@@ -134,7 +129,6 @@ public class AudioStreamingService extends Service {
                             ? rnnoise.processFrame(inFloat).audio
                             : inFloat;
 
-                    // 4) Apply hearing-gain overrides
                     String ear = bandOverrides.keySet().stream()
                             .findFirst().orElse("left");
                     Map<Integer,Integer> ov =
@@ -147,30 +141,30 @@ public class AudioStreamingService extends Service {
                     }
                     float finalGain = globalAmp * bandGain;
 
-                    // 5) Process & oversample
                     processFrameWithOversampling(rnOut, processed, finalGain);
 
-                    // 6) Send waveform levels
+                                    // 6) (Optional) broadcast input/output levels for your WaveformView
                     float inRms  = calculateRMS(inFloat);
                     float outRms = calculateRMS(processed);
                     sendBroadcast(new Intent("com.example.audion.WAVEFORM_UPDATE")
-                            .putExtra("inputLevel", inRms)
-                            .putExtra("outputLevel", outRms));
+                        .putExtra("inputLevel",  inRms)
+                        .putExtra("outputLevel", outRms));
 
-                    // 7) Convert back to shorts & write to track
-                    for (int i = 0; i < read; i++){
+                    // 7) Convert back to shorts & write to the AudioTrack
+                    for (int i = 0; i < read; i++) {
                         inBuf[i] = (short) processed[i];
                     }
                     audioTrack.write(inBuf, 0, read);
                     totalFramesWritten += read;
 
-                    // 8) Compute latency via frame lag
+                    // 8) (Optional) compute & broadcast latency
                     int framesPlayed = audioTrack.getPlaybackHeadPosition();
-                    long framesLag = totalFramesWritten - framesPlayed;
-                    double latencyMs = (framesLag / (double)SAMPLE_RATE) * 1000.0;
-                    Intent latencyIntent = new Intent("com.example.audion.LATENCY_UPDATE")
-                            .putExtra("LATENCY_MS", latencyMs);
-                    sendBroadcast(latencyIntent);
+                    long framesLag   = totalFramesWritten - framesPlayed;
+                    double latencyMs = (framesLag / (double) SAMPLE_RATE) * 1000.0;
+                    sendBroadcast(new Intent("com.example.audion.LATENCY_UPDATE")
+                        .putExtra("LATENCY_MS", latencyMs));
+
+                    
                 }
             }
         }, "AudioProc");

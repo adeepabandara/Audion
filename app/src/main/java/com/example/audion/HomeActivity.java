@@ -14,9 +14,17 @@ import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.Toast;
 import android.widget.Button;
+import android.view.WindowManager;
+
+import android.view.Window;
+
+
+
+import android.os.Build;
+import android.view.View;
+import android.graphics.Color;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -34,6 +42,9 @@ import java.util.List;
 import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
+
+    private static final int REQUEST_RECORD_AUDIO = 101;
+
     private static final String TAG                     = "HomeActivity";
     private static final int    PERMISSION_REQUEST_CODE = 1;
 
@@ -49,10 +60,6 @@ public class HomeActivity extends AppCompatActivity {
     private ImageView            ivProfileIcon;
     private BottomNavigationView bottomNav;
     private SeekBar              amplificationSeekBar;
-    private com.example.audion.WaveformView waveformInputView, waveformOutputView;
-
-    // Latency display
-    private TextView latencyTextView;
 
     private boolean isStreaming = false;
     private List<HearingProfile> profileList = new ArrayList<>();
@@ -60,44 +67,48 @@ public class HomeActivity extends AppCompatActivity {
     private HearingTestResultDao hearingTestResultDao;
     private static final int USER_ID = 1;
 
-    private final BroadcastReceiver waveformReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context ctx, Intent intent) {
-            float in  = intent.getFloatExtra("inputLevel",  0f);
-            float out = intent.getFloatExtra("outputLevel", 0f);
-            waveformInputView.addAmplitude(Math.abs(in));
-            waveformOutputView.addAmplitude(Math.abs(out));
-        }
-    };
 
-    private final BroadcastReceiver latencyReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context ctx, Intent intent) {
-            double latencyMs = intent.getDoubleExtra("LATENCY_MS", -1.0);
-            latencyTextView.setText(String.format(Locale.getDefault(),
-                    "Latency: %.1f ms", latencyMs));
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
+
+        // 2) go full-screen (hides the status bar entirely)
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
+        // 3) on Android P+ allow content into any cutout/notch area
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(lp);
+        }
+
         setContentView(R.layout.activity_variation_one);
 
-        
-        Button focusBtn = findViewById(R.id.focus);
+        getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN
+        );
 
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                this,
+                new String[]{ Manifest.permission.RECORD_AUDIO },
+                REQUEST_RECORD_AUDIO
+            );
+        }
+
+
+
+        Button focusBtn = findViewById(R.id.focus);
         toggleButton         = findViewById(R.id.toggleButton);
-        
         tvSelectedProfile    = findViewById(R.id.tvSelectedProfile);
         ivProfileIcon        = findViewById(R.id.ivProfileIcon);
         bottomNav            = findViewById(R.id.bottomNavigationView);
         amplificationSeekBar = findViewById(R.id.seekBar);
-        waveformInputView    = findViewById(R.id.waveformInput);
-        waveformOutputView   = findViewById(R.id.waveformOutput);
-
-        // Bind latency TextView (make sure it's in your XML)
-        latencyTextView      = findViewById(R.id.latencyTextView);
 
         hearingTestResultDao = AppDatabase.getInstance(this).hearingTestResultDao();
 
@@ -120,7 +131,6 @@ public class HomeActivity extends AppCompatActivity {
 
         toggleButton.setOnClickListener(v -> {
             if (!isStreaming) {
-                // Start streaming with runtime permission check
                 if (hasMicPermission()) {
                     startAudioStreamingService();
                     isStreaming = true;
@@ -137,7 +147,7 @@ public class HomeActivity extends AppCompatActivity {
             }
             getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                     .edit()
-                    .putBoolean(KEY_IS_STREAMING, isStreaming)
+                    .putBoolean(KEY_IS_STREAMING, false)
                     .apply();
             updateToggleUi(isStreaming);
         });
@@ -185,14 +195,42 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         loadHearingProfiles();
+    }
 
-        if (!hasMicPermission()) {
-            requestPermissions(
-                    new String[]{ Manifest.permission.RECORD_AUDIO },
-                    PERMISSION_REQUEST_CODE
-            );
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+
+
+        SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        isStreaming = sp.getBoolean(KEY_IS_STREAMING, false);
+        updateToggleUi(isStreaming);
+
+        float ampFactor = sp.getFloat(KEY_AMPLIFICATION, 1f);
+        double curDb = 20 * Math.log10(ampFactor);
+        int prog = Math.round((float)(curDb/40f)*amplificationSeekBar.getMax());
+        amplificationSeekBar.setProgress(prog);
+
+        SwitchMaterial noiseRemovalSwitch = findViewById(R.id.noiseRemovalSwitch);
+        noiseRemovalSwitch.setChecked(sp.getBoolean(KEY_NOISE_REMOVAL, false));
+
+        int saved = sp.getInt(KEY_SELECTED_PROFILE_ID, -1);
+        if (saved != -1 && saved != currentProfileId) {
+            currentProfileId = saved;
+            new Thread(() -> {
+                HearingProfile hp = AppDatabase
+                        .getInstance(this)
+                        .hearingProfileDao()
+                        .getHearingProfileById(saved);
+                runOnUiThread(() -> {
+                    tvSelectedProfile.setText(hp.getName());
+                    ivProfileIcon.setImageResource(iconResForKey(hp.getIcon()));
+                });
+            }).start();
         }
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -236,56 +274,6 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-
-        isStreaming = sp.getBoolean(KEY_IS_STREAMING, false);
-        updateToggleUi(isStreaming);
-
-        float ampFactor = sp.getFloat(KEY_AMPLIFICATION, 1f);
-        double curDb = 20 * Math.log10(ampFactor);
-        int prog = Math.round((float)(curDb/40f)*amplificationSeekBar.getMax());
-        amplificationSeekBar.setProgress(prog);
-
-        SwitchMaterial noiseRemovalSwitch = findViewById(R.id.noiseRemovalSwitch);
-        noiseRemovalSwitch.setChecked(sp.getBoolean(KEY_NOISE_REMOVAL, false));
-
-        int saved = sp.getInt(KEY_SELECTED_PROFILE_ID, -1);
-        if (saved != -1 && saved != currentProfileId) {
-            currentProfileId = saved;
-            new Thread(() -> {
-                HearingProfile hp = AppDatabase
-                        .getInstance(this)
-                        .hearingProfileDao()
-                        .getHearingProfileById(saved);
-                runOnUiThread(() -> {
-                    tvSelectedProfile.setText(hp.getName());
-                    ivProfileIcon.setImageResource(iconResForKey(hp.getIcon()));
-                });
-            }).start();
-        }
-
-        registerReceiver(
-                waveformReceiver,
-                new IntentFilter("com.example.audion.WAVEFORM_UPDATE"),
-                Context.RECEIVER_NOT_EXPORTED
-        );
-        registerReceiver(
-                latencyReceiver,
-                new IntentFilter("com.example.audion.LATENCY_UPDATE"),
-                Context.RECEIVER_NOT_EXPORTED
-        );
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(waveformReceiver);
-        unregisterReceiver(latencyReceiver);
-    }
-
     private void startAudioStreamingService() {
         ContextCompat.startForegroundService(
                 this,
@@ -297,11 +285,9 @@ public class HomeActivity extends AppCompatActivity {
         stopService(new Intent(this, AudioStreamingService.class));
     }
 
-
-
     private void openFocusActivity() {
-    Intent intent = new Intent(HomeActivity.this, FocusActivity.class);
-    startActivity(intent);          // use finish() after this if MainActivity should close
+        Intent intent = new Intent(this, FocusActivity.class);
+        startActivity(intent);
     }
 
     private void loadHearingProfiles() {
@@ -379,6 +365,4 @@ public class HomeActivity extends AppCompatActivity {
             default:               return R.drawable.ic_home;
         }
     }
-
-    
 }
