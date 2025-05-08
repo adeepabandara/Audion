@@ -145,6 +145,12 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
         selectedSpeakerId = null;
     }
 
+    public void updatePlaybackVolume(float gain) {
+        if (currentAudioTrack != null) {
+            currentAudioTrack.setVolume(gain);
+        }
+    }
+
 
     public void stopAllPlayback() {
     stopPlayback();
@@ -194,7 +200,7 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
         private void playSpeakerAudio(GlobalSpeakerInfo speaker) {
             if (diarizationManager == null) {
                 String msg = "Diarization manager not available";
-                Toast.makeText(itemView.getContext(),msg,Toast.LENGTH_SHORT).show();
+                Toast.makeText(itemView.getContext(), msg, Toast.LENGTH_SHORT).show();
                 focusActivity.updateStatus("Error: " + msg);
                 return;
             }
@@ -206,7 +212,7 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
 
             if (speaker.getLastChunkId() > 0) {
                 speakerAudio = diarizationManager.extractSpeakerAudio(
-                    speaker.getLastChunkId(), speaker.getGlobalId());
+                        speaker.getLastChunkId(), speaker.getGlobalId());
                 usedChunkId = speaker.getLastChunkId();
             }
 
@@ -216,7 +222,7 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
                 for (int cid : ids) {
                     if (cid != speaker.getLastChunkId()) {
                         speakerAudio = diarizationManager.extractSpeakerAudio(cid, speaker.getGlobalId());
-                        if (speakerAudio != null && speakerAudio.length>0) {
+                        if (speakerAudio != null && speakerAudio.length > 0) {
                             usedChunkId = cid;
                             break;
                         }
@@ -224,58 +230,57 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
                 }
             }
 
-            if (speakerAudio == null || speakerAudio.length==0) {
+            if (speakerAudio == null || speakerAudio.length == 0) {
                 String msg = "No audio for Speaker " + speaker.getGlobalId();
-                Toast.makeText(itemView.getContext(),msg,Toast.LENGTH_SHORT).show();
+                Toast.makeText(itemView.getContext(), msg, Toast.LENGTH_SHORT).show();
                 focusActivity.updateStatus("Error: " + msg);
                 return;
             }
 
-            // apply amplification from FocusActivity
-            float amp = focusActivity.getAmplificationFactor();
-            for (int i = 0; i < speakerAudio.length; i++){
-                speakerAudio[i] *= amp;
-            }
+
 
             int sampleRate = diarizationManager.getSampleRate();
             int minBuf = AudioTrack.getMinBufferSize(
-                sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_FLOAT);
+                    sampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_FLOAT);
 
             currentAudioTrack = new AudioTrack.Builder()
-                .setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build())
-                .setAudioFormat(new AudioFormat.Builder()
-                    .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
-                    .setSampleRate(sampleRate)
-                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                    .build())
-                .setBufferSizeInBytes(Math.max(minBuf, speakerAudio.length*4))
-                .setTransferMode(AudioTrack.MODE_STATIC)
-                .build();
+                    .setAudioAttributes(new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build())
+                    .setAudioFormat(new AudioFormat.Builder()
+                            .setEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                            .setSampleRate(sampleRate)
+                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                            .build())
+                    .setBufferSizeInBytes(Math.max(minBuf, speakerAudio.length * 4))
+                    .setTransferMode(AudioTrack.MODE_STATIC)
+                    .build();
 
             currentAudioTrack.setPlaybackPositionUpdateListener(
-                new AudioTrack.OnPlaybackPositionUpdateListener() {
-                    @Override public void onMarkerReached(AudioTrack track) {
-                        track.release();
-                        if (track == currentAudioTrack) currentAudioTrack = null;
-                    }
-                    @Override public void onPeriodicNotification(AudioTrack track) {}
-                });
+                    new AudioTrack.OnPlaybackPositionUpdateListener() {
+                        @Override public void onMarkerReached(AudioTrack track) {
+                            track.release();
+                            if (track == currentAudioTrack) currentAudioTrack = null;
+                        }
+                        @Override public void onPeriodicNotification(AudioTrack track) {}
+                    });
 
             try {
                 currentAudioTrack.write(speakerAudio, 0, speakerAudio.length, AudioTrack.WRITE_BLOCKING);
                 currentAudioTrack.setNotificationMarkerPosition(speakerAudio.length);
                 currentAudioTrack.play();
+                currentAudioTrack.setVolume(focusActivity.getAmplificationFactor());
                 String msg = String.format("Playing Speaker %d (Chunk %d, %.1fs)",
-                    speaker.getGlobalId(), usedChunkId, speaker.getTotalDuration());
-                Toast.makeText(itemView.getContext(),msg,Toast.LENGTH_SHORT).show();
+                        speaker.getGlobalId(), usedChunkId, speaker.getTotalDuration());
+                Toast.makeText(itemView.getContext(), msg, Toast.LENGTH_SHORT).show();
                 focusActivity.updateStatus(msg);
             } catch (Exception e) {
-                Log.e(TAG,"Error playing audio",e);
-                String em = "Error: "+e.getMessage();
-                Toast.makeText(itemView.getContext(),em,Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Error playing audio", e);
+                String em = "Error: " + e.getMessage();
+                Toast.makeText(itemView.getContext(), em, Toast.LENGTH_SHORT).show();
                 focusActivity.updateStatus("Error: " + em);
                 if (currentAudioTrack != null) {
                     currentAudioTrack.release();
@@ -283,5 +288,6 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
                 }
             }
         }
+
     }
 }

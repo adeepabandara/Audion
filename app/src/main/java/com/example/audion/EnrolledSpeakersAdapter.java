@@ -15,6 +15,7 @@ import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.content.Intent;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -70,6 +71,7 @@ public class EnrolledSpeakersAdapter
         holder.playButton.setEnabled(hasAudio);
         holder.playButton.setText(isPlaying && pos==selectedPosition ? "Stop" : "Play");
         holder.playButton.setOnClickListener(v -> {
+            v.getContext().sendBroadcast(new Intent("com.example.audion.STOP_STREAMING"));
             if (isPlaying) {
                 stopPlayback();
                 holder.playButton.setText("Play");
@@ -131,8 +133,12 @@ public class EnrolledSpeakersAdapter
                     .setBufferSizeInBytes(bufSize)
                     .setTransferMode(AudioTrack.MODE_STATIC)
                     .build();
+            // apply the user’s amplification to each sample:
+            for (int i = 0; i < samples.length; i++) {
+                samples[i] *= gain;
+            }
+// now write out the amplified buffer:
             audioTrack.write(samples, 0, samples.length, AudioTrack.WRITE_BLOCKING);
-            audioTrack.setVolume(gain);
             audioTrack.setNotificationMarkerPosition(samples.length);
             audioTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
                 @Override public void onMarkerReached(AudioTrack t) {

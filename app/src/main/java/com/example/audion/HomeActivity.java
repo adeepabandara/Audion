@@ -7,28 +7,16 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ImageView;
-import android.widget.Toast;
 import android.widget.Button;
-import android.view.WindowManager;
-
-import android.content.IntentFilter;
-import android.content.Context;
-
-import android.view.Window;
-import android.content.BroadcastReceiver;
-import android.content.IntentFilter;
-import com.example.audion.WaveformView;
-
-
-
-import android.os.Build;
-import android.view.View;
-import android.graphics.Color;
+import android.widget.Toast;
 
 import androidx.annotation.DrawableRes;
 import androidx.appcompat.app.AppCompatActivity;
@@ -45,14 +33,10 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
 
-
     private WaveformView waveformView;
-
-
 
     private final BroadcastReceiver wfReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context ctx, Intent intent) {
@@ -61,43 +45,49 @@ public class HomeActivity extends AppCompatActivity {
         }
     };
 
-    private static final int REQUEST_RECORD_AUDIO = 101;
+    // ← ADD: receiver to stop streaming when FocusActivity sends STOP_STREAMING
+    private final BroadcastReceiver stopStreamingReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context ctx, Intent intent) {
+            stopAudioStreamingService();
+            isStreaming = false;
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(KEY_IS_STREAMING, false)
+                    .apply();
+            updateToggleUi(false);
+        }
+    };
 
-    private static final String TAG                     = "HomeActivity";
-    private static final int    PERMISSION_REQUEST_CODE = 1;
+    private static final int REQUEST_RECORD_AUDIO   = 101;
+    private static final int PERMISSION_REQUEST_CODE = 1;
 
-    private static final String PREFS_NAME              = "com.example.audion.PREFERENCES";
+    private static final String TAG                 = "HomeActivity";
+    private static final String PREFS_NAME          = "com.example.audion.PREFERENCES";
     private static final String KEY_SELECTED_PROFILE_ID = "selectedProfileId";
-    private static final String KEY_IS_STREAMING        = "isStreaming";
-    public  static final String KEY_NOISE_REMOVAL       = "noiseRemoval";
-    public  static final String KEY_AMPLIFICATION       = "amplificationFactor";
+    private static final String KEY_IS_STREAMING    = "isStreaming";
+    public  static final String KEY_NOISE_REMOVAL   = "noiseRemoval";
+    public  static final String KEY_AMPLIFICATION   = "amplificationFactor";
 
-    private MaterialButton       toggleButton;
-    private MaterialButton       focus;
-    private TextView             tvSelectedProfile;
-    private TextView             noiseStatusText;
-    private ImageView            ivProfileIcon;
+    private MaterialButton toggleButton;
+    private TextView       tvSelectedProfile;
+    private TextView       noiseStatusText;
+    private ImageView      ivProfileIcon;
     private BottomNavigationView bottomNav;
-    private SeekBar              amplificationSeekBar;
+    private SeekBar        amplificationSeekBar;
 
-    private boolean isStreaming = false;
+    private boolean        isStreaming = false;
     private List<HearingProfile> profileList = new ArrayList<>();
-    private int currentProfileId = -1;
+    private int            currentProfileId = -1;
     private HearingTestResultDao hearingTestResultDao;
     private static final int USER_ID = 1;
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
 
-        // 2) go full-screen (hides the status bar entirely)
+        // full‐screen / cutout support
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        // 3) on Android P+ allow content into any cutout/notch area
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             WindowManager.LayoutParams lp = getWindow().getAttributes();
             lp.layoutInDisplayCutoutMode =
@@ -107,30 +97,25 @@ public class HomeActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_variation_one);
 
-
-        getWindow().addFlags(
-                WindowManager.LayoutParams.FLAG_FULLSCREEN
-        );
-
+        // request mic permission if needed
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
-                this,
-                new String[]{ Manifest.permission.RECORD_AUDIO },
-                REQUEST_RECORD_AUDIO
+                    this,
+                    new String[]{ Manifest.permission.RECORD_AUDIO },
+                    REQUEST_RECORD_AUDIO
             );
         }
 
-
-
-        Button focusBtn = findViewById(R.id.focus);
-        toggleButton         = findViewById(R.id.toggleButton);
-        tvSelectedProfile    = findViewById(R.id.tvSelectedProfile);
-        ivProfileIcon        = findViewById(R.id.ivProfileIcon);
-        bottomNav            = findViewById(R.id.bottomNavigationView);
+        // bind views
+        waveformView       = findViewById(R.id.waveformView);
+        toggleButton       = findViewById(R.id.toggleButton);
+        tvSelectedProfile  = findViewById(R.id.tvSelectedProfile);
+        ivProfileIcon      = findViewById(R.id.ivProfileIcon);
+        bottomNav          = findViewById(R.id.bottomNavigationView);
         amplificationSeekBar = findViewById(R.id.seekBar);
-        waveformView = findViewById(R.id.waveformView);
-        TextView noiseStatusText = findViewById(R.id.noiseStatusText);
+        noiseStatusText    = findViewById(R.id.noiseStatusText);
+        Button focusBtn    = findViewById(R.id.focus);
 
         hearingTestResultDao = AppDatabase.getInstance(this).hearingTestResultDao();
 
@@ -141,11 +126,11 @@ public class HomeActivity extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.navigation_frequencies) {
                 startActivity(new Intent(this, FrequencyActivity.class));
-                overridePendingTransition(0,0);
+                overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.navigation_settings) {
                 startActivity(new Intent(this, MusicPlayerActivity.class));
-                overridePendingTransition(0,0);
+                overridePendingTransition(0, 0);
                 return true;
             }
             return true;
@@ -156,6 +141,10 @@ public class HomeActivity extends AppCompatActivity {
                 if (hasMicPermission()) {
                     startAudioStreamingService();
                     isStreaming = true;
+                    getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                            .edit()
+                            .putBoolean(KEY_IS_STREAMING, true)
+                            .apply();
                 } else {
                     ActivityCompat.requestPermissions(
                             this,
@@ -166,11 +155,11 @@ public class HomeActivity extends AppCompatActivity {
             } else {
                 stopAudioStreamingService();
                 isStreaming = false;
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                        .edit()
+                        .putBoolean(KEY_IS_STREAMING, false)
+                        .apply();
             }
-            getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                    .edit()
-                    .putBoolean(KEY_IS_STREAMING, false)
-                    .apply();
             updateToggleUi(isStreaming);
         });
 
@@ -194,14 +183,13 @@ public class HomeActivity extends AppCompatActivity {
                     .edit()
                     .putBoolean(KEY_NOISE_REMOVAL, checked)
                     .apply();
-            // ← add this line:
             noiseStatusText.setText(
                     checked ? "Noise Cancellation ON"
                             : "Noise Cancellation OFF"
             );
         });
 
-
+        // restore saved prefs
         boolean isOn = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                 .getBoolean(KEY_NOISE_REMOVAL, false);
         noiseRemovalSwitch.setChecked(isOn);
@@ -210,7 +198,7 @@ public class HomeActivity extends AppCompatActivity {
                 : "Noise Cancellation OFF"
         );
 
-        tvSelectedProfile.setOnClickListener(v->{
+        tvSelectedProfile.setOnClickListener(v -> {
             reorderProfiles(profileList, currentProfileId);
             ProfileSelectionBottomSheet bs =
                     ProfileSelectionBottomSheet.newInstance(
@@ -234,13 +222,40 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        // register waveform updates
+        ContextCompat.registerReceiver(
+                this,
+                wfReceiver,
+                new IntentFilter("com.example.audion.WAVEFORM_UPDATE"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+        // register stop‐streaming listener
+        ContextCompat.registerReceiver(
+                this,
+                stopStreamingReceiver,
+                new IntentFilter("com.example.audion.STOP_STREAMING"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterReceiver(wfReceiver);
+        unregisterReceiver(stopStreamingReceiver);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
 
-
-
         SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         isStreaming = sp.getBoolean(KEY_IS_STREAMING, false);
+        if (isStreaming) {
+            startAudioStreamingService();
+        }
         updateToggleUi(isStreaming);
 
         float ampFactor = sp.getFloat(KEY_AMPLIFICATION, 1f);
@@ -267,7 +282,6 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String[] permissions,
@@ -288,44 +302,10 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-
-    @Override protected void onStart() {
-        super.onStart();
-        // this uses ContextCompat so you don't need API-33+ compile flags
-        ContextCompat.registerReceiver(
-                this,
-                wfReceiver,
-                new IntentFilter("com.example.audion.WAVEFORM_UPDATE"),
-                ContextCompat.RECEIVER_NOT_EXPORTED
-        );
-    }
-
-    @Override protected void onStop() {
-        super.onStop();
-        unregisterReceiver(wfReceiver);
-    }
-
-
     private boolean hasMicPermission() {
         return ContextCompat.checkSelfPermission(
                 this, Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void updateToggleUi(boolean streaming) {
-        if (streaming) {
-            toggleButton.setText("Stop");
-            toggleButton.setIconResource(R.drawable.ic_stop);
-            toggleButton.setBackgroundTintList(
-                    getResources().getColorStateList(R.color.red_circle)
-            );
-        } else {
-            toggleButton.setText("Start");
-            toggleButton.setIconResource(R.drawable.ic_play);
-            toggleButton.setBackgroundTintList(
-                    getResources().getColorStateList(R.color.green_circle)
-            );
-        }
     }
 
     private void startAudioStreamingService() {
@@ -340,6 +320,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void openFocusActivity() {
+        stopAudioStreamingService();
         Intent intent = new Intent(this, FocusActivity.class);
         startActivity(intent);
     }
@@ -397,14 +378,27 @@ public class HomeActivity extends AppCompatActivity {
     private void updateGainsForProfile(int profileId){
         new Thread(() -> {
             List<HearingTestResult> results =
-                    AppDatabase
-                            .getInstance(this)
-                            .hearingTestResultDao()
-                            .getResultsForUserAndProfile(USER_ID, profileId);
+                    hearingTestResultDao.getResultsForUserAndProfile(USER_ID, profileId);
             for (HearingTestResult r:results){
                 Log.d(TAG, "Freq="+r.getFrequency()+" → gain="+(r.getAmplitudeStep()/100f));
             }
         }).start();
+    }
+
+    private void updateToggleUi(boolean streaming) {
+        if (streaming) {
+            toggleButton.setText("Stop");
+            toggleButton.setIconResource(R.drawable.ic_stop);
+            toggleButton.setBackgroundTintList(
+                    getResources().getColorStateList(R.color.red_circle)
+            );
+        } else {
+            toggleButton.setText("Start");
+            toggleButton.setIconResource(R.drawable.ic_play);
+            toggleButton.setBackgroundTintList(
+                    getResources().getColorStateList(R.color.green_circle)
+            );
+        }
     }
 
     @DrawableRes

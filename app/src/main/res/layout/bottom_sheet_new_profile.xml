@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout 
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app   ="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="@color/white">
 
     <!-- Title -->
     <TextView
@@ -13,9 +14,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="New Hearing Profile"
+        android:textSize="18sp"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:gravity="center"
-        android:paddingBottom="16dp"/>
+        android:textColor="@android:color/black"
+    android:gravity="start"
+    android:paddingBottom="16dp"/>
 
     <!-- Name + Icon row -->
     <LinearLayout
@@ -26,7 +29,7 @@
         <!-- Profile name input -->
         <EditText
             android:id="@+id/editTextProfileName"
-            android:layout_width="100dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
@@ -41,11 +44,9 @@
         <!-- Icon dropdown -->
         <Spinner
             android:id="@+id/spinnerIcon"
-            android:layout_width="94dp"
-            android:layout_height="51dp"
-
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:background="@drawable/edittext_border_green"
-
             android:padding="8dp"
             android:spinnerMode="dropdown" />
     </LinearLayout>

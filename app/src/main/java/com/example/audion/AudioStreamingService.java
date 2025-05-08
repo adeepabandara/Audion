@@ -6,6 +6,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.Context;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -18,14 +20,15 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class AudioStreamingService extends Service {
-    private static final String TAG         = "AudioStreamingService";
-    private static final String CHANNEL_ID  = "audio_streaming_channel";
 
+    private static final String TAG        = "AudioStreamingService";
+    private static final String CHANNEL_ID = "audio_streaming_channel";
 
     public static final String ACTION_UPDATE_GAIN =
             "com.example.audion.ACTION_UPDATE_GAIN";
@@ -37,10 +40,10 @@ public class AudioStreamingService extends Service {
     public static final String KEY_NOISE_REMOVAL = "noiseRemoval";
     public static final String KEY_AMPLIFICATION = "amplificationFactor";
 
-    private static final int SAMPLE_RATE        = 48000;
-    private static final int CHANNEL_IN         = AudioFormat.CHANNEL_IN_MONO;
-    private static final int CHANNEL_OUT        = AudioFormat.CHANNEL_OUT_MONO;
-    private static final int AUDIO_FORMAT       = AudioFormat.ENCODING_PCM_16BIT;
+    private static final int SAMPLE_RATE  = 48000;
+    private static final int CHANNEL_IN   = AudioFormat.CHANNEL_IN_MONO;
+    private static final int CHANNEL_OUT  = AudioFormat.CHANNEL_OUT_MONO;
+    private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     private static final int BUF_IN  =
             AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_IN,  AUDIO_FORMAT);
     private static final int BUF_OUT =
@@ -56,38 +59,56 @@ public class AudioStreamingService extends Service {
     private final Map<String,Map<Integer,Integer>> bandOverrides =
             new HashMap<>();
 
+    // this receiver will stop the service when it sees STOP_STREAMING
+    private final BroadcastReceiver stopStreamingReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            isProcessing = false;
+            stopForeground(true);
+            stopSelf();
+        }
+    };
+
     @Override
-    public int onStartCommand(Intent intent,int flags,int startId){
-        if(intent!=null && ACTION_UPDATE_GAIN.equals(intent.getAction())){
-            String ear  = intent.getStringExtra(EXTRA_EAR);
-            int freq    = intent.getIntExtra(EXTRA_FREQ, -1);
-            int ampl    = intent.getIntExtra(EXTRA_AMPL, -1);
-            if(ear!=null && freq>0 && ampl>=0){
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && ACTION_UPDATE_GAIN.equals(intent.getAction())) {
+            String ear = intent.getStringExtra(EXTRA_EAR);
+            int freq  = intent.getIntExtra(EXTRA_FREQ, -1);
+            int ampl  = intent.getIntExtra(EXTRA_AMPL, -1);
+            if (ear != null && freq > 0 && ampl >= 0) {
                 bandOverrides
-                        .computeIfAbsent(ear, k->new HashMap<>())
-                        .put(freq,ampl);
-                Log.d(TAG,"Override "+ear+" "+freq+"→"+ampl);
+                        .computeIfAbsent(ear, k -> new HashMap<>())
+                        .put(freq, ampl);
+                Log.d(TAG, "Override " + ear + " " + freq + "→" + ampl);
             }
             return START_STICKY;
         }
 
+        ContextCompat.registerReceiver(
+                this,
+                stopStreamingReceiver,
+                new IntentFilter("com.example.audion.STOP_STREAMING"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
+
         createNotificationChannel();
         NotificationCompat.Builder nb =
-                new NotificationCompat.Builder(this,CHANNEL_ID)
+                new NotificationCompat.Builder(this, CHANNEL_ID)
                         .setContentTitle("Audio Streaming")
                         .setContentText("Running…")
                         .setSmallIcon(R.drawable.ic_play);
-        startForeground(1,nb.build());
+        startForeground(1, nb.build());
         startAudioProcessing();
         return START_STICKY;
     }
 
-    private void startAudioProcessing(){
+
+    private void startAudioProcessing() {
         rnnoise = new RNNoise();
         rnnoise.initialize();
         audioRecord = new AudioRecord(
                 MediaRecorder.AudioSource.MIC,
-                SAMPLE_RATE,CHANNEL_IN,AUDIO_FORMAT,BUF_IN);
+                SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT, BUF_IN);
         audioTrack = new AudioTrack.Builder()
                 .setAudioAttributes(new AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -115,95 +136,93 @@ public class AudioStreamingService extends Service {
             audioRecord.startRecording();
 
             while (isProcessing) {
-                int read = audioRecord.read(inBuf, 0, RNNoise.FRAME_SIZE);
-                if (read == RNNoise.FRAME_SIZE) {
-                    for (int i = 0; i < read; i++) {
-                        inFloat[i] = inBuf[i];
-                    }
-
-                    SharedPreferences sp = getSharedPreferences(
-                            PREFS_NAME, MODE_PRIVATE);
-                    float globalAmp = sp.getFloat(KEY_AMPLIFICATION,1f);
-                    boolean nr = sp.getBoolean(KEY_NOISE_REMOVAL,false);
-                    float[] rnOut = nr
-                            ? rnnoise.processFrame(inFloat).audio
-                            : inFloat;
-
-                    String ear = bandOverrides.keySet().stream()
-                            .findFirst().orElse("left");
-                    Map<Integer,Integer> ov =
-                            bandOverrides.getOrDefault(ear,new HashMap<>());
-                    float bandGain = 1f;
-                    if (!ov.isEmpty()){
-                        float sum = 0;
-                        for (int v : ov.values()) sum += v/100f;
-                        bandGain = sum / ov.size();
-                    }
-                    float finalGain = globalAmp * bandGain;
-
-                    processFrameWithOversampling(rnOut, processed, finalGain);
-
-                                    // 6) (Optional) broadcast input/output levels for your WaveformView
-                    float inRms  = calculateRMS(inFloat);
-                    float outRms = calculateRMS(processed);
-
-// ── normalize into 0…1 ────────────────────────────────────────────────────────
-                    float normIn  = Math.max(0f, Math.min(1f, inRms  / Short.MAX_VALUE));
-                    float normOut = Math.max(0f, Math.min(1f, outRms / Short.MAX_VALUE));
-
-// ── broadcast *explicitly* to your app so Activity actually receives it ────────
-                    Intent wf = new Intent("com.example.audion.WAVEFORM_UPDATE")
-                            .setPackage(getPackageName())
-                            .putExtra("inputLevel",  normIn)
-                            .putExtra("outputLevel", normOut);
-                    sendBroadcast(wf);
-
-// ── (then continue your conversion/write as before) ───────────────────────────
-                    for (int i = 0; i < read; i++) {
-                        inBuf[i] = (short) processed[i];
-                    }
-                    audioTrack.write(inBuf, 0, read);
-                    totalFramesWritten += read;
-
-                    // 8) (Optional) compute & broadcast latency
-                    int framesPlayed = audioTrack.getPlaybackHeadPosition();
-                    long framesLag   = totalFramesWritten - framesPlayed;
-                    double latencyMs = (framesLag / (double) SAMPLE_RATE) * 1000.0;
-                    sendBroadcast(new Intent("com.example.audion.LATENCY_UPDATE")
-                        .putExtra("LATENCY_MS", latencyMs));
-
-                    
+                if (audioRecord == null ||
+                        audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
+                    break;
                 }
+
+                int read = audioRecord.read(inBuf, 0, RNNoise.FRAME_SIZE);
+                if (read <= 0) break;
+
+                for (int i = 0; i < read; i++) {
+                    inFloat[i] = inBuf[i];
+                }
+
+                SharedPreferences sp = getSharedPreferences(
+                        PREFS_NAME, MODE_PRIVATE);
+                float globalAmp = sp.getFloat(KEY_AMPLIFICATION,1f);
+                boolean nr = sp.getBoolean(KEY_NOISE_REMOVAL,false);
+                float[] rnOut = nr
+                        ? rnnoise.processFrame(inFloat).audio
+                        : inFloat;
+
+                String ear = bandOverrides.keySet().stream()
+                        .findFirst().orElse("left");
+                Map<Integer,Integer> ov =
+                        bandOverrides.getOrDefault(ear,new HashMap<>());
+                float bandGain = 1f;
+                if (!ov.isEmpty()) {
+                    float sum = 0;
+                    for (int v : ov.values()) sum += v/100f;
+                    bandGain = sum / ov.size();
+                }
+                float finalGain = globalAmp * bandGain;
+
+                processFrameWithOversampling(rnOut, processed, finalGain);
+
+                float inRms  = calculateRMS(inFloat);
+                float outRms = calculateRMS(processed);
+                float normIn  = Math.max(0f, Math.min(1f, inRms  / Short.MAX_VALUE));
+                float normOut = Math.max(0f, Math.min(1f, outRms / Short.MAX_VALUE));
+
+                Intent wf = new Intent("com.example.audion.WAVEFORM_UPDATE")
+                        .setPackage(getPackageName())
+                        .putExtra("inputLevel",  normIn)
+                        .putExtra("outputLevel", normOut);
+                sendBroadcast(wf);
+
+                for (int i = 0; i < read; i++) {
+                    inBuf[i] = (short) processed[i];
+                }
+                audioTrack.write(inBuf, 0, read);
+                totalFramesWritten += read;
+
+                int framesPlayed = audioTrack.getPlaybackHeadPosition();
+                long framesLag   = totalFramesWritten - framesPlayed;
+                double latencyMs = (framesLag / (double) SAMPLE_RATE) * 1000.0;
+                sendBroadcast(new Intent("com.example.audion.LATENCY_UPDATE")
+                        .putExtra("LATENCY_MS", latencyMs));
             }
         }, "AudioProc");
+
         processThread.start();
     }
 
-    private float calculateRMS(float[] buf){
+    private float calculateRMS(float[] buf) {
         float sum = 0;
         for (float v : buf) sum += v*v;
-        return (float) Math.sqrt(sum / buf.length);
+        return (float)Math.sqrt(sum / buf.length);
     }
 
-    private float softClip(float x){
+    private float softClip(float x) {
         float n = x / Short.MAX_VALUE;
         return (float)Math.tanh(n) * Short.MAX_VALUE;
     }
 
     private void processFrameWithOversampling(
-            float[] in, float[] out, float amp){
+            float[] in, float[] out, float amp) {
         int N = RNNoise.FRAME_SIZE;
         int up = 2*N - 1;
         float[] tmp = new float[up];
-        for (int i = 0; i < N; i++){
+        for (int i = 0; i < N; i++) {
             tmp[2*i] = in[i];
             if (i < N-1) tmp[2*i+1] = (in[i] + in[i+1]) / 2f;
         }
-        for (int i = 0; i < up; i++){
+        for (int i = 0; i < up; i++) {
             tmp[i] *= amp;
             tmp[i] = softClip(tmp[i]);
         }
-        for (int j = 0; j < N; j++){
+        for (int j = 0; j < N; j++) {
             out[j] = (j < N-1)
                     ? (tmp[2*j] + tmp[2*j+1]) / 2f
                     : tmp[2*j];
@@ -211,15 +230,18 @@ public class AudioStreamingService extends Service {
     }
 
     @Override
-    public void onDestroy(){
+    public void onDestroy() {
         super.onDestroy();
+        // <- simply call this on your Service
+        unregisterReceiver(stopStreamingReceiver);
+
         isProcessing = false;
-        try { processThread.join(500); } catch(Exception ignored) {}
-        if (audioRecord != null){
+        try { processThread.join(500); } catch (Exception ignored) {}
+        if (audioRecord != null) {
             audioRecord.stop();
             audioRecord.release();
         }
-        if (audioTrack != null){
+        if (audioTrack != null) {
             audioTrack.stop();
             audioTrack.release();
         }
@@ -228,12 +250,12 @@ public class AudioStreamingService extends Service {
 
     @Nullable
     @Override
-    public IBinder onBind(Intent intent){
+    public IBinder onBind(Intent intent) {
         return null;
     }
 
-    private void createNotificationChannel(){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel ch = new NotificationChannel(
                     CHANNEL_ID, "Audio Streaming", NotificationManager.IMPORTANCE_LOW
             );

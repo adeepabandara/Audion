@@ -33,6 +33,8 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.Button;
 
+import android.content.BroadcastReceiver;
+
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 
@@ -97,10 +99,10 @@ public class FocusActivity extends AppCompatActivity
 
     // rotating scan messages/images
     private final String[] scanMessages = {
-        "Calibrating microphone…",
-        "Analyzing ambient noise…",
-        "Mapping speaker profiles…",
-        "Finalizing scan…"
+        "Warming up your ears…",
+        "Catching every whisper…",
+        "Spotlighting the speakers…",
+        "Prepping your focus lens…"
     };
 
     private final Handler scanTextHandler = new Handler(Looper.getMainLooper());
@@ -156,13 +158,15 @@ public class FocusActivity extends AppCompatActivity
             focusWaveform.addLevel(level);
         }
     };
-    
+
 
     // Normal vs Focus toggle
     private MaterialButton normalButton, focusButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
 
@@ -217,11 +221,14 @@ public class FocusActivity extends AppCompatActivity
         amplificationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar sb, int p, boolean u) {
                 amplificationFactor = p / 50f;
+                // ← tell the global‐speaker adapter about the new gain
+                if (globalSpeakersAdapter != null) {
+                    globalSpeakersAdapter.updatePlaybackVolume(amplificationFactor);
+                }
             }
             @Override public void onStartTrackingTouch(SeekBar sb) { }
             @Override public void onStopTrackingTouch(SeekBar sb) { }
         });
-
         toggleButton.setVisibility(View.INVISIBLE);
         toggleButton.setEnabled(false);
         enrollButton.setEnabled(false);
@@ -274,9 +281,13 @@ public class FocusActivity extends AppCompatActivity
         globalSpeakersRecyclerView.setAdapter(globalSpeakersAdapter);
         globalSpeakersRecyclerView.setVisibility(View.GONE);
 
+
+
+
         // enrolled speakers
         enrolledSpeakersAdapter = new EnrolledSpeakersAdapter(this, enrolledSpeakers);
         enrolledSpeakersAdapter.setOnSpeakerSelectListener((speaker, pos) -> {
+            sendBroadcast(new Intent("com.example.audion.STOP_STREAMING"));
             selectedEnrolledSpeaker = speaker;
             defaultPanel.removeAllViews();
             toggleButton.setVisibility(View.VISIBLE);
@@ -327,6 +338,25 @@ public class FocusActivity extends AppCompatActivity
             startActivity(new Intent(this, HomeActivity.class));
         });
         focusButton.setOnClickListener(v -> updateToggleUi(false));
+
+
+        amplificationSeekBar = findViewById(R.id.seekBar);
+        amplificationSeekBar.setMax(100);
+        amplificationSeekBar.setProgress(50);
+        amplificationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar sb, int p, boolean u) {
+                amplificationFactor = p / 50f;
+
+                if (enrolledSpeakersAdapter != null) {
+                    enrolledSpeakersAdapter.updatePlaybackVolume(amplificationFactor);
+                }
+                if (globalSpeakersAdapter != null) {
+                    globalSpeakersAdapter.updatePlaybackVolume(amplificationFactor);
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar sb) { }
+            @Override public void onStopTrackingTouch(SeekBar sb) { }
+        });
     }
 
 
@@ -465,7 +495,7 @@ public class FocusActivity extends AppCompatActivity
         if (isProcessing) stopProcessing();
         else {
             if (selectedEnrolledSpeaker == null) {
-                Toast.makeText(this, "Select a speaker first", 
+                Toast.makeText(this, "Select a speaker first",
                                Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -569,14 +599,20 @@ public class FocusActivity extends AppCompatActivity
     }
 
 
-    @Override public void onSpeakerSelected(int speakerId) { }
+    @Override public void onSpeakerSelected(int speakerId) {
+        sendBroadcast(new Intent("com.example.audion.STOP_STREAMING"));
+    }
     @Override public void onSpeakerDeselected() { }
 
     @Override public void onSpeakersDetected(List<DirectDiarizationManager.SpeakerInfo> list) {
         runOnUiThread(() -> {
             globalSpeakersRecyclerView.setVisibility(View.VISIBLE);
             globalSpeakersAdapter.notifyDataSetChanged();
+
+            sendBroadcast(new Intent("com.example.audion.STOP_STREAMING"));
         });
+
+        sendBroadcast(new Intent("com.example.audion.STOP_STREAMING"));
     }
     @Override public void onSpeakersHistoryUpdated(List<List<DirectDiarizationManager.SpeakerInfo>> history) {
         runOnUiThread(() -> {

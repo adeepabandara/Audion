@@ -81,7 +81,7 @@ public class SpeakerDiarizationManager {
         // Create clustering configuration
         FastClusteringConfig clusteringConfig = new FastClusteringConfig();
         clusteringConfig.setNumClusters(-1);  // Auto-determine number of clusters
-        clusteringConfig.setThreshold(0.3f);  // Lower threshold to be more lenient
+        clusteringConfig.setThreshold(0.4f);  // Lower threshold to be more lenient
         
         // Create main configuration
         OfflineSpeakerDiarizationConfig config = new OfflineSpeakerDiarizationConfig();

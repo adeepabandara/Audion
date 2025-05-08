@@ -15,6 +15,7 @@ import com.example.audion.fragments.RightEarFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.chip.Chip;
 
+import android.view.Window;
 import android.widget.ImageView;
 import androidx.appcompat.widget.AppCompatTextView;
 
@@ -50,7 +51,14 @@ public class FrequencyActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
+
+        // 2) hide the support ActionBar (if you’re using AppCompat)
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
+
         setContentView(R.layout.activity_frequency);
 
         ivProfileIcon     = findViewById(R.id.ivProfileIcon);

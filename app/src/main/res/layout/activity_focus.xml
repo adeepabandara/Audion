@@ -212,18 +212,19 @@
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:backgroundTint="@color/white"
-        android:visibility="gone"
+        android:background="#FFFFFF"
+        android:visibility="visible"
         android:elevation="10dp">
 
-        <com.airbnb.lottie.LottieAnimationView
-            android:id="@+id/diarizationAnimation"
-            android:layout_width="160dp"
-            android:layout_height="148dp"
-            app:lottie_fileName="wave_loading.json"
-            app:lottie_autoPlay="true"
-            app:lottie_loop="true"
-            android:layout_gravity="center"/>
-    </FrameLayout>
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/diarizationAnimation"
+        android:layout_width="160dp"
+        android:layout_height="148dp"
+        app:lottie_fileName="wave_loading.json"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        android:layout_gravity="center"/>
+</FrameLayout>
+
 
 </FrameLayout>
