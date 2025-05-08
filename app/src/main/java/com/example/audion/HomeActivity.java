@@ -53,6 +53,7 @@ public class HomeActivity extends AppCompatActivity {
     private WaveformView waveformView;
 
 
+
     private final BroadcastReceiver wfReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context ctx, Intent intent) {
             float out = intent.getFloatExtra("outputLevel", 0f);
@@ -74,6 +75,7 @@ public class HomeActivity extends AppCompatActivity {
     private MaterialButton       toggleButton;
     private MaterialButton       focus;
     private TextView             tvSelectedProfile;
+    private TextView             noiseStatusText;
     private ImageView            ivProfileIcon;
     private BottomNavigationView bottomNav;
     private SeekBar              amplificationSeekBar;
@@ -128,6 +130,7 @@ public class HomeActivity extends AppCompatActivity {
         bottomNav            = findViewById(R.id.bottomNavigationView);
         amplificationSeekBar = findViewById(R.id.seekBar);
         waveformView = findViewById(R.id.waveformView);
+        TextView noiseStatusText = findViewById(R.id.noiseStatusText);
 
         hearingTestResultDao = AppDatabase.getInstance(this).hearingTestResultDao();
 
@@ -186,12 +189,26 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         SwitchMaterial noiseRemovalSwitch = findViewById(R.id.noiseRemovalSwitch);
-        noiseRemovalSwitch.setOnCheckedChangeListener((btn,checked)->{
-            getSharedPreferences(PREFS_NAME,MODE_PRIVATE)
+        noiseRemovalSwitch.setOnCheckedChangeListener((btn, checked) -> {
+            getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                     .edit()
                     .putBoolean(KEY_NOISE_REMOVAL, checked)
                     .apply();
+            // ← add this line:
+            noiseStatusText.setText(
+                    checked ? "Noise Cancellation ON"
+                            : "Noise Cancellation OFF"
+            );
         });
+
+
+        boolean isOn = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                .getBoolean(KEY_NOISE_REMOVAL, false);
+        noiseRemovalSwitch.setChecked(isOn);
+        noiseStatusText.setText(isOn
+                ? "Noise Cancellation ON"
+                : "Noise Cancellation OFF"
+        );
 
         tvSelectedProfile.setOnClickListener(v->{
             reorderProfiles(profileList, currentProfileId);
