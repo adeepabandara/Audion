@@ -1,4 +1,4 @@
-package com.example.androidapp;
+package com.example.audion;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -18,13 +18,19 @@ import android.os.Process;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.material.switchmaterial.SwitchMaterial;
 
-public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "MainActivity";
+import android.content.Intent;
+
+import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.android.material.button.MaterialButton;
+
+
+public class VariationTwoActivity extends AppCompatActivity {
+    private static final String TAG = "VariationTwoActivity";
     private static final int PERMISSION_REQUEST_CODE = 1;
     private static final int SAMPLE_RATE = 48000;
     private static final int CHANNEL_CONFIG_IN = AudioFormat.CHANNEL_IN_MONO;
@@ -41,38 +47,99 @@ public class MainActivity extends AppCompatActivity {
     private Button toggleButton;
     private SwitchMaterial noiseRemovalSwitch;
     private ProcessThread processThread;
-    
-    // UI Elements
-    private ProgressBar inputLevelMeter;
-    private ProgressBar outputLevelMeter;
-    private TextView vadProbabilityText;
-    private TextView noiseReductionText;
-    private Handler mainHandler;
 
+    // UI Elements
+    // private ProgressBar inputLevelMeter;
+    // private ProgressBar outputLevelMeter;
+    // private TextView vadProbabilityText;
+    // private TextView noiseReductionText;
+    private Handler mainHandler;
+    private WaveformView waveformInputView;
+    private WaveformView waveformOutputView;
+
+    // Amplification
+    private SeekBar amplificationSeekBar;
+    private float amplificationFactor = 8.0f; // default: no amplification
+    
+
+
+ 
     @Override
+
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_variation_two);
+        waveformInputView = findViewById(R.id.waveformInput);
+    	waveformOutputView = findViewById(R.id.waveformOutput);
 
         // Initialize RNNoise
         rnnoise = new RNNoise();
         rnnoise.initialize();
 
+
         // Initialize UI elements
+
         toggleButton = findViewById(R.id.toggleButton);
         noiseRemovalSwitch = findViewById(R.id.noiseRemovalSwitch);
-        inputLevelMeter = findViewById(R.id.inputLevelMeter);
-        outputLevelMeter = findViewById(R.id.outputLevelMeter);
-        vadProbabilityText = findViewById(R.id.vadProbability);
-        noiseReductionText = findViewById(R.id.noiseReduction);
+        amplificationSeekBar = findViewById(R.id.seekBar);
+        // inputLevelMeter = findViewById(R.id.inputLevelMeter);
+        // outputLevelMeter = findViewById(R.id.outputLevelMeter);
+        // vadProbabilityText = findViewById(R.id.vadProbability);
+        // noiseReductionText = findViewById(R.id.noiseReduction);
+        
+        
+        // Example: max=50 in XML, so progress 10 = factor of 1.0
+        amplificationFactor = amplificationSeekBar.getProgress() / 10.0f;
+
+        // Listen for changes on the SeekBar
+        amplificationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                amplificationFactor = progress / 100.0f; // Map [0..50] -> [0..5.0]
+                // You can adjust the mapping above as you wish
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                // Not used
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                // Not used
+            }
+        });
 
         // Set progress bar ranges (using 16-bit audio range)
-        inputLevelMeter.setMax(Short.MAX_VALUE);
-        outputLevelMeter.setMax(Short.MAX_VALUE);
+        // inputLevelMeter.setMax(Short.MAX_VALUE);
+        // outputLevelMeter.setMax(Short.MAX_VALUE);
 
-        toggleButton.setOnClickListener(v -> toggleProcessing());
+        toggleButton.setOnClickListener(v -> {
+            MaterialButton materialButton = (MaterialButton) toggleButton;
+
+            if (materialButton.getText().toString().equals("Turn On")) {
+                materialButton.setText("Turn Off");
+                materialButton.setBackgroundTintList(getResources().getColorStateList(R.color.red_circle)); // 🔴 Change to red
+            } else {
+                materialButton.setText("Turn On");
+                materialButton.setBackgroundTintList(getResources().getColorStateList(R.color.green_circle)); // 🟢 Change to green
+            }
+
+            toggleProcessing();
+        });
+
+
+
+
+
+
+
+
         noiseRemovalSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             noiseRemovalEnabled = isChecked;
+
+            
         });
         mainHandler = new Handler(Looper.getMainLooper());
 
@@ -83,7 +150,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean hasPermissions() {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestPermissions() {
@@ -93,13 +161,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                          int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Recording permission granted", Toast.LENGTH_SHORT).show();
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Recording permission granted",
+                        Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "Recording permission denied", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Recording permission denied",
+                        Toast.LENGTH_SHORT).show();
                 toggleButton.setEnabled(false);
             }
         }
@@ -120,8 +192,23 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Initialize audio input
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                SAMPLE_RATE, CHANNEL_CONFIG_IN, AUDIO_FORMAT, BUFFER_SIZE_IN);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        audioRecord = new AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                SAMPLE_RATE,
+                CHANNEL_CONFIG_IN,
+                AUDIO_FORMAT,
+                BUFFER_SIZE_IN
+        );
 
         // Initialize audio output
         audioTrack = new AudioTrack.Builder()
@@ -143,7 +230,7 @@ public class MainActivity extends AppCompatActivity {
         processThread = new ProcessThread();
         processThread.start();
 
-        toggleButton.setText("Stop");
+        toggleButton.setText("Turn Off");
         noiseRemovalSwitch.setEnabled(true);
     }
 
@@ -170,23 +257,29 @@ public class MainActivity extends AppCompatActivity {
             audioTrack = null;
         }
 
-        toggleButton.setText("Start");
+        toggleButton.setText("Turn On");
         noiseRemovalSwitch.setEnabled(false);
         noiseRemovalSwitch.setChecked(false);
         noiseRemovalEnabled = false;
-        
+
         // Reset UI
         updateUI(0, 0, 0, 0);
     }
 
-    private void updateUI(float inputLevel, float outputLevel, float vadProb, float noiseReduction) {
-        mainHandler.post(() -> {
-            inputLevelMeter.setProgress((int) Math.abs(inputLevel));
-            outputLevelMeter.setProgress((int) Math.abs(outputLevel));
-            vadProbabilityText.setText(String.format("%.1f%%", vadProb * 100));
-            noiseReductionText.setText(String.format("%.1f dB", noiseReduction));
-        });
-    }
+    private void updateUI(float inputLevel, float outputLevel,
+                      float vadProb, float noiseReduction) {
+    mainHandler.post(() -> {
+        // Update other UI elements
+        // inputLevelMeter.setProgress((int) Math.abs(inputLevel));
+        // outputLevelMeter.setProgress((int) Math.abs(outputLevel));
+        // vadProbabilityText.setText(String.format("%.1f%%", vadProb * 100));
+        // noiseReductionText.setText(String.format("%.1f dB", noiseReduction));
+
+        // Update waveform views (ensure these are already initialized)
+        waveformInputView.addAmplitude(Math.abs(inputLevel));
+        waveformOutputView.addAmplitude(Math.abs(outputLevel));
+    });
+}
 
     private float calculateRMSLevel(float[] buffer) {
         float sum = 0;
@@ -206,11 +299,12 @@ public class MainActivity extends AppCompatActivity {
     private class ProcessThread extends Thread {
         @Override
         public void run() {
+            // Set high priority for real-time audio
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
 
             short[] audioBuffer = new short[RNNoise.FRAME_SIZE];
             float[] floatBuffer = new float[RNNoise.FRAME_SIZE];
-            
+
             audioTrack.play();
             audioRecord.startRecording();
 
@@ -228,36 +322,57 @@ public class MainActivity extends AppCompatActivity {
                         // Process through RNNoise
                         RNNoise.ProcessResult result = rnnoise.processFrame(floatBuffer);
                         float outputRMS = calculateRMSLevel(result.audio);
-                        
+
                         // Calculate noise reduction in dB
                         float noiseReduction = calculateNoiseReduction(inputRMS, outputRMS);
 
                         // Update UI with all metrics
                         updateUI(inputRMS, outputRMS, result.vadProbability, noiseReduction);
 
-                        // Convert back to shorts for playback
+                        // Convert back to shorts for playback and apply amplification
                         for (int i = 0; i < RNNoise.FRAME_SIZE; i++) {
-                            audioBuffer[i] = (short) result.audio[i];
+                            float amplifiedSample = result.audio[i] * amplificationFactor;
+
+                            // Clip to short range to avoid overflow
+                            if (amplifiedSample > Short.MAX_VALUE) {
+                                amplifiedSample = Short.MAX_VALUE;
+                            } else if (amplifiedSample < Short.MIN_VALUE) {
+                                amplifiedSample = Short.MIN_VALUE;
+                            }
+
+                            audioBuffer[i] = (short) amplifiedSample;
                         }
                     } else {
                         // Direct playback without noise removal
-                        float inputRMS = calculateRMSLevel(convertToFloat(audioBuffer));
-                        updateUI(inputRMS, inputRMS, 0, 0);
+                        // Convert short to float
+                        for (int i = 0; i < RNNoise.FRAME_SIZE; i++) {
+                            floatBuffer[i] = audioBuffer[i];
+                        }
+
+                        float inputRMS = calculateRMSLevel(floatBuffer);
+
+                        // Apply amplification
+                        for (int i = 0; i < RNNoise.FRAME_SIZE; i++) {
+                            float amplifiedSample = floatBuffer[i] * amplificationFactor;
+                            if (amplifiedSample > Short.MAX_VALUE) {
+                                amplifiedSample = Short.MAX_VALUE;
+                            } else if (amplifiedSample < Short.MIN_VALUE) {
+                                amplifiedSample = Short.MIN_VALUE;
+                            }
+                            audioBuffer[i] = (short) amplifiedSample;
+                        }
+
+                        // Update UI: same in/out level if no noise removal,
+                        // but we can show the difference due to amplification
+                        float outputRMS = calculateRMSLevel(floatBuffer) * amplificationFactor;
+                        updateUI(inputRMS, outputRMS, 0, 0);
                     }
 
-                    // Play processed or direct audio
+                    // Play processed (or direct) audio
                     audioTrack.write(audioBuffer, 0, RNNoise.FRAME_SIZE);
                 }
             }
         }
-    }
-
-    private float[] convertToFloat(short[] input) {
-        float[] output = new float[input.length];
-        for (int i = 0; i < input.length; i++) {
-            output[i] = input[i];
-        }
-        return output;
     }
 
     @Override
@@ -268,4 +383,14 @@ public class MainActivity extends AppCompatActivity {
             rnnoise.destroy();
         }
     }
+
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish(); // Close current activity and go back
+        return true;
+    }
+
+
+
 }

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/activity_main_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F2FFFA"  
+    android:padding="16dp">
+
+    <!-- 
+         Toggle button at the top. 
+         We'll dynamically change its text/color in code 
+         based on the streaming state (Turn On / Turn Off).
+    -->
+    <Button
+        android:id="@+id/toggleButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:text="Turn Off"
+        android:textAllCaps="false"
+        android:textSize="18sp"
+        android:fontFamily="sans-serif-medium"
+        android:backgroundTint="#FF3B30"   
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
+    <!-- 
+         A simple volume/amplification slider with a speaker icon on the left. 
+         If you prefer to rename it from “seekBar” to something else, 
+         be sure to update your Java/Kotlin references accordingly.
+    -->
+    <ImageView
+        android:id="@+id/volumeIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginTop="32dp"
+
+
+        app:layout_constraintTop_toBottomOf="@+id/toggleButton"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="16dp"
+        android:progress="10"  
+        android:max="50"       
+        app:layout_constraintStart_toEndOf="@+id/volumeIcon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toggleButton"/>
+
+    <!-- 
+         A labeled switch for Noise Cancellation. 
+    -->
+    <TextView
+        android:id="@+id/tvNoiseCancellation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="Noise cancellation"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif"
+        android:textColor="#000000"
+        app:layout_constraintTop_toBottomOf="@+id/seekBar"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/noiseRemovalSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:checked="false"
+        app:layout_constraintTop_toBottomOf="@+id/seekBar"
+        app:layout_constraintStart_toEndOf="@+id/tvNoiseCancellation" />
+
+    <!-- 
+         Two buttons at the bottom (Standard and Focus). 
+         For now, you can ignore them in code. 
+         They’re just placed here to match your design layout. 
+    -->
+    <Button
+        android:id="@+id/btnStandard"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="16dp"
+        android:text="Standard"
+        android:textAllCaps="false"
+        android:fontFamily="sans-serif-medium"
+        android:backgroundTint="#00695C" 
+        android:textColor="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@+id/tvNoiseCancellation"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/btnFocus"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginStart="16dp"
+        android:text="Focus"
+        android:textAllCaps="false"
+        android:fontFamily="sans-serif-medium"
+        android:backgroundTint="#FFFFFF" 
+        android:textColor="#00695C"
+        app:layout_constraintTop_toBottomOf="@+id/noiseRemovalSwitch"
+        app:layout_constraintStart_toEndOf="@+id/btnStandard" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

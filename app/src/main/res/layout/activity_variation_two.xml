@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#F0FDFA">
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="13dp" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Hi Dushanee"
+        android:textAlignment="center"
+        android:textSize="20dp"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="44dp" />
+
+
+
+            <com.google.android.material.button.MaterialButton
+        android:id="@+id/toggleButton"
+        style="@style/Widget.MaterialComponents.Button"
+        android:layout_width="317dp"
+        android:layout_height="75dp"
+        android:layout_gravity="center"
+        android:background="@drawable/rectangle_button_background"
+        android:fontFamily="monospace"
+        android:gravity="center"
+        android:text="Turn On"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        app:iconGravity="top"
+        app:iconPadding="-25dp"
+        app:iconSize="130dp"
+        app:cornerRadius="20dp"/>
+
+
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="28dp" />
+
+    <LinearLayout
+    android:layout_width="319dp"
+    android:layout_height="60dp"
+    android:layout_gravity="center"
+    android:layout_marginBottom="16dp"
+    android:background="@drawable/rounded_mint_card"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingLeft="4dp"
+    android:paddingRight="4dp">
+
+    <!-- Centered text before the waveform -->
+
+    <!-- Waveform view fills remaining space -->
+    <com.example.audion.WaveformView
+        android:id="@+id/waveformOutput"
+        android:layout_width="291dp"
+        android:layout_height="16dp"
+        android:layout_weight="1"
+        android:background="@color/card_bg"
+        />
+</LinearLayout>
+
+
+
+    <LinearLayout
+        android:layout_width="319dp"
+        android:layout_height="60dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/rounded_mint_card"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="24dp"
+        android:paddingTop="12dp"
+        android:paddingRight="24dp"
+        android:paddingBottom="12dp">
+
+        <ImageView
+            android:id="@+id/volumeIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginRight="12dp"
+            android:src="@drawable/volume" />
+
+        <SeekBar
+            android:id="@+id/seekBar"
+            android:layout_width="247dp"
+            android:layout_height="20dp"
+            android:max="100"
+            android:minHeight="0dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:progressDrawable="@drawable/seekbar_custom_progress"
+            android:splitTrack="false"
+            android:thumb="@drawable/seekbar_custom_thumb"
+            android:thumbOffset="0dp" />
+
+    </LinearLayout>
+
+
+    <LinearLayout
+    android:layout_width="319dp"
+    android:layout_height="60dp"
+    android:layout_gravity="center"
+    android:layout_marginBottom="16dp"
+    android:background="@drawable/rounded_mint_card"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingLeft="24dp"
+    android:paddingRight="24dp">
+
+    <!-- Noise Cancellation Text + Status Indicator -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Noise Cancellation Text -->
+        <TextView
+            android:id="@+id/tvNoiseCancellation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Noise Cancellation"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif"
+            android:textColor="#000000"
+            android:gravity="center_vertical" />
+
+    </LinearLayout>
+
+    <!-- Push the switch to the right -->
+    <View
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1" />
+
+    <!-- Switch for Noise Cancellation -->
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/noiseRemovalSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checked="false" />
+</LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="307dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <!-- Standard Button -->
+
+        <!-- Space between buttons -->
+        <Button
+            android:id="@+id/btnStandard"
+            app:cornerRadius="20dp"
+            android:layout_width="18dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:backgroundTint="#00695C"
+            android:fontFamily="sans-serif-medium"
+            android:text="Standard"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white" />
+
+        <Space
+            android:layout_width="16dp"
+            android:layout_height="wrap_content" />
+
+        <!-- Focus Button -->
+        <Button
+            android:id="@+id/btnFocus"
+            app:cornerRadius="20dp"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:backgroundTint="#FFFFFF"
+            android:fontFamily="sans-serif-medium"
+            android:text="Focus"
+            android:textAllCaps="false"
+            android:textColor="#00695C" />
+    </LinearLayout>
+
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="22dp" />
+
+
+    <LinearLayout
+    android:layout_width="319dp"
+    android:layout_height="60dp"
+    android:layout_gravity="center"
+    android:layout_marginBottom="16dp"
+    android:background="@drawable/rounded_mint_card"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingLeft="4dp">
+
+
+        <com.example.audion.WaveformView
+            android:id="@+id/waveformInput"
+            android:layout_width="307dp"
+            android:layout_height="30dp"
+            android:background="#E7FAF5" />
+
+
+    </LinearLayout>
+
+
+
+
+
+
+</LinearLayout>
