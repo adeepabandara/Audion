@@ -1,4 +1,4 @@
-package com.example.androidapp;
+package com.example.audion;
 
 /**
  * Java wrapper for RNNoise native library.
@@ -13,7 +13,7 @@ public class RNNoise {
     // Load native libraries
     static {
         System.loadLibrary("rnnoise");
-        System.loadLibrary("androidapp");
+        System.loadLibrary("audion");
     }
 
     // Inner class to hold process results
