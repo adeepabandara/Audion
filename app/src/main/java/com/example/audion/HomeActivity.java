@@ -18,6 +18,10 @@ import android.widget.ImageView;
 import android.widget.Button;
 import android.widget.Toast;
 
+
+import android.os.Vibrator;
+import android.os.VibrationEffect;
+
 import androidx.annotation.DrawableRes;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -97,6 +101,8 @@ public class HomeActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_variation_one);
 
+        Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
         // request mic permission if needed
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -137,6 +143,19 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         toggleButton.setOnClickListener(v -> {
+            // ① Haptic feedback: vibrate for 100ms
+
+            if (vibrator != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(
+                            VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE)
+                    );
+                } else {
+                    vibrator.vibrate(100);
+                }
+            }
+
+            // ② Existing start/stop logic
             if (!isStreaming) {
                 if (hasMicPermission()) {
                     startAudioStreamingService();
@@ -162,6 +181,7 @@ public class HomeActivity extends AppCompatActivity {
             }
             updateToggleUi(isStreaming);
         });
+
 
         amplificationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
             @Override public void onProgressChanged(SeekBar sb,int progress,boolean u){
