@@ -53,7 +53,14 @@ dependencies {
     implementation 'androidx.room:room-runtime:2.5.0'
     annotationProcessor 'androidx.room:room-compiler:2.5.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'com.google.android.material:material:1.8.0'
+    implementation "com.google.android.material:material:1.9.0"
     implementation "com.airbnb.android:lottie:6.0.0"
+    implementation "net.java.dev.jna:jna:5.5.0@aar"
+    implementation "com.alphacephei:vosk-android:0.3.32+"  
+    implementation group: 'com.alphacephei', name: 'vosk-android', version: '0.3.32+'
+    
+    implementation 'com.github.KihonRyuu:TourGuide:v1.0.18-SNAPSHOT'
+
+    
 
 }

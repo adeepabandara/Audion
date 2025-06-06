@@ -1,0 +1,21 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/captionLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <!-- You can add a background or video view behind this if you want -->
+    
+    <TextView
+        android:id="@+id/captionTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#99000000"
+        android:padding="8dp"
+        android:text="Initializing captions..."
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:ellipsize="end"
+        android:maxLines="2" />
+</RelativeLayout>

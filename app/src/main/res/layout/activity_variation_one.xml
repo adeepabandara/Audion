@@ -6,6 +6,19 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="false">
 
+    <!-- Help Button -->
+    <Button
+        android:id="@+id/btnGetStarted"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_margin="16dp"
+        android:background="@drawable/circular_button_background"  
+        android:text="?"
+        android:textSize="24sp"
+        android:textColor="@android:color/white" />
+
     <!-- Main ScrollView container -->
     <ScrollView
         android:id="@+id/mainScrollView"
@@ -50,6 +63,17 @@
                 <Space
                     android:layout_width="match_parent"
                     android:layout_height="17dp" />
+
+
+                <Button
+                    android:id="@+id/btnOpenCaption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Open Captions"
+                    android:layout_marginTop="24dp"
+                    android:padding="12dp"
+                    android:layout_marginBottom="12dp"/>
+
 
                 <!-- Toggle Button (circle style) -->
                 <LinearLayout

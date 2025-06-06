@@ -1,0 +1,16 @@
+import android.view.View;
+
+
+
+    btnOpenCaption = findViewById(R.id.btnOpenCaption);
+            btnOpenCaption.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // CORRECT: use HomeActivity.this to refer to this activity’s context
+                    Intent intent = new Intent(HomeActivity.this, CaptionActivity.class);
+                    startActivity(intent);
+                }
+            });
+
+
+                private MaterialButton btnOpenCaption;
