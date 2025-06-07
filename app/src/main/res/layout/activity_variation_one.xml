@@ -2,304 +2,196 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:fitsSystemWindows="true"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="false">
+    android:background="@color/background">
 
-    <!-- Help Button -->
-    <Button
-        android:id="@+id/btnGetStarted"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true"
-        android:layout_margin="16dp"
-        android:background="@drawable/circular_button_background"  
-        android:text="?"
-        android:textSize="24sp"
-        android:textColor="@android:color/white" />
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/background"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        app:tabMode="fixed"
+        app:tabGravity="fill"
+        app:tabIndicatorColor="@color/primary"
+        app:tabSelectedTextColor="@color/primary"
+        app:tabTextColor="@color/primary"/>
 
-    <!-- Main ScrollView container -->
     <ScrollView
         android:id="@+id/mainScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/bottomNavigationView"
-        android:background="#F0FDFA"
+        android:layout_below="@id/tabLayout"
+        android:layout_above="@id/bottomNavigationView"
         android:fillViewport="true"
-        android:padding="20dp"
-        android:clipToPadding="false">
+        android:clipToPadding="false"
+        android:padding="20dp">
 
-        <!-- Outer container to center the fixed-width content horizontally -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center_horizontal">
 
-            <!-- Inner fixed-width container preserving original component dimensions -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/toggleButton"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="164dp"
+                android:layout_height="164dp"
+                android:background="@drawable/circle_button_background"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:text="Start"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                app:icon="@drawable/ic_play"
+                app:iconGravity="top"
+                app:iconPadding="-25dp"
+                app:iconSize="130dp"
+                app:iconTint="@null" />
+
+            <com.example.audion.WaveformView
+                android:id="@+id/waveformView"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="16dp"/>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="11dp"/>
+
             <LinearLayout
                 android:layout_width="match_parent"
-                android:gravity="center"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/rounded_mint_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="24dp"
+                android:paddingTop="12dp"
+                android:paddingRight="24dp"
+                android:paddingBottom="12dp">
 
-                <!-- Top spacing -->
-                <Space
-                    android:layout_width="match_parent"
-                    android:layout_height="13dp" />
+                <ImageView
+                    android:id="@+id/volumeIcon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginRight="12dp"
+                    android:src="@drawable/volume"/>
 
-                <!-- Optional Title (commented out) -->
-                <!--
+                <SeekBar
+                    android:id="@+id/seekBar"
+                    android:layout_width="0dp"
+                    android:layout_height="20dp"
+                    android:layout_weight="1"
+                    android:max="100"
+                    android:minHeight="0dp"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:progressDrawable="@drawable/seekbar_custom_progress"
+                    android:splitTrack="false"
+                    android:thumb="@drawable/seekbar_custom_thumb"
+                    android:thumbOffset="0dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/rounded_mint_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp">
+
                 <TextView
-                    android:id="@+id/textView"
-                    android:layout_width="319dp"
-                    android:layout_height="wrap_content"
-                    android:text="Audio Variation"
-                    android:textAlignment="center"
-                    android:textSize="20dp" />
-                -->
-
-                <Space
-                    android:layout_width="match_parent"
-                    android:layout_height="17dp" />
-
-
-                <Button
-                    android:id="@+id/btnOpenCaption"
+                    android:id="@+id/noiseStatusText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Open Captions"
-                    android:layout_marginTop="24dp"
-                    android:padding="12dp"
-                    android:layout_marginBottom="12dp"/>
+                    android:text=""
+                    android:textSize="16sp"
+                    android:textColor="@color/primary"
+                    android:gravity="center_vertical"/>
 
-
-                <!-- Toggle Button (circle style) -->
-                <LinearLayout
-                    android:layout_width="319dp"
+                <View
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:gravity="center">
+                    android:layout_weight="1"/>
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/toggleButton"
-                        style="@style/Widget.MaterialComponents.Button"
-                        android:layout_width="200dp"
-                        android:layout_height="200dp"
-                        android:gravity="center"
-                        android:fontFamily="monospace"
-                        android:text="Start"
-                        android:textSize="20sp"
-                        android:textColor="@android:color/white"
-                        android:background="@drawable/circle_button_background"
-                        app:icon="@drawable/ic_play"
-                        app:iconSize="130dp"
-                        app:iconGravity="top"
-                        app:iconPadding="-25dp"
-                        app:iconTint="@null" />
-
-
-
-
-
-                </LinearLayout>
-
-                <com.example.audion.WaveformView
-                    android:id="@+id/waveformView"
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:layout_marginTop="16dp"
-                    android:background="#F0FDFA"/>
-
-
-                <Space
-                    android:layout_width="match_parent"
-                    android:layout_height="11dp" />
-
-                <!-- Global Amplification SeekBar Container (if you still need it) -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="60dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="@drawable/rounded_mint_card"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingLeft="24dp"
-                    android:paddingTop="12dp"
-                    android:paddingRight="24dp"
-                    android:paddingBottom="12dp">
-
-                    <ImageView
-                        android:id="@+id/volumeIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_marginRight="12dp"
-                        android:src="@drawable/volume" />
-
-                    <SeekBar
-                        android:id="@+id/seekBar"
-                        android:layout_width="288dp"
-                        android:layout_height="20dp"
-                        android:max="100"
-                        android:minHeight="0dp"
-                        android:paddingTop="8dp"
-                        android:paddingBottom="8dp"
-                        android:progressDrawable="@drawable/seekbar_custom_progress"
-                        android:splitTrack="false"
-                        android:thumb="@drawable/seekbar_custom_thumb"
-                        android:thumbOffset="0dp" />
-                </LinearLayout>
-
-                <!-- Noise Cancellation Switch Container -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="60dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="@drawable/rounded_mint_card"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingLeft="24dp"
-                    android:paddingRight="24dp">
-
-                    <TextView
-                        android:id="@+id/noiseStatusText"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text=""
-                        android:textSize="16sp"
-                        android:fontFamily="sans-serif"
-                        android:textColor="#000000"
-                        android:gravity="center_vertical" />
-
-                    <View
-                        android:layout_width="163dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/noiseRemovalSwitch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="false"
-                        app:thumbTint="@color/switch_thumb_tint"
-                        app:trackTint="@color/switch_track_tint" />
-
-                </LinearLayout>
-
-                <!-- REPLACED: Remove Multi-Band Graph View Container -->
-                <!-- Instead, add a dropdown for selecting the hearing profile -->
-                <LinearLayout
-                    android:id="@+id/profilePickerCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="60dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="@drawable/rounded_mint_card"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingLeft="24dp"
-                    android:paddingRight="24dp">
-
-                    <!-- Profile icon -->
-                    <ImageView
-                        android:id="@+id/ivProfileIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_home"
-                        android:tint="?attr/colorPrimary" />
-
-                    <!-- Profile name -->
-                    <TextView
-                        android:id="@+id/tvSelectedProfile"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:paddingStart="12dp"
-                        android:text="Select Profile"
-                        android:textColor="@android:color/black"
-                        android:textSize="16sp" />
-
-                    <!-- Dropdown arrow -->
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_arrow_drop_down"
-                        android:tint="?attr/colorPrimary" />
-
-                </LinearLayout>
-
-
-   
-
-                <!-- Waveform Input View Container -->
-<!--                <LinearLayout-->
-<!--                    android:layout_width="319dp"-->
-<!--                    android:layout_height="60dp"-->
-<!--                    android:layout_marginBottom="16dp"-->
-<!--                    android:background="@drawable/rounded_mint_card"-->
-<!--                    android:gravity="center_vertical"-->
-<!--                    android:orientation="horizontal"-->
-<!--                    android:paddingLeft="4dp">-->
-
-<!--                    <com.example.audion.WaveformView-->
-<!--                        android:id="@+id/waveformInput"-->
-<!--                        android:layout_width="307dp"-->
-<!--                        android:layout_height="30dp"-->
-<!--                        android:background="#E7FAF5" />-->
-<!--                </LinearLayout>-->
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/noiseRemovalSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:thumbTint="@color/switch_thumb_tint"
+                    app:trackTint="@color/switch_track_tint"/>
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/profilePickerCard"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/rounded_mint_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp">
+
+                <ImageView
+                    android:id="@+id/ivProfileIcon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_home"
+                    android:tint="?attr/colorPrimary"/>
+
+                <TextView
+                    android:id="@+id/tvSelectedProfile"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingStart="12dp"
+                    android:text="Select Profile"
+                    android:textColor="@color/primary"
+                    android:textSize="16sp"/>
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_drop_down"
+                    android:tint="?attr/colorPrimary"/>
+
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGetStarted"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginBottom="16dp"
+                android:backgroundTint="@color/outline"
+                android:text="?"
+                android:textColor="@color/primary"
+                app:cornerRadius="20dp"
+                app:strokeColor="@color/primary"
+                app:strokeWidth="2dp" />
+
+            <Button
+                android:id="@+id/btnOpenCaption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Open Captions"
+                android:layout_marginTop="24dp"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp"/>
         </LinearLayout>
     </ScrollView>
-
-    <LinearLayout
-        android:id="@+id/modeToggleContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_above="@id/bottomNavigationView"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="@color/background">
-
-        <!-- Normal (filled / selected) -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/normal"
-            style="@style/Widget.MaterialComponents.Button"
-            android:layout_width="0dp"
-            android:layout_height="60dp"
-            android:layout_weight="1"
-            android:text="Normal"
-            android:textAllCaps="false"
-            android:textSize="16sp"
-            app:backgroundTint="@color/primary"
-            android:textColor="@android:color/white"
-            app:cornerRadius="20dp"
-            android:layout_marginEnd="12dp"/>
-
-        <!-- Focus (outlined) -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/focus"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="60dp"
-            android:layout_weight="1"
-            android:text="Focus"
-            android:textAllCaps="false"
-            android:textSize="16sp"
-            android:textColor="@color/primary"
-            app:strokeWidth="1dp"
-            app:strokeColor="@color/outline"
-            app:cornerRadius="20dp"
-            android:backgroundTint="@color/background"/>
-    </LinearLayout>
-
 
     <include
         android:id="@+id/bottomNavigationView"
         layout="@layout/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true" />
+        android:layout_alignParentBottom="true"/>
 </RelativeLayout>

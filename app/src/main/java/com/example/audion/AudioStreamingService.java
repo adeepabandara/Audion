@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class AudioStreamingService extends Service {
-
     private static final String TAG        = "AudioStreamingService";
     private static final String CHANNEL_ID = "audio_streaming_channel";
 
@@ -43,11 +42,11 @@ public class AudioStreamingService extends Service {
     private static final int SAMPLE_RATE  = 48000;
     private static final int CHANNEL_IN   = AudioFormat.CHANNEL_IN_MONO;
     private static final int CHANNEL_OUT  = AudioFormat.CHANNEL_OUT_MONO;
-    private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
+    private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_FLOAT;
     private static final int BUF_IN  =
-            AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_IN,  AUDIO_FORMAT);
+            AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT);
     private static final int BUF_OUT =
-            AudioTrack .getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, AUDIO_FORMAT);
+            AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL_OUT, AUDIO_FORMAT);
 
     private RNNoise rnnoise;
     private AudioRecord audioRecord;
@@ -56,10 +55,8 @@ public class AudioStreamingService extends Service {
     private Thread processThread;
 
     private long totalFramesWritten = 0;
-    private final Map<String,Map<Integer,Integer>> bandOverrides =
-            new HashMap<>();
+    private final Map<String, Map<Integer, Integer>> bandOverrides = new HashMap<>();
 
-    // this receiver will stop the service when it sees STOP_STREAMING
     private final BroadcastReceiver stopStreamingReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -102,13 +99,18 @@ public class AudioStreamingService extends Service {
         return START_STICKY;
     }
 
-
     private void startAudioProcessing() {
         rnnoise = new RNNoise();
         rnnoise.initialize();
+
         audioRecord = new AudioRecord(
                 MediaRecorder.AudioSource.MIC,
-                SAMPLE_RATE, CHANNEL_IN, AUDIO_FORMAT, BUF_IN);
+                SAMPLE_RATE,
+                CHANNEL_IN,
+                AUDIO_FORMAT,
+                BUF_IN
+        );
+
         audioTrack = new AudioTrack.Builder()
                 .setAudioAttributes(new AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -128,63 +130,70 @@ public class AudioStreamingService extends Service {
 
         processThread = new Thread(() -> {
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
-            short[] inBuf     = new short[RNNoise.FRAME_SIZE];
-            float[] inFloat   = new float[RNNoise.FRAME_SIZE];
-            float[] processed = new float[RNNoise.FRAME_SIZE];
+
+            float[] inFloat        = new float[RNNoise.FRAME_SIZE];
+            float[] rnInput        = new float[RNNoise.FRAME_SIZE];
+            float[] rnOutScaled    = new float[RNNoise.FRAME_SIZE];
+            float[] rnOut          = new float[RNNoise.FRAME_SIZE];
+            float[] processed      = new float[RNNoise.FRAME_SIZE];
 
             audioTrack.play();
             audioRecord.startRecording();
 
             while (isProcessing) {
                 if (audioRecord == null ||
-                        audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
+                    audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
                     break;
                 }
 
-                int read = audioRecord.read(inBuf, 0, RNNoise.FRAME_SIZE);
+                int read = audioRecord.read(inFloat, 0, RNNoise.FRAME_SIZE,
+                                            AudioRecord.READ_BLOCKING);
                 if (read <= 0) break;
 
+                SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                float globalAmp = sp.getFloat(KEY_AMPLIFICATION, 1f);
+                boolean nr = sp.getBoolean(KEY_NOISE_REMOVAL, false);
+
+                // Rescale ±1.0 float → ±32767 range for RNNoise
                 for (int i = 0; i < read; i++) {
-                    inFloat[i] = inBuf[i];
+                    rnInput[i] = inFloat[i] * Short.MAX_VALUE;
                 }
 
-                SharedPreferences sp = getSharedPreferences(
-                        PREFS_NAME, MODE_PRIVATE);
-                float globalAmp = sp.getFloat(KEY_AMPLIFICATION,1f);
-                boolean nr = sp.getBoolean(KEY_NOISE_REMOVAL,false);
-                float[] rnOut = nr
-                        ? rnnoise.processFrame(inFloat).audio
-                        : inFloat;
+                if (nr) {
+                    rnOutScaled = rnnoise.processFrame(rnInput).audio;
+                } else {
+                    System.arraycopy(rnInput, 0, rnOutScaled, 0, read);
+                }
 
-                String ear = bandOverrides.keySet().stream()
-                        .findFirst().orElse("left");
-                Map<Integer,Integer> ov =
-                        bandOverrides.getOrDefault(ear,new HashMap<>());
+                // Rescale RNNoise output back to ±1.0 float
+                for (int i = 0; i < read; i++) {
+                    rnOut[i] = rnOutScaled[i] / Short.MAX_VALUE;
+                }
+
+                String ear = bandOverrides.keySet().stream().findFirst().orElse("left");
+                Map<Integer, Integer> ov = bandOverrides.getOrDefault(ear, new HashMap<>());
                 float bandGain = 1f;
                 if (!ov.isEmpty()) {
                     float sum = 0;
-                    for (int v : ov.values()) sum += v/100f;
+                    for (int v : ov.values()) sum += (v / 100f);
                     bandGain = sum / ov.size();
                 }
                 float finalGain = globalAmp * bandGain;
 
-                processFrameWithOversampling(rnOut, processed, finalGain);
+                processFrameWithOversamplingFloat(rnOut, processed, finalGain);
 
-                float inRms  = calculateRMS(inFloat);
-                float outRms = calculateRMS(processed);
-                float normIn  = Math.max(0f, Math.min(1f, inRms  / Short.MAX_VALUE));
-                float normOut = Math.max(0f, Math.min(1f, outRms / Short.MAX_VALUE));
+                float inRms  = calculateRMSFloat(inFloat, read);
+                float outRms = calculateRMSFloat(processed, read);
+                float normIn  = Math.max(0f, Math.min(1f, inRms));
+                float normOut = Math.max(0f, Math.min(1f, outRms));
 
                 Intent wf = new Intent("com.example.audion.WAVEFORM_UPDATE")
                         .setPackage(getPackageName())
-                        .putExtra("inputLevel",  normIn)
+                        .putExtra("inputLevel", normIn)
                         .putExtra("outputLevel", normOut);
                 sendBroadcast(wf);
 
-                for (int i = 0; i < read; i++) {
-                    inBuf[i] = (short) processed[i];
-                }
-                audioTrack.write(inBuf, 0, read);
+                audioTrack.write(processed, 0, read, AudioTrack.WRITE_BLOCKING);
                 totalFramesWritten += read;
 
                 int framesPlayed = audioTrack.getPlaybackHeadPosition();
@@ -198,45 +207,55 @@ public class AudioStreamingService extends Service {
         processThread.start();
     }
 
-    private float calculateRMS(float[] buf) {
+    private float calculateRMSFloat(float[] buf, int length) {
         float sum = 0;
-        for (float v : buf) sum += v*v;
-        return (float)Math.sqrt(sum / buf.length);
+        for (int i = 0; i < length; i++) {
+            sum += buf[i] * buf[i];
+        }
+        return (float) Math.sqrt(sum / length);
     }
 
-    private float softClip(float x) {
-        float n = x / Short.MAX_VALUE;
-        return (float)Math.tanh(n) * Short.MAX_VALUE;
+    private float softClipFloat(float x) {
+        return (float) Math.tanh(x);
     }
 
-    private void processFrameWithOversampling(
+    private void processFrameWithOversamplingFloat(
             float[] in, float[] out, float amp) {
         int N = RNNoise.FRAME_SIZE;
-        int up = 2*N - 1;
+        int up = 2 * N - 1;
         float[] tmp = new float[up];
+
         for (int i = 0; i < N; i++) {
-            tmp[2*i] = in[i];
-            if (i < N-1) tmp[2*i+1] = (in[i] + in[i+1]) / 2f;
+            tmp[2 * i] = in[i];
+            if (i < N - 1) {
+                tmp[2 * i + 1] = (in[i] + in[i + 1]) * 0.5f;
+            }
         }
+
         for (int i = 0; i < up; i++) {
-            tmp[i] *= amp;
-            tmp[i] = softClip(tmp[i]);
+            float scaled = tmp[i] * amp;
+            tmp[i] = softClipFloat(scaled);
         }
+
         for (int j = 0; j < N; j++) {
-            out[j] = (j < N-1)
-                    ? (tmp[2*j] + tmp[2*j+1]) / 2f
-                    : tmp[2*j];
+            if (j < N - 1) {
+                out[j] = 0.5f * (tmp[2 * j] + tmp[2 * j + 1]);
+            } else {
+                out[j] = tmp[2 * j];
+            }
         }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        // <- simply call this on your Service
         unregisterReceiver(stopStreamingReceiver);
 
         isProcessing = false;
-        try { processThread.join(500); } catch (Exception ignored) {}
+        try {
+            processThread.join(500);
+        } catch (Exception ignored) {
+        }
         if (audioRecord != null) {
             audioRecord.stop();
             audioRecord.release();

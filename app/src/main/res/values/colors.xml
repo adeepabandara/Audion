@@ -11,9 +11,12 @@
     <color name="green_circle">#0F766E</color>
     <color name="red_circle">#CD1C18</color>
     <color name="card_bg">#E7FAF5</color>
+    <color name="red_alert">#E53E3E</color>
+    <color name="red_alert_light">#FFCDD2</color>
 
 
-    
+
+
 
 
 

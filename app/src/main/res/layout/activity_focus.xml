@@ -10,11 +10,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- everything above the bottom buttons scrolls -->
+        <!-- ─── TabLayout at the very top ──────────────────────────────────────── -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:tabIndicatorColor="@color/primary"
+            app:tabSelectedTextColor="@color/primary"
+            app:tabTextColor="@color/outline" />
+
+        <!-- everything below the tabs, above the bottom buttons, scrolls -->
         <ScrollView
             android:id="@+id/mainScrollView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_below="@id/tabLayout"
             android:layout_above="@+id/modeToggleContainer"
             android:fillViewport="true"
             android:padding="20dp"
@@ -62,7 +72,6 @@
                             app:iconGravity="top"
                             app:iconPadding="-25dp"
                             app:iconTint="@null" />
-
 
                         <com.example.audion.WaveformView
                             android:id="@+id/focusWaveform"
@@ -156,6 +165,27 @@
             </LinearLayout>
         </ScrollView>
 
+        <!-- ─── Loading overlay between TabLayout and bottom controls ───────────── -->
+        <FrameLayout
+            android:id="@+id/loadingOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/tabLayout"
+            android:layout_above="@id/modeToggleContainer"
+            android:background="#FFFFFF"
+            android:visibility="visible"
+            android:elevation="10dp">
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/diarizationAnimation"
+                android:layout_width="160dp"
+                android:layout_height="148dp"
+                app:lottie_fileName="wave_loading.json"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true"
+                android:layout_gravity="center"/>
+        </FrameLayout>
+
         <!-- fixed bottom controls -->
         <LinearLayout
             android:id="@+id/modeToggleContainer"
@@ -166,37 +196,7 @@
             android:layout_above="@id/bottomNavigationView"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/normal"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="60dp"
-                android:layout_weight="1"
-                android:text="Normal"
-                android:textAllCaps="false"
-                android:textSize="16sp"
-                app:cornerRadius="20dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="@color/outline"
-                android:backgroundTint="@android:color/transparent"
-                android:textColor="@color/primary"
-                android:layout_marginEnd="12dp"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/focus"
-                style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp"
-                android:layout_height="60dp"
-                android:layout_weight="1"
-                android:text="Focus"
-                android:textAllCaps="false"
-                android:textSize="16sp"
-                app:cornerRadius="20dp"
-                android:backgroundTint="@color/primary"
-                android:textColor="@android:color/white"/>
-        </LinearLayout>
+            android:layout_marginBottom="16dp"/>
 
         <include
             android:id="@+id/bottomNavigationView"
@@ -206,25 +206,4 @@
             android:layout_alignParentBottom="true"/>
 
     </RelativeLayout>
-
-    <!-- full-screen loading overlay -->
-    <FrameLayout
-        android:id="@+id/loadingOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#FFFFFF"
-        android:visibility="visible"
-        android:elevation="10dp">
-
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/diarizationAnimation"
-        android:layout_width="160dp"
-        android:layout_height="148dp"
-        app:lottie_fileName="wave_loading.json"
-        app:lottie_autoPlay="true"
-        app:lottie_loop="true"
-        android:layout_gravity="center"/>
-</FrameLayout>
-
-
 </FrameLayout>

@@ -10,21 +10,27 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Vibrator;
 import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.content.res.ColorStateList;
+import android.graphics.drawable.LayerDrawable;
+import android.graphics.drawable.Drawable;
+
+
+
 import androidx.annotation.DrawableRes;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -34,8 +40,10 @@ import com.example.audion.data.HearingProfile;
 import com.example.audion.data.HearingTestResult;
 import com.example.audion.data.HearingTestResultDao;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.android.material.tabs.TabLayout;
+import android.widget.LinearLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,35 +55,35 @@ import tourguide.tourguide.TourGuide;
 
 public class HomeActivity extends AppCompatActivity {
 
-    // ─── Tour/overlay fields ────────────────────────────────────────────────────
-    private TourGuide      mCurrentTourGuideOverlay;
-    private View           currentStepTarget;
-    private boolean        tourActive = false;
+    private static final String TAG = "HomeActivity";
 
-    // ─── UI & streaming fields ──────────────────────────────────────────────────
-    private WaveformView               waveformView;
-    private MaterialButton             toggleButton;
-    private TextView                   tvSelectedProfile;
-    private TextView                   noiseStatusText;
-    private ImageView                  ivProfileIcon;
-    private BottomNavigationView       bottomNav;
-    private SeekBar                    amplificationSeekBar;
-    private SwitchMaterial             noiseRemovalSwitch;
+    // UI & streaming fields
+    private WaveformView      waveformView;
+    private MaterialButton    toggleButton;
+    private TextView          tvSelectedProfile;
+    private TextView          noiseStatusText;
+    private ImageView         ivProfileIcon;
+    private BottomNavigationView bottomNav;
+    private SeekBar           amplificationSeekBar;
+    private SwitchMaterial    noiseRemovalSwitch;
+    private TabLayout         tabLayout;
 
-    private boolean                    isStreaming = false;
-    private List<HearingProfile>       profileList = new ArrayList<>();
-    private int                        currentProfileId = -1;
-    private HearingTestResultDao       hearingTestResultDao;
-    private static final int           USER_ID = 1;
 
-    // ─── Permissions & receivers ────────────────────────────────────────────────
-    private static final int           REQUEST_RECORD_AUDIO   = 101;
-    private static final int           PERMISSION_REQUEST_CODE = 1;
-    private static final String        PREFS_NAME             = "com.example.audion.PREFERENCES";
-    private static final String        KEY_SELECTED_PROFILE_ID = "selectedProfileId";
-    private static final String        KEY_IS_STREAMING        = "isStreaming";
-    public  static final String        KEY_NOISE_REMOVAL       = "noiseRemoval";
-    public  static final String        KEY_AMPLIFICATION       = "amplificationFactor";
+
+    private boolean           isStreaming = false;
+    private List<HearingProfile> profileList = new ArrayList<>();
+    private int               currentProfileId = -1;
+    private HearingTestResultDao hearingTestResultDao;
+    private static final int  USER_ID = 1;
+
+    // Permissions & receivers
+    private static final int  REQUEST_RECORD_AUDIO   = 101;
+    private static final int  PERMISSION_REQUEST_CODE = 1;
+    private static final String PREFS_NAME          = "com.example.audion.PREFERENCES";
+    private static final String KEY_SELECTED_PROFILE_ID = "selectedProfileId";
+    private static final String KEY_IS_STREAMING    = "isStreaming";
+    public static final String KEY_NOISE_REMOVAL    = "noiseRemoval";
+    public static final String KEY_AMPLIFICATION    = "amplificationFactor";
 
     private final BroadcastReceiver wfReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context ctx, Intent intent) {
@@ -96,25 +104,31 @@ public class HomeActivity extends AppCompatActivity {
         }
     };
 
-    private static final String TAG = "HomeActivity";
+    // Confirmation flags for thresholds
+    private boolean allowAbove40 = false;
+    private boolean allowAbove70 = false;
+    private int     lastProgress = 0;
+
+    private SeekBar.OnSeekBarChangeListener gainChangeListener;
+
+    // Tour/overlay fields
+    private TourGuide mCurrentTourGuideOverlay;
+    private View      currentStepTarget;
+    private boolean   tourActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Remove title, enable fullscreen/cutout
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
+
+
         super.onCreate(savedInstanceState);
 
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            WindowManager.LayoutParams lp = getWindow().getAttributes();
-            lp.layoutInDisplayCutoutMode =
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-            getWindow().setAttributes(lp);
-        }
+
 
         setContentView(R.layout.activity_variation_one);
 
-        // ───────── Bind views ────────────────────────────────────────────────────
+        // Bind views
+
         waveformView         = findViewById(R.id.waveformView);
         toggleButton         = findViewById(R.id.toggleButton);
         tvSelectedProfile    = findViewById(R.id.tvSelectedProfile);
@@ -123,11 +137,12 @@ public class HomeActivity extends AppCompatActivity {
         amplificationSeekBar = findViewById(R.id.seekBar);
         noiseStatusText      = findViewById(R.id.noiseStatusText);
         noiseRemovalSwitch   = findViewById(R.id.noiseRemovalSwitch);
-        Button focusBtn      = findViewById(R.id.focus);
+        tabLayout            = findViewById(R.id.tabLayout);
+  
 
         hearingTestResultDao = AppDatabase.getInstance(this).hearingTestResultDao();
 
-        // ───────── Request RECORD_AUDIO permission if needed ────────────────────
+        // Request RECORD_AUDIO permission if needed
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
@@ -137,16 +152,34 @@ public class HomeActivity extends AppCompatActivity {
             );
         }
 
-        // ───────── Focus button ──────────────────────────────────────────────────
-        focusBtn.setOnClickListener(v -> openFocusActivity());
+        // ─── Setup TabLayout at top ───────────────────────────────────────────────
+        tabLayout.addTab(tabLayout.newTab().setText("Normal"));
+        tabLayout.addTab(tabLayout.newTab().setText("Focus"));
+        tabLayout.selectTab(tabLayout.getTabAt(0));
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override public void onTabSelected(TabLayout.Tab tab) {
+                // Only “Normal” stays selected; “Focus” triggers activity.
+                if (tab.getPosition() == 0) { }
+            }
+            @Override public void onTabUnselected(TabLayout.Tab tab) {}
+            @Override public void onTabReselected(TabLayout.Tab tab) {}
+        });
+        LinearLayout tabStrip = (LinearLayout) tabLayout.getChildAt(0);
+        if (tabStrip != null && tabStrip.getChildCount() > 1) {
+            View focusTabView = tabStrip.getChildAt(1);
+            focusTabView.setOnClickListener(v -> {
+                openFocusActivity();
+                tabLayout.selectTab(tabLayout.getTabAt(0));
+            });
+        }
 
-        // ───────── ToggleButton's NORMAL listener ────────────────────────────────
+        // ToggleButton’s normal listener
         toggleButton.setOnClickListener(HomeActivity.this::handleToggleNormalClick);
 
-        // ───────── “Get Started” launches the tour ───────────────────────────────
+        // “Get Started” launches the tour
         findViewById(R.id.btnGetStarted).setOnClickListener(v -> startTour());
 
-        // ───────── Bottom navigation ─────────────────────────────────────────────
+        // Bottom navigation
         bottomNav.setSelectedItemId(R.id.navigation_home);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -162,22 +195,146 @@ public class HomeActivity extends AppCompatActivity {
             return true;
         });
 
-        // ───────── Amplification SeekBar normal listener ────────────────────────
-        amplificationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar sb, int progress, boolean u) {
-                float maxDb = 40f;
-                float curDb = (progress / (float) sb.getMax()) * maxDb;
-                float ampFactor = (float) Math.pow(10, curDb / 20f);
-                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                        .edit()
-                        .putFloat(KEY_AMPLIFICATION, ampFactor)
-                        .apply();
+        // ─── Amplification SeekBar with confirmation dialogs ─────────────────────────
+        final float maxDb = 70f;  // SeekBar spans 0–70 dB
+
+        // (A) Intercept touch so user cannot drag past thresholds if not confirmed
+        amplificationSeekBar.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                float curDb = (lastProgress / (float) amplificationSeekBar.getMax()) * maxDb;
+                if (curDb >= 40f && !allowAbove40) {
+                    return true; // block further movement
+                }
+                if (curDb >= 70f && !allowAbove70) {
+                    return true;
+                }
             }
-            @Override public void onStartTrackingTouch(SeekBar sb) { }
-            @Override public void onStopTrackingTouch(SeekBar sb) { }
+            return false; // otherwise allow SeekBar to handle it
         });
 
-        // ───────── Noise Removal Switch normal listener ─────────────────────────
+
+
+// 1) install the listener
+        gainChangeListener = new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
+                // compute dB, thresholds
+                float curDb = (progress / (float) sb.getMax()) * maxDb;
+                int maxProgress = sb.getMax();
+                int threshold40 = Math.round((40f / maxDb) * maxProgress);
+                int threshold70 = Math.round((70f / maxDb) * maxProgress);
+
+                // grab the three layers of the track
+                LayerDrawable ld = (LayerDrawable) sb.getProgressDrawable().mutate();
+                Drawable prLayer  = ld.findDrawableByLayerId(android.R.id.progress);
+                Drawable secLayer = ld.findDrawableByLayerId(android.R.id.secondaryProgress);
+                Drawable bgLayer  = ld.findDrawableByLayerId(android.R.id.background);
+
+                // fetch our colors
+                int primaryColor = ContextCompat.getColor(HomeActivity.this, R.color.primary);
+                int bgColor      = ContextCompat.getColor(HomeActivity.this, R.color.background);
+                int redAlert     = ContextCompat.getColor(HomeActivity.this, R.color.red_alert);
+                int lightRedAlert   = ContextCompat.getColor(HomeActivity.this, R.color.red_alert_light);
+
+                // tint the filled portion: red if ≥40 dB, otherwise primary
+                prLayer.setTint(curDb >= 40f ? redAlert : primaryColor);
+                // the 0→40dB zone (secondaryProgress) stays background
+                secLayer.setTint(bgColor);
+                // the rest of the bar is always red
+                bgLayer.setTint(lightRedAlert);
+                sb.setSecondaryProgress(threshold40);
+
+                // also tint the thumb the same way
+                Drawable thumb = sb.getThumb().mutate();
+                thumb.setTint(curDb >= 40f ? redAlert : primaryColor);
+                sb.setThumb(thumb);
+
+                if (fromUser) {
+                    // Extreme warning (70 dB)
+                    if (curDb > 70f && !allowAbove70 && lastProgress <= threshold70) {
+                        sb.setEnabled(false);
+                        sb.setOnSeekBarChangeListener(null);
+                        sb.setProgress(threshold70);
+                        lastProgress = threshold70;
+                        showThresholdDialog(
+                                "Extreme Gain Warning",
+                                "You are about to exceed 70 dB of amplification. This can cause severe distortion or hearing damage. Continue?",
+                                () -> {
+                                    allowAbove70 = true;
+                                    sb.setEnabled(true);
+                                    sb.setProgress(progress);
+                                    lastProgress = progress;
+                                    applyGain(progress, maxProgress, maxDb);
+                                    sb.setOnSeekBarChangeListener(gainChangeListener);
+                                },
+                                () -> {
+                                    sb.setEnabled(true);
+                                    sb.setProgress(threshold70);
+                                    lastProgress = threshold70;
+                                    sb.setOnSeekBarChangeListener(gainChangeListener);
+                                }
+                        );
+                        return;
+                    }
+                    // High warning (40 dB)
+                    if (curDb > 40f && curDb <= 70f && !allowAbove40 && lastProgress <= threshold40) {
+                        sb.setEnabled(false);
+                        sb.setOnSeekBarChangeListener(null);
+                        sb.setProgress(threshold40);
+                        lastProgress = threshold40;
+                        showThresholdDialog(
+                                "High Gain Warning",
+                                "You are about to exceed 40 dB of amplification. This may cause noticeable distortion. Continue?",
+                                () -> {
+                                    allowAbove40 = true;
+                                    sb.setEnabled(true);
+                                    sb.setProgress(progress);
+                                    lastProgress = progress;
+                                    applyGain(progress, maxProgress, maxDb);
+                                    sb.setOnSeekBarChangeListener(gainChangeListener);
+                                },
+                                () -> {
+                                    sb.setEnabled(true);
+                                    sb.setProgress(threshold40);
+                                    lastProgress = threshold40;
+                                    sb.setOnSeekBarChangeListener(gainChangeListener);
+                                }
+                        );
+                        return;
+                    }
+                    // reset confirmations if moved back down
+                    if (curDb <= 40f) allowAbove40 = false;
+                    if (curDb <= 70f) allowAbove70 = false;
+
+                    // finally apply the new gain
+                    sb.setProgress(progress);
+                    applyGain(progress, maxProgress, maxDb);
+                    lastProgress = progress;
+                } else {
+                    // programmatic update: just sync lastProgress
+                    lastProgress = progress;
+                }
+            }
+
+            @Override public void onStartTrackingTouch(SeekBar sb) { }
+            @Override public void onStopTrackingTouch(SeekBar sb)  { }
+        };
+
+
+
+        amplificationSeekBar.setOnSeekBarChangeListener(gainChangeListener);
+
+// 2) force one initial tint/layout pass immediately:
+        amplificationSeekBar.post(() ->
+                gainChangeListener.onProgressChanged(
+                        amplificationSeekBar,
+                        amplificationSeekBar.getProgress(),
+                        false
+                )
+        );
+
+
+        // Noise Removal Switch listener
         noiseRemovalSwitch.setOnCheckedChangeListener((btn, checked) -> {
             getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                     .edit()
@@ -187,8 +344,6 @@ public class HomeActivity extends AppCompatActivity {
                     checked ? "Noise Cancellation ON" : "Noise Cancellation OFF"
             );
         });
-
-        // Restore saved noise‐removal state
         boolean isOn = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                 .getBoolean(KEY_NOISE_REMOVAL, false);
         noiseRemovalSwitch.setChecked(isOn);
@@ -197,7 +352,7 @@ public class HomeActivity extends AppCompatActivity {
                 : "Noise Cancellation OFF"
         );
 
-        // ───────── Profile selection ────────────────────────────────────────────
+        // Profile selection
         tvSelectedProfile.setOnClickListener(v -> {
             reorderProfiles(profileList, currentProfileId);
             ProfileSelectionBottomSheet bs =
@@ -218,21 +373,48 @@ public class HomeActivity extends AppCompatActivity {
             bs.show(getSupportFragmentManager(), "ProfileSelection");
         });
 
-        // ───────── Load stored profiles ─────────────────────────────────────────
         loadHearingProfiles();
+    }
+
+    private void applyGain(int progress, int maxProgress, float maxDb) {
+        float curDb = (progress / (float) maxProgress) * maxDb;
+        float ampFactor = (float) Math.pow(10, curDb / 20f);
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                .edit()
+                .putFloat(KEY_AMPLIFICATION, ampFactor)
+                .apply();
+    }
+
+    private void showThresholdDialog(
+            String title,
+            String message,
+            Runnable onConfirm,
+            Runnable onCancel
+    ) {
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(message)
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    onCancel.run();
+                    dialog.dismiss();
+                })
+                .setPositiveButton("I'm sure", (dialog, which) -> {
+                    onConfirm.run();
+                    dialog.dismiss();
+                })
+                .setCancelable(false)
+                .show();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        // Register waveform updates
         ContextCompat.registerReceiver(
                 this,
                 wfReceiver,
                 new IntentFilter("com.example.audion.WAVEFORM_UPDATE"),
                 ContextCompat.RECEIVER_NOT_EXPORTED
         );
-        // Register stop-streaming listener
         ContextCompat.registerReceiver(
                 this,
                 stopStreamingReceiver,
@@ -251,7 +433,6 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
         SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         isStreaming = sp.getBoolean(KEY_IS_STREAMING, false);
         if (isStreaming) {
@@ -261,7 +442,7 @@ public class HomeActivity extends AppCompatActivity {
 
         float ampFactor = sp.getFloat(KEY_AMPLIFICATION, 1f);
         double curDb = 20 * Math.log10(ampFactor);
-        int prog = Math.round((float) ((curDb / 40f) * amplificationSeekBar.getMax()));
+        int prog = Math.round((float) ((curDb / 70f) * amplificationSeekBar.getMax()));
         amplificationSeekBar.setProgress(prog);
 
         noiseRemovalSwitch.setChecked(sp.getBoolean(KEY_NOISE_REMOVAL, false));
@@ -323,12 +504,9 @@ public class HomeActivity extends AppCompatActivity {
         stopAudioStreamingService();
         Intent intent = new Intent(this, FocusActivity.class);
         startActivity(intent);
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
-    /**
-     * Exactly your existing “haptic + start/stop streaming” logic.
-     * Called both normally and inside the tour.
-     */
     private void handleToggleNormalClick(View v) {
         Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator != null) {
@@ -367,25 +545,13 @@ public class HomeActivity extends AppCompatActivity {
         updateToggleUi(isStreaming);
     }
 
-    /**
-     * Three‐step tour:
-     *   1) Highlight toggleButton
-     *   2) Highlight amplificationSeekBar
-     *   3) Highlight noiseRemovalSwitch
-     *
-     * Tapping outside currentStepTarget cancels the tour immediately.
-     */
     private void startTour() {
         tourActive = true;
-
-        // Clean up any previous overlay
         if (mCurrentTourGuideOverlay != null) {
             mCurrentTourGuideOverlay.cleanUp();
         }
 
         final boolean[] step1Active = { true };
-
-        // ─── Step 1: Highlight toggleButton ─────────────────────────────────────
         currentStepTarget = toggleButton;
         TourGuide step1 = TourGuide.init(this)
                 .with(TourGuide.Technique.CLICK)
@@ -406,11 +572,9 @@ public class HomeActivity extends AppCompatActivity {
 
         toggleButton.setOnClickListener(v -> {
             if (step1Active[0]) {
-                // First tap during Step 1 → advance to Step 2
                 step1Active[0] = false;
                 step1.cleanUp();
 
-                // ─── Step 2: Highlight amplificationSeekBar ─────────────────────
                 currentStepTarget = amplificationSeekBar;
                 TourGuide step2 = TourGuide.init(HomeActivity.this)
                         .with(TourGuide.Technique.CLICK)
@@ -430,67 +594,64 @@ public class HomeActivity extends AppCompatActivity {
                 mCurrentTourGuideOverlay = step2;
                 step2.playOn(amplificationSeekBar);
 
-                amplificationSeekBar.setOnTouchListener(new View.OnTouchListener() {
-                    private boolean step2Active = true;
+                amplificationSeekBar.setOnTouchListener((v2, event) -> {
+                    boolean step2ActiveInner = true;
+                    if (step2ActiveInner && event.getAction() == MotionEvent.ACTION_DOWN) {
+                        step2ActiveInner = false;
+                        step2.cleanUp();
 
-                    @Override
-                    public boolean onTouch(View v2, MotionEvent event) {
-                        if (step2Active && event.getAction() == MotionEvent.ACTION_DOWN) {
-                            // First touch during Step 2 → advance to Step 3
-                            step2Active = false;
-                            step2.cleanUp();
+                        currentStepTarget = noiseRemovalSwitch;
+                        TourGuide step3 = TourGuide.init(HomeActivity.this)
+                                .with(TourGuide.Technique.CLICK)
+                                .setPointer(new Pointer()
+                                        .setColor(Color.parseColor("#ffffff"))
+                                        .setGravity(Gravity.START | Gravity.CENTER_VERTICAL))
+                                .setToolTip(new ToolTip()
+                                        .setTitle("Noise Cancellation")
+                                        .setDescription("Tap here to toggle noise removal")
+                                        .setBackgroundColor(Color.parseColor("#0F766E"))
+                                        .setTextColor(Color.WHITE)
+                                        .setShadow(true)
+                                        .setGravity(Gravity.END | Gravity.CENTER_VERTICAL))
+                                .setOverlay(new Overlay()
+                                        .setBackgroundColor(Color.parseColor("#88000000")));
+                        mCurrentTourGuideOverlay = step3;
+                        step3.playOn(noiseRemovalSwitch);
 
-                            // ─── Step 3: Highlight noiseRemovalSwitch ─────────────
-                            currentStepTarget = noiseRemovalSwitch;
-                            TourGuide step3 = TourGuide.init(HomeActivity.this)
-                                    .with(TourGuide.Technique.CLICK)
-                                    .setPointer(new Pointer()
-                                            .setColor(Color.parseColor("#ffffff"))
-                                            .setGravity(Gravity.START | Gravity.CENTER_VERTICAL))
-                                    .setToolTip(new ToolTip()
-                                            .setTitle("Noise Cancellation")
-                                            .setDescription("Tap here to toggle noise removal")
-                                            .setBackgroundColor(Color.parseColor("#0F766E"))
-                                            .setTextColor(Color.WHITE)
-                                            .setShadow(true)
-                                            .setGravity(Gravity.END | Gravity.CENTER_VERTICAL))
-                           
-                                    .setOverlay(new Overlay()
-                                            .setBackgroundColor(Color.parseColor("#88000000")));
-                            mCurrentTourGuideOverlay = step3;
-                            step3.playOn(noiseRemovalSwitch);
+                        noiseRemovalSwitch.setOnCheckedChangeListener((button, checked) -> {
+                            getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                                    .edit()
+                                    .putBoolean(KEY_NOISE_REMOVAL, checked)
+                                    .apply();
+                            noiseStatusText.setText(
+                                    checked ? "Noise Cancellation ON" : "Noise Cancellation OFF"
+                            );
+                        });
 
-                            noiseRemovalSwitch.setOnClickListener(sw -> {
-                                // First tap during Step 3 → finish the tour
-                                step3.cleanUp();
-                                tourActive = false;
-                                currentStepTarget = null;
+                        noiseRemovalSwitch.setOnClickListener(sw -> {
+                            step3.cleanUp();
+                            tourActive = false;
+                            currentStepTarget = null;
 
-                                // Restore original listeners
-                                toggleButton.setOnClickListener(HomeActivity.this::handleToggleNormalClick);
-                                amplificationSeekBar.setOnTouchListener(null);
-                                noiseRemovalSwitch.setOnCheckedChangeListener((button, checked) -> {
-                                    getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                                            .edit()
-                                            .putBoolean(KEY_NOISE_REMOVAL, checked)
-                                            .apply();
-                                    noiseStatusText.setText(
-                                            checked ? "Noise Cancellation ON" : "Noise Cancellation OFF"
-                                    );
-                                });
+                            toggleButton.setOnClickListener(HomeActivity.this::handleToggleNormalClick);
+                            amplificationSeekBar.setOnTouchListener(null);
+                            noiseRemovalSwitch.setOnCheckedChangeListener((button, checked) -> {
+                                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                                        .edit()
+                                        .putBoolean(KEY_NOISE_REMOVAL, checked)
+                                        .apply();
+                                noiseStatusText.setText(
+                                        checked ? "Noise Cancellation ON" : "Noise Cancellation OFF"
+                                );
                             });
+                        });
 
-                            // Also run the toggle logic on this first tap
-                            handleToggleNormalClick(v);
-
-                            // **Consume** this ACTION_DOWN so no further touch logic runs:
-                            return true;
-                        }
-                        return false;
+                        handleToggleNormalClick(v);
+                        return true;
                     }
+                    return false;
                 });
             } else {
-                // If tapped after step1 but before cleanup, just run normal logic
                 handleToggleNormalClick(v);
             }
         });
@@ -510,14 +671,12 @@ public class HomeActivity extends AppCompatActivity {
             int bottom = top + currentStepTarget.getHeight();
 
             if (!(rawX >= left && rawX <= right && rawY >= top && rawY <= bottom)) {
-                // Tapped outside highlighted view → cancel the tour
                 cancelTour();
             }
         }
         return super.dispatchTouchEvent(ev);
     }
 
-    /** Clean up any active overlay and restore original listeners. */
     private void cancelTour() {
         tourActive = false;
         if (mCurrentTourGuideOverlay != null) {
@@ -526,13 +685,8 @@ public class HomeActivity extends AppCompatActivity {
         }
         currentStepTarget = null;
 
-        // Restore toggleButton’s normal listener
         toggleButton.setOnClickListener(HomeActivity.this::handleToggleNormalClick);
-
-        // Restore SeekBar’s normal listener
         amplificationSeekBar.setOnTouchListener(null);
-
-        // Restore noiseRemovalSwitch’s normal listener
         noiseRemovalSwitch.setOnCheckedChangeListener((button, checked) -> {
             getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                     .edit()

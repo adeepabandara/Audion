@@ -1,3 +1,4 @@
+// FocusActivity.java
 package com.example.audion;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -5,18 +6,17 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import androidx.annotation.NonNull;
-
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.Manifest;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -26,53 +26,31 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.os.Build;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
-import android.widget.Button;
-
-import android.content.BroadcastReceiver;
-
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-
-import android.widget.LinearLayout;
-
-
-import android.view.Gravity;
-import android.widget.FrameLayout;
-
-
-import android.view.Window;
-import android.view.WindowManager;
-import android.os.Build;
-import android.view.View;
-import android.graphics.Color;
-
+import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.airbnb.lottie.LottieAnimationView;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.example.audion.diarization.DirectDiarizationManager;
 import com.example.audion.diarization.SpeakerDiarizationManager;
 import com.google.android.material.button.MaterialButton;
-import com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.tabs.TabLayout;
+import com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationSegment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-
-import android.content.BroadcastReceiver;
-import android.content.IntentFilter;
-import com.example.audion.WaveformView;
-
-import android.content.res.ColorStateList;
-import android.graphics.Color;
 
 public class FocusActivity extends AppCompatActivity
         implements DirectDiarizationManager.DiarizationListener,
@@ -133,10 +111,9 @@ public class FocusActivity extends AppCompatActivity
     private RecyclerView globalSpeakersRecyclerView;
 
     private Handler mainHandler;
-//    private TextView statusText;
     private MaterialButton enrollButton;
     private BottomNavigationView bottomNav;
-      private MaterialButton       focus;
+
 
     // inline UI
     private FrameLayout defaultPanel;
@@ -159,20 +136,17 @@ public class FocusActivity extends AppCompatActivity
         }
     };
 
-
-    // Normal vs Focus toggle
-    private MaterialButton normalButton, focusButton;
+    // TabLayout for Normal/Focus
+    private TabLayout tabLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
-
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
 
-        // 2) Make true full-screen (hides status bar)
+        // Make true full-screen (hides status bar)
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        // 3) If you want behind‐the‐notch support on P+
+        // If you want behind-the-notch support on P+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             WindowManager.LayoutParams lp = getWindow().getAttributes();
             lp.layoutInDisplayCutoutMode =
@@ -181,6 +155,26 @@ public class FocusActivity extends AppCompatActivity
         }
 
         setContentView(R.layout.activity_focus);
+
+        // ─── Bind TabLayout at the very top ──────────────────────────────────────
+        tabLayout = findViewById(R.id.tabLayout);
+        tabLayout.addTab(tabLayout.newTab().setText("Normal"));
+        tabLayout.addTab(tabLayout.newTab().setText("Focus"));
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override public void onTabSelected(TabLayout.Tab tab) {
+                if (tab.getPosition() == 0) {
+                    // “Normal” → go back to HomeActivity
+                    Intent intent = new Intent(FocusActivity.this, HomeActivity.class);
+                    startActivity(intent);
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                }
+                // If “Focus” (position 1), do nothing (we’re already here)
+            }
+            @Override public void onTabUnselected(TabLayout.Tab tab) { }
+            @Override public void onTabReselected(TabLayout.Tab tab) { }
+        });
+        // Select “Focus” by default
+        tabLayout.selectTab(tabLayout.getTabAt(1));
 
         focusWaveform = findViewById(R.id.focusWaveform);
         lbm = LocalBroadcastManager.getInstance(this);
@@ -196,32 +190,24 @@ public class FocusActivity extends AppCompatActivity
             Log.w(TAG, "toggleButton not found yet; skipping initial hide");
         }
 
-
-        // 1) Loading overlay
+        // Loading overlay
         View loadingOverlay = findViewById(R.id.loadingOverlay);
         loadingOverlay.setVisibility(View.VISIBLE);
 
-        // 2) Bind UI
-        defaultPanel                = findViewById(R.id.defaultPanel);
-        showDefaultPanel();
-        enrollButton                = findViewById(R.id.enrollButton);
-        enrolledSpeakersRecyclerView= findViewById(R.id.enrolledSpeakersRecyclerView);
-        normalButton                = findViewById(R.id.normal);
-        focusButton                 = findViewById(R.id.focus);
-//        statusText                  = findViewById(R.id.statusText);
-        bottomNav            = findViewById(R.id.bottomNavigationView);
-        Button focusBtn = findViewById(R.id.focus);
+        // Bind UI
+        enrollButton                 = findViewById(R.id.enrollButton);
+        enrolledSpeakersRecyclerView = findViewById(R.id.enrolledSpeakersRecyclerView);
+        bottomNav                    = findViewById(R.id.bottomNavigationView);
         findViewById(R.id.seekBarContainer).setVisibility(View.GONE);
         findViewById(R.id.enrolledSpeakersRecyclerView).setVisibility(View.GONE);
         findViewById(R.id.noSpeakersText).setVisibility(View.GONE);
 
-        amplificationSeekBar        = findViewById(R.id.seekBar);
+        amplificationSeekBar = findViewById(R.id.seekBar);
         amplificationSeekBar.setMax(100);
         amplificationSeekBar.setProgress(50);
         amplificationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar sb, int p, boolean u) {
                 amplificationFactor = p / 50f;
-                // ← tell the global‐speaker adapter about the new gain
                 if (globalSpeakersAdapter != null) {
                     globalSpeakersAdapter.updatePlaybackVolume(amplificationFactor);
                 }
@@ -229,13 +215,14 @@ public class FocusActivity extends AppCompatActivity
             @Override public void onStartTrackingTouch(SeekBar sb) { }
             @Override public void onStopTrackingTouch(SeekBar sb) { }
         });
+
         toggleButton.setVisibility(View.INVISIBLE);
         toggleButton.setEnabled(false);
         enrollButton.setEnabled(false);
 
         mainHandler = new Handler(Looper.getMainLooper());
 
-        // 3) Background init
+        // Background init
         new Thread(() -> {
             rnnoise = new RNNoise();
             rnnoise.initialize();
@@ -246,13 +233,9 @@ public class FocusActivity extends AppCompatActivity
                 loadingOverlay.setVisibility(View.GONE);
                 toggleButton.setEnabled(true);
                 enrollButton.setEnabled(true);
-//                statusText.setText("");
                 bindAdaptersAndListeners();
             });
         }).start();
-
-
-
 
         bottomNav.setSelectedItemId(R.id.navigation_home);
         bottomNav.setOnItemSelectedListener(item -> {
@@ -268,7 +251,6 @@ public class FocusActivity extends AppCompatActivity
             }
             return true;
         });
-
     }
 
     private void bindAdaptersAndListeners() {
@@ -280,9 +262,6 @@ public class FocusActivity extends AppCompatActivity
         globalSpeakersRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         globalSpeakersRecyclerView.setAdapter(globalSpeakersAdapter);
         globalSpeakersRecyclerView.setVisibility(View.GONE);
-
-
-
 
         // enrolled speakers
         enrolledSpeakersAdapter = new EnrolledSpeakersAdapter(this, enrolledSpeakers);
@@ -300,14 +279,11 @@ public class FocusActivity extends AppCompatActivity
 
         enrolledSpeakersRecyclerView.setVisibility(View.GONE);
 
-
-// …
-
         enrollButton.setOnClickListener(v -> {
             if (!isEnrolling) {
                 startEnrollment();
             } else {
-                // *** MANUAL CANCEL ***
+                // Manual cancel
                 isEnrolling = false;
                 scanTextHandler.removeCallbacks(scanTextRunnable);
                 if (enrollmentRecorder != null) {
@@ -315,12 +291,10 @@ public class FocusActivity extends AppCompatActivity
                     enrollmentRecorder.release();
                     enrollmentRecorder = null;
                 }
-                // restore the very first view:
                 defaultPanel.removeAllViews();
                 showDefaultPanel();
                 toggleButton.setVisibility(View.INVISIBLE);
 
-                // reset your Scan button
                 enrollButton.setText("Scan Environment");
                 enrollButton.setBackgroundTintList(
                         ColorStateList.valueOf(Color.parseColor("#0F766E"))
@@ -328,16 +302,9 @@ public class FocusActivity extends AppCompatActivity
             }
         });
 
-
         // start/stop processing
         toggleButton.setOnClickListener(v -> toggleProcessing());
 
-        // normal / focus toggle
-        normalButton.setOnClickListener(v -> {
-            updateToggleUi(true);
-            startActivity(new Intent(this, HomeActivity.class));
-        });
-        focusButton.setOnClickListener(v -> updateToggleUi(false));
 
 
         amplificationSeekBar = findViewById(R.id.seekBar);
@@ -346,7 +313,6 @@ public class FocusActivity extends AppCompatActivity
         amplificationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar sb, int p, boolean u) {
                 amplificationFactor = p / 50f;
-
                 if (enrolledSpeakersAdapter != null) {
                     enrolledSpeakersAdapter.updatePlaybackVolume(amplificationFactor);
                 }
@@ -359,7 +325,6 @@ public class FocusActivity extends AppCompatActivity
         });
     }
 
-
     /** Called when user taps “Stop Scan” during an in-progress scan */
     private void abortEnrollment() {
         if (!isEnrolling) return;
@@ -370,34 +335,24 @@ public class FocusActivity extends AppCompatActivity
             enrollmentRecorder.release();
             enrollmentRecorder = null;
         }
-        // *Do not* call your normal stopEnrollment() here—this prevents any
-        // processEnrollmentAudio() or inline-diarization from ever firing.
-
         runOnUiThread(() -> {
-            // 1. Restore the ORIGINAL default panel
             showDefaultPanel();
-            // 2. Hide the big start/stop toggle
             toggleButton.setVisibility(View.INVISIBLE);
             toggleButton.setEnabled(false);
-            // 3. Reset the Scan button back to teal “Scan Environment”
             enrollButton.setText("Scan Environment");
             enrollButton.setBackgroundTintList(
                     ColorStateList.valueOf(Color.parseColor("#0F766E"))
             );
-            // 4. Hide any leftover inline lists / seekbars / messages
             findViewById(R.id.seekBarContainer).setVisibility(View.GONE);
             findViewById(R.id.enrolledSpeakersRecyclerView).setVisibility(View.GONE);
             findViewById(R.id.noSpeakersText).setVisibility(View.GONE);
         });
     }
 
-
-
     private void showDefaultPanel() {
         defaultPanel.removeAllViews();
         View v = getLayoutInflater()
                 .inflate(R.layout.default_inline, defaultPanel, false);
-        // center it:
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -407,18 +362,13 @@ public class FocusActivity extends AppCompatActivity
     }
 
     private void showScanInline() {
-        // 1) Remove whatever was there
         defaultPanel.removeAllViews();
-
-        // 2) Inflate your scan layout
         View scanV = getLayoutInflater()
                 .inflate(R.layout.scan_inline, defaultPanel, false);
 
-        // 3) **Bind its sub-views** before you use them:
         scanTextView       = scanV.findViewById(R.id.scanText);
         scanProgressInline = scanV.findViewById(R.id.scanProgress);
 
-        // 4) Center it in the defaultPanel
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -426,24 +376,20 @@ public class FocusActivity extends AppCompatActivity
         );
         defaultPanel.addView(scanV, lp);
 
-        // 5) Now it's safe to call setText() and setProgress()
         scanTextIndex = 0;
         scanTextView.setText(scanMessages[scanTextIndex]);
         scanProgressInline.setProgress(0);
 
-
-        // 1) update text & progress every quarter of 30s
         long interval = ENROLLMENT_DURATION_SECONDS * 1000L / scanMessages.length;
         scanTextRunnable = new Runnable() {
             @Override public void run() {
                 scanTextIndex = (scanTextIndex + 1) % scanMessages.length;
-                scanTextView .setText(scanMessages[scanTextIndex]);
+                scanTextView.setText(scanMessages[scanTextIndex]);
                 scanTextHandler.postDelayed(this, interval);
             }
         };
         scanTextHandler.postDelayed(scanTextRunnable, interval);
 
-        // 2) update progress continuously as samples come in
         new Thread(() -> {
             while (isEnrolling) {
                 runOnUiThread(() ->
@@ -462,7 +408,6 @@ public class FocusActivity extends AppCompatActivity
         View diaV = getLayoutInflater()
                 .inflate(R.layout.diarization_inline, defaultPanel, false);
 
-        // bind your inline views here:
         diarizationStatusInline   = diaV.findViewById(R.id.diarizationStatus);
         diarizationProgressInline = diaV.findViewById(R.id.diarizationProgress);
 
@@ -473,8 +418,6 @@ public class FocusActivity extends AppCompatActivity
         );
         defaultPanel.addView(diaV, lp);
     }
-
-
 
     private void initializeDiarizationManager() {
         try {
@@ -535,7 +478,6 @@ public class FocusActivity extends AppCompatActivity
             updateToggleUi(true);
             focusWaveform.setVisibility(View.VISIBLE);
             focusWaveform.levels.clear();
-//            statusText.setText("Focusing on " + selectedEnrolledSpeaker.getName());
 
             processThread = new ProcessThread();
             processThread.setPriority(Thread.MAX_PRIORITY);
@@ -585,7 +527,6 @@ public class FocusActivity extends AppCompatActivity
         }
     }
 
-
     @Override protected void onStart() {
         super.onStart();
         lbm.registerReceiver(
@@ -597,7 +538,6 @@ public class FocusActivity extends AppCompatActivity
         super.onStop();
         lbm.unregisterReceiver(wfReceiver);
     }
-
 
     @Override public void onSpeakerSelected(int speakerId) {
         sendBroadcast(new Intent("com.example.audion.STOP_STREAMING"));
@@ -702,19 +642,13 @@ public class FocusActivity extends AppCompatActivity
         recordedSamples = 0;
         isEnrolling = true;
 
-        // Immediately hide any previous inline UI:
         runOnUiThread(() -> {
-            // 1) Hide the amp seek-bar
             findViewById(R.id.seekBarContainer).setVisibility(View.GONE);
-            // 2) Hide the enrolled list
             findViewById(R.id.enrolledSpeakersRecyclerView).setVisibility(View.GONE);
-            // 3) Hide the "no speakers" text
             findViewById(R.id.noSpeakersText).setVisibility(View.GONE);
 
-            // 4) Inflate & show the scan UI
             showScanInline();
 
-            // 5) Turn the button into a red “Stop Scan”
             enrollButton.setText("Stop Scan");
             enrollButton.setBackgroundTintList(
                     ColorStateList.valueOf(Color.RED)
@@ -744,10 +678,8 @@ public class FocusActivity extends AppCompatActivity
                 runOnUiThread(this::showDiarizationInline);
                 stopEnrollment();
             }
-            // if user aborted, UI was already reset by your click-handler
         }).start();
     }
-
 
     private void stopEnrollment() {
         if (!isEnrolling) return;
@@ -759,10 +691,7 @@ public class FocusActivity extends AppCompatActivity
             enrollmentRecorder = null;
         }
 
-        // flip the scan button back
         runOnUiThread(() -> enrollButton.setText("Stop Scan"));
-
-        // now kick off your enrollment‐processing work
         new Thread(this::processEnrollmentAudio).start();
     }
 
@@ -770,7 +699,6 @@ public class FocusActivity extends AppCompatActivity
         float[] audio = new float[recordedSamples];
         System.arraycopy(enrollmentBuffer, 0, audio, 0, recordedSamples);
 
-        // 1) run the heavy‐duty diarization with inline progress callbacks
         OfflineSpeakerDiarizationSegment[] segs =
                 SpeakerDiarizationManager.processSpeakerDiarization(
                         audio,
@@ -786,7 +714,6 @@ public class FocusActivity extends AppCompatActivity
                             return 0;
                         });
 
-        // 2) bucket segments by speaker
         Map<Integer,List<OfflineSpeakerDiarizationSegment>> bySp = new HashMap<>();
         if (segs != null) {
             for (var s : segs) {
@@ -795,7 +722,6 @@ public class FocusActivity extends AppCompatActivity
             }
         }
 
-        // 3) build your list of found speakers
         List<EnrollmentActivity.EnrolledSpeaker> found = new ArrayList<>();
         for (var e : bySp.entrySet()) {
             float[] clip = extractSpeakerAudio(audio, e.getValue());
@@ -810,21 +736,18 @@ public class FocusActivity extends AppCompatActivity
                     emb, dur, clip));
         }
 
-        // 4) update UI **once**, at the very end of diarization
         runOnUiThread(() -> {
             View seekBarContainer   = findViewById(R.id.seekBarContainer);
             RecyclerView enrolled   = findViewById(R.id.enrolledSpeakersRecyclerView);
             TextView noSpeakersText = findViewById(R.id.noSpeakersText);
 
             if (found.isEmpty()) {
-                // no matches: show only "no speakers" inline, never show the toggle
                 showPromptNoSpeakersInline();
                 toggleButton.setVisibility(View.INVISIBLE);
                 seekBarContainer.setVisibility(View.GONE);
                 enrolled.setVisibility(View.GONE);
                 noSpeakersText.setVisibility(View.VISIBLE);
             } else {
-                // speakers found: show prompt + list + seekbar
                 toggleButton.setVisibility(View.GONE);
                 showPromptSpeakersFoundInline(found.size());
 
@@ -837,7 +760,6 @@ public class FocusActivity extends AppCompatActivity
                 noSpeakersText.setVisibility(View.GONE);
             }
 
-            // **only now** flip your Scan button into “Scan Again” (teal)
             enrollButton.setText("Scan Again");
             enrollButton.setBackgroundTintList(
                     ColorStateList.valueOf(Color.parseColor("#0F766E"))
@@ -845,8 +767,6 @@ public class FocusActivity extends AppCompatActivity
             enrollButton.setVisibility(View.VISIBLE);
         });
     }
-
-
 
     private void showPromptNoSpeakersInline() {
         defaultPanel.removeAllViews();
@@ -965,6 +885,6 @@ public class FocusActivity extends AppCompatActivity
 
     /** Called by adapters for inline status updates */
     public void updateStatus(String message) {
-//        runOnUiThread(() -> statusText.setText(message));
+        // runOnUiThread(() -> statusText.setText(message));
     }
 }

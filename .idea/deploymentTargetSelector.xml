@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-05-11T19:54:06.952911800Z">
+        <DropdownSelection timestamp="2025-06-07T10:20:59.408671200Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=R58M244R2WL" />
@@ -15,12 +15,12 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\adeepa.bandara_rootc\.android\avd\Audion_Test.avd" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=R58M244R2WL" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=R7AX20DWEGW" />
+                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\adeepa.bandara_rootc\.android\avd\Audion_Test.avd" />
               </handle>
             </Target>
           </targets>
