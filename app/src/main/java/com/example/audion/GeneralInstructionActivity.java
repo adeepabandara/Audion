@@ -8,6 +8,8 @@ import com.example.audion.data.AppDatabase;
 import com.example.audion.data.HearingProfile;
 import com.example.audion.data.HearingProfileDao;
 import com.example.audion.R;
+import android.view.Window;
+import android.view.WindowManager;
 
 public class GeneralInstructionActivity extends AppCompatActivity {
 
@@ -17,6 +19,8 @@ public class GeneralInstructionActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
+        
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_general_instruction);
 
@@ -47,7 +51,7 @@ public class GeneralInstructionActivity extends AppCompatActivity {
     }
 
     private void proceedToLeftEarInstruction() {
-        Intent intent = new Intent(GeneralInstructionActivity.this, LeftEarInstructionActivity.class);
+        Intent intent = new Intent(GeneralInstructionActivity.this, BaselineCalibrationActivity.class);
         intent.putExtra("USER_ID", userId);
         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
         startActivity(intent);

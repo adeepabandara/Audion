@@ -2,6 +2,9 @@ package com.example.audion;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import android.content.Intent;
 import android.media.AudioFormat;
@@ -13,6 +16,8 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.view.Window;
+import android.view.WindowManager;
 
 import com.example.audion.audio.ToneGenerator;
 import com.example.audion.data.AppDatabase;
@@ -39,8 +44,23 @@ public class PureToneTestActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pure_tone_test);
+        View decorView = getWindow().getDecorView();
+        // allow drawing under the bars
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        // create a controller
+        WindowInsetsControllerCompat insetsController =
+            new WindowInsetsControllerCompat(getWindow(), decorView);
+        // hide *all* system bars (status + nav)
+        insetsController.hide(WindowInsetsCompat.Type.systemBars());
+        // make them stay hidden until the user swipes
+        insetsController.setSystemBarsBehavior(
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        );
+
 
         // 1) First initialize currentEar from the Intent
         currentEar = getIntent().getStringExtra("EAR");

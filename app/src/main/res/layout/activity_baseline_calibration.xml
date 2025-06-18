@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:padding="20dp"
+    android:fitsSystemWindows="true">
+
+    <!-- ───────── Scrollable content ───────── -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/contentScroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/buttonBlock"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <!-- Ear label -->
+            <TextView
+                android:id="@+id/tvEarLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Right Ear"
+                android:textColor="#1A6958"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"/>
+
+            <!-- Countdown pre-instruction -->
+            <TextView
+                android:id="@+id/textInstruction"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="You will hear the tone in..."
+                android:textColor="#4A4A4A"
+                android:textSize="14dp"
+                android:textAppearance="?attr/textAppearanceBody1"
+                android:layout_marginTop="20dp"
+                android:gravity="center"/>
+
+
+
+            <!-- Short bullet instructions in mint card -->
+            <TextView
+                android:id="@+id/tvStaticInstruction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_mint_card"
+                android:padding="12dp"
+                android:text="• Every time you hear the tone tap 👍.\n\n• If the tone is not audible, tap 👎."
+                android:textColor="#4A4A4A"
+                android:textAppearance="?attr/textAppearanceBody1"
+                android:textSize="14sp"
+                android:layout_marginTop="24dp"/>
+
+            <!-- Countdown value -->
+            <TextView
+                android:id="@+id/textCountdown"
+                android:layout_width="wrap_content"
+                android:layout_height="148dp"
+                android:layout_marginTop="32dp"
+                android:gravity="center"
+                android:text="3"
+                android:textColor="#0F766E"
+                android:textSize="64sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <!-- Lottie animation -->
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/toneAnimation"
+                android:layout_width="200dp"
+                android:layout_height="165dp"
+                android:layout_marginTop="20dp"
+                android:adjustViewBounds="true"
+                android:scaleType="fitCenter"
+                app:lottie_autoPlay="true"
+                app:lottie_fileName="calibration.json"
+                app:lottie_loop="true" />
+
+            <!-- Volume slider -->
+            <SeekBar
+                android:id="@+id/seekBarVolume"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:layout_marginTop="24dp"/>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ───────── Fixed button block ───────── -->
+    <LinearLayout
+        android:id="@+id/buttonBlock"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- Thumbs row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:weightSum="2"
+            android:layout_marginBottom="16dp">
+
+            <!-- 👎 Can’t Hear -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonNotHear"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:backgroundTint="@color/background"
+                app:strokeColor="@color/red_cant"
+                app:strokeWidth="3dp"
+                app:cornerRadius="40dp"
+                android:text="👎"
+                android:textColor="@color/red_cant"
+                android:textAllCaps="false"
+                android:textSize="32sp"
+                android:fontFamily="@font/dm_sans"/>
+
+            <Space
+                android:layout_width="16dp"
+                android:layout_height="0dp" />
+
+            <!-- 👍 Hear It -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonHear"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:minWidth="0dp"
+                android:backgroundTint="@color/background"
+                app:strokeColor="@color/green_hear"
+                app:strokeWidth="3dp"
+                app:cornerRadius="40dp"
+                android:text="👍"
+                android:textColor="@color/green_hear"
+                android:textAllCaps="false"
+                android:textSize="32sp"
+                android:fontFamily="@font/dm_sans"/>
+        </LinearLayout>
+
+        <!-- Next button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonNextStep"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#0F766E"
+            android:text="Next"
+            android:textColor="#FFFFFF"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            app:cornerRadius="32dp"
+            android:fontFamily="@font/dm_sans"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

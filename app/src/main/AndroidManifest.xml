@@ -39,13 +39,42 @@
           android:windowSoftInputMode="adjustResize"/>
 
           <activity android:name=".HomeActivity" />
-           <activity android:name=".PureToneTestActivity" 
-           android:windowSoftInputMode="adjustResize"/>
+
+          <activity
+              android:name=".PureToneTestActivity"
+
+              android:windowSoftInputMode="adjustResize" />
 
 
 
                 <activity android:name=".FrequencyActivity" 
            android:windowSoftInputMode="adjustResize"/>
+
+
+           
+                <activity android:name=".AudiogramActivity" 
+           android:windowSoftInputMode="adjustResize"/>
+
+                           <activity android:name=".BaselineCalibrationActivity" 
+           android:windowSoftInputMode="adjustResize"/>
+
+
+                                      <activity android:name=".FrequencySweepActivity" 
+           android:windowSoftInputMode="adjustResize"/>
+
+
+           
+                <activity android:name=".HelpActivity" 
+           android:windowSoftInputMode="adjustResize"/>
+
+
+                <activity android:name=".CalibrationRepo" 
+           android:windowSoftInputMode="adjustResize"/>
+
+
+           <activity android:name=".SettingsActivity" />
+<activity android:name=".CalibrationInstructionActivity" />
+<activity android:name=".CalibrationTestActivity" />
 
 
                            <activity android:name=".NewProfileBottomSheet" 

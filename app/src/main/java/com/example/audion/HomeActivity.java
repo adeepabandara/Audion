@@ -67,8 +67,7 @@ public class HomeActivity extends AppCompatActivity {
     private SeekBar           amplificationSeekBar;
     private SwitchMaterial    noiseRemovalSwitch;
     private TabLayout         tabLayout;
-
-
+    private LinearLayout      volumeCard;
 
     private boolean           isStreaming = false;
     private List<HearingProfile> profileList = new ArrayList<>();
@@ -138,7 +137,7 @@ public class HomeActivity extends AppCompatActivity {
         noiseStatusText      = findViewById(R.id.noiseStatusText);
         noiseRemovalSwitch   = findViewById(R.id.noiseRemovalSwitch);
         tabLayout            = findViewById(R.id.tabLayout);
-  
+        volumeCard           = findViewById(R.id.volumeCard);
 
         hearingTestResultDao = AppDatabase.getInstance(this).hearingTestResultDao();
 
@@ -151,6 +150,26 @@ public class HomeActivity extends AppCompatActivity {
                     REQUEST_RECORD_AUDIO
             );
         }
+
+
+        Intent launch = getIntent();
+        if (launch.getBooleanExtra("START_TOUR", false)) {
+            String type = launch.getStringExtra("TOUR_TYPE");
+            switch (type) {
+                case "PLAY":
+                    startPlayTour();
+                    break;
+                case "AMPLIFY":
+                    startAmplifyTour();
+                    break;
+                case "NOISE":
+                    startNoiseTour();
+                    break;
+                default:
+                    // no default
+            }
+        }
+
 
         // ─── Setup TabLayout at top ───────────────────────────────────────────────
         tabLayout.addTab(tabLayout.newTab().setText("Normal"));
@@ -176,27 +195,38 @@ public class HomeActivity extends AppCompatActivity {
         // ToggleButton’s normal listener
         toggleButton.setOnClickListener(HomeActivity.this::handleToggleNormalClick);
 
-        // “Get Started” launches the tour
-        findViewById(R.id.btnGetStarted).setOnClickListener(v -> startTour());
+
 
         // Bottom navigation
+// Bottom navigation
         bottomNav.setSelectedItemId(R.id.navigation_home);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.navigation_frequencies) {
+            if (id == R.id.navigation_home) {
+                // Already on Home
+                return true;
+            } else if (id == R.id.navigation_frequencies) {
                 startActivity(new Intent(this, FrequencyActivity.class));
                 overridePendingTransition(0, 0);
                 return true;
-            } else if (id == R.id.navigation_settings) {
+            } else if (id == R.id.navigation_music) {
                 startActivity(new Intent(this, MusicPlayerActivity.class));
                 overridePendingTransition(0, 0);
                 return true;
+            } else if (id == R.id.navigation_help) {
+                startActivity(new Intent(this, HelpActivity.class));
+                overridePendingTransition(0, 0);
+                return true;
+            } else if (id == R.id.navigation_settings) {
+                startActivity(new Intent(this, BaselineCalibrationActivity.class));
+                overridePendingTransition(0, 0);
+                return true;
             }
-            return true;
+            return false;
         });
 
         // ─── Amplification SeekBar with confirmation dialogs ─────────────────────────
-        final float maxDb = 70f;  // SeekBar spans 0–70 dB
+        final float maxDb = 100f;  // SeekBar spans 0–100 dB
 
         // (A) Intercept touch so user cannot drag past thresholds if not confirmed
         amplificationSeekBar.setOnTouchListener((v, event) -> {
@@ -221,8 +251,8 @@ public class HomeActivity extends AppCompatActivity {
                 // compute dB, thresholds
                 float curDb = (progress / (float) sb.getMax()) * maxDb;
                 int maxProgress = sb.getMax();
-                int threshold40 = Math.round((40f / maxDb) * maxProgress);
-                int threshold70 = Math.round((70f / maxDb) * maxProgress);
+                int threshold40 = Math.round((60f / maxDb) * maxProgress);
+                int threshold70 = Math.round((90f / maxDb) * maxProgress);
 
                 // grab the three layers of the track
                 LayerDrawable ld = (LayerDrawable) sb.getProgressDrawable().mutate();
@@ -237,7 +267,7 @@ public class HomeActivity extends AppCompatActivity {
                 int lightRedAlert   = ContextCompat.getColor(HomeActivity.this, R.color.red_alert_light);
 
                 // tint the filled portion: red if ≥40 dB, otherwise primary
-                prLayer.setTint(curDb >= 40f ? redAlert : primaryColor);
+                prLayer.setTint(curDb >= 60f ? redAlert : primaryColor);
                 // the 0→40dB zone (secondaryProgress) stays background
                 secLayer.setTint(bgColor);
                 // the rest of the bar is always red
@@ -246,7 +276,7 @@ public class HomeActivity extends AppCompatActivity {
 
                 // also tint the thumb the same way
                 Drawable thumb = sb.getThumb().mutate();
-                thumb.setTint(curDb >= 40f ? redAlert : primaryColor);
+                thumb.setTint(curDb >= 60f ? redAlert : primaryColor);
                 sb.setThumb(thumb);
 
                 if (fromUser) {
@@ -773,6 +803,107 @@ public class HomeActivity extends AppCompatActivity {
             );
         }
     }
+
+
+    
+private void startPlayTour() {
+    tourActive = true;
+    if (mCurrentTourGuideOverlay != null) {
+        mCurrentTourGuideOverlay.cleanUp();
+    }
+
+    currentStepTarget = toggleButton;
+
+    mCurrentTourGuideOverlay = TourGuide.init(this)
+        // keep the click technique
+        .with(TourGuide.Technique.CLICK)
+        // white pointer, pointing from below and centered
+        .setPointer(new Pointer()
+            .setColor(Color.WHITE)
+            .setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL))
+        // tooltip above the button, same text + styling
+        .setToolTip(new ToolTip()
+            .setTitle("Start/Stop Streaming")
+            .setDescription("Tap here to begin or stop audio streaming")
+            .setBackgroundColor(Color.parseColor("#0F766E"))
+            .setTextColor(Color.WHITE)
+            .setShadow(true)
+            .setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL))
+        // semi‐transparent black overlay
+        .setOverlay(new Overlay()
+            .setBackgroundColor(0xAA000000));
+
+    // play it on the actual toggle button
+    mCurrentTourGuideOverlay.playOn(toggleButton);
+}
+
+
+private void startAmplifyTour() {
+    tourActive = true;
+    if (mCurrentTourGuideOverlay != null) {
+        mCurrentTourGuideOverlay.cleanUp();
+    }
+
+    // 1) Highlight the whole card
+    View card = findViewById(R.id.volumeCard);
+    currentStepTarget = card;
+    mCurrentTourGuideOverlay = TourGuide.init(this)
+        .with(TourGuide.Technique.CLICK)  // CLICK-only is an option too
+        .setPointer(new Pointer()
+            .setColor(Color.WHITE)
+            .setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL))
+        .setToolTip(new ToolTip()
+            .setTitle("Amplification Level")
+            .setDescription("Drag here to adjust amplification")
+            .setBackgroundColor(Color.parseColor("#0F766E"))
+            .setTextColor(Color.WHITE)
+            .setGravity(Gravity.BOTTOM | Gravity.CENTER))
+        .setOverlay(new Overlay()
+            .setBackgroundColor(Color.parseColor("#99000000"))
+            .setStyle(Overlay.Style.RECTANGLE));
+    mCurrentTourGuideOverlay.playOn(card);
+
+    // 2) Intercept a drag (ACTION_MOVE) on that same card
+    card.setOnTouchListener((v, ev) -> {
+        if (ev.getAction() == MotionEvent.ACTION_MOVE) {
+            // drag started—clean up the overlay and proceed
+            mCurrentTourGuideOverlay.cleanUp();
+            tourActive = false;
+            // e.g. move on to the next step of your tour:
+            startNoiseTour();  
+            return true;
+        }
+        return false;
+    });
+}
+
+private void startNoiseTour() {
+    tourActive = true;
+    if (mCurrentTourGuideOverlay != null) mCurrentTourGuideOverlay.cleanUp();
+
+    View target = findViewById(R.id.noiseRemovalSwitch);
+    currentStepTarget = target;
+
+    mCurrentTourGuideOverlay = TourGuide.init(this)
+        .with(TourGuide.Technique.CLICK)
+        .setPointer(new Pointer()
+            .setColor(Color.WHITE)
+            .setGravity(Gravity.END | Gravity.CENTER_VERTICAL))    // point from the right
+        .setToolTip(new ToolTip()
+            .setTitle("Noise Cancellation")
+            .setDescription("Tap here\nto toggle noise removal")
+            .setBackgroundColor(Color.parseColor("#0F766E"))
+            .setTextColor(Color.WHITE)
+            .setShadow(true)
+            .setGravity(Gravity.START | Gravity.CENTER_VERTICAL)) // align the bubble to the left
+        .setOverlay(new Overlay()
+            .setBackgroundColor(Color.parseColor("#88000000")));
+
+    mCurrentTourGuideOverlay.playOn(target);
+}
+
+
+
 
     @DrawableRes
     private int iconResForKey(String key) {

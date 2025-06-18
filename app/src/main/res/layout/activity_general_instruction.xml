@@ -1,89 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F0FDFA"
-    android:fillViewport="true"
-    android:padding="20dp">
+    android:background="@color/background"
+    android:fitsSystemWindows="true">
 
-    <!-- Now fills the screen so our spacer can push the button down -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+    <!-- Scrollable content -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/mainScroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:padding="20dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/buttonProceed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Logo Section (if any) -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="4dp" />
-
-        <!-- Greeting Text -->
-        <TextView
-            android:id="@+id/tvGreeting"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="let’s get started!"
-            android:textColor="#1A6958"
-            android:textSize="32sp"
-            android:textStyle="bold" />
-
-        <!-- Introduction Text -->
-        <TextView
-            android:id="@+id/tvIntro"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:fontFamily="@font/poppins"
-            android:lineSpacingExtra="4dp"
-            android:text="We’ll run a quick Pure Tone Hearing Test to fine-tune Audion just for you. Find a quiet space, grab your headphones."
-            android:textColor="#4A4A4A"
-            android:textSize="14sp" />
+            android:orientation="vertical">
 
-        <!-- Follow-Up Instruction -->
-        <TextView
-            android:id="@+id/tvFollowUp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:fontFamily="@font/poppins"
-            android:text="To proceed, please connect wired or Bluetooth headphones"
-            android:textColor="#4A4A4A"
-            android:textSize="14sp" />
+            <!-- Logo Section (if any) -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
 
-        <!-- Ear Image -->
-        <ImageView
-            android:id="@+id/imageViewEar"
-            android:layout_width="match_parent"
-            android:layout_height="275dp"
-            android:layout_marginBottom="20dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ear" />
+            <!-- Greeting Text -->
+            <TextView
+                android:id="@+id/tvGreeting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="16dp"
+                android:text="let’s get started!"
+                android:fontFamily="@font/dm_sans"
+                android:textColor="#1A6958"
+                android:textSize="32sp"
+                android:textStyle="bold" />
 
-        <!-- This spacer consumes all extra space, pushing the button to the bottom -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            <!-- Introduction Text -->
+            <TextView
+                android:id="@+id/tvIntro"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/dm_sans"
+                android:lineSpacingExtra="4dp"
+                android:text="We’ll run a quick Hearing Test to fine-tune Audion just for you. Find a quiet space, grab your earphones."
+                android:textColor="#4A4A4A"
+                android:textSize="16sp" />
 
-        <!-- Proceed Button pinned at the bottom -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonProceed"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginBottom="16dp"
-            android:backgroundTint="#0F766E"
-            android:fontFamily="@font/poppins_light"
-            android:text="I’m Ready – Let’s Begin!"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:cornerRadius="20dp" />
+            <!-- Follow-Up Instruction -->
+            <TextView
+                android:id="@+id/tvFollowUp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:fontFamily="@font/dm_sans"
+                android:text="To proceed, please connect wired or Bluetooth headphones"
+                android:textColor="#4A4A4A"
+                android:textSize="16sp" />
 
-    </LinearLayout>
-</ScrollView>
+            <!-- Ear Image -->
+            <ImageView
+                android:id="@+id/imageViewEar"
+                android:layout_width="match_parent"
+                android:layout_height="275dp"
+                android:layout_marginBottom="20dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ear" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Fixed Proceed Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonProceed"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#0F766E"
+        android:text="I'm Ready"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:fontFamily="@font/dm_sans"
+        app:cornerRadius="32dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

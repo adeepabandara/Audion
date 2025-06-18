@@ -1,6 +1,7 @@
 // FocusActivity.java
 package com.example.audion;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -38,6 +39,10 @@ import android.widget.SeekBar;
 import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import android.graphics.drawable.LayerDrawable;
+import android.graphics.drawable.Drawable;
+import androidx.core.content.ContextCompat;
 
 import com.airbnb.lottie.LottieAnimationView;
 import com.example.audion.diarization.DirectDiarizationManager;
@@ -139,6 +144,15 @@ public class FocusActivity extends AppCompatActivity
     // TabLayout for Normal/Focus
     private TabLayout tabLayout;
 
+
+    private boolean allowAbove40 = false;
+    private boolean allowAbove70 = false;
+    private int     lastProgress = 0;
+
+    private final float maxDb = 100f;
+
+    private SeekBar.OnSeekBarChangeListener gainChangeListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -190,6 +204,10 @@ public class FocusActivity extends AppCompatActivity
             Log.w(TAG, "toggleButton not found yet; skipping initial hide");
         }
 
+
+
+
+
         // Loading overlay
         View loadingOverlay = findViewById(R.id.loadingOverlay);
         loadingOverlay.setVisibility(View.VISIBLE);
@@ -205,16 +223,121 @@ public class FocusActivity extends AppCompatActivity
         amplificationSeekBar = findViewById(R.id.seekBar);
         amplificationSeekBar.setMax(100);
         amplificationSeekBar.setProgress(50);
-        amplificationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar sb, int p, boolean u) {
-                amplificationFactor = p / 50f;
-                if (globalSpeakersAdapter != null) {
-                    globalSpeakersAdapter.updatePlaybackVolume(amplificationFactor);
+        gainChangeListener = new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
+                // compute dB, thresholds
+                float curDb = (progress / (float) sb.getMax()) * maxDb;
+                int maxProgress = sb.getMax();
+                int threshold40 = Math.round((60f / maxDb) * maxProgress);
+                int threshold70 = Math.round((90f / maxDb) * maxProgress);
+
+                // grab the three layers of the track
+                LayerDrawable ld = (LayerDrawable) sb.getProgressDrawable().mutate();
+                Drawable prLayer  = ld.findDrawableByLayerId(android.R.id.progress);
+                Drawable secLayer = ld.findDrawableByLayerId(android.R.id.secondaryProgress);
+                Drawable bgLayer  = ld.findDrawableByLayerId(android.R.id.background);
+
+                // fetch our colors
+                int primaryColor    = ContextCompat.getColor(FocusActivity.this, R.color.primary);
+                int bgColor         = ContextCompat.getColor(FocusActivity.this, R.color.background);
+                int redAlert        = ContextCompat.getColor(FocusActivity.this, R.color.red_alert);
+                int lightRedAlert   = ContextCompat.getColor(FocusActivity.this, R.color.red_alert_light);
+
+                // tint the filled portion: red if ≥60 dB, otherwise primary
+                prLayer.setTint(curDb >= 60f ? redAlert : primaryColor);
+                // the 0→40dB zone (secondaryProgress) stays background
+                secLayer.setTint(bgColor);
+                // the rest of the bar is always light‐red
+                bgLayer.setTint(lightRedAlert);
+                sb.setSecondaryProgress(threshold40);
+
+                // also tint the thumb the same way
+                Drawable thumb = sb.getThumb().mutate();
+                thumb.setTint(curDb >= 60f ? redAlert : primaryColor);
+                sb.setThumb(thumb);
+
+                if (fromUser) {
+                    // ── Extreme warning (70 dB) ─────────────────────────
+                    if (curDb > 70f && !allowAbove70 && lastProgress <= threshold70) {
+                        sb.setEnabled(false);
+                        sb.setOnSeekBarChangeListener(null);
+                        sb.setProgress(threshold70);
+                        lastProgress = threshold70;
+                        showThresholdDialog(
+                                "Extreme Gain Warning",
+                                "You are about to exceed 70 dB of amplification. This can cause severe distortion or hearing damage. Continue?",
+                                () -> {
+                                    allowAbove70 = true;
+                                    sb.setEnabled(true);
+                                    sb.setProgress(progress);
+                                    lastProgress = progress;
+                                    applyGain(progress, maxProgress, maxDb);
+                                    sb.setOnSeekBarChangeListener(gainChangeListener);
+                                },
+                                () -> {
+                                    sb.setEnabled(true);
+                                    sb.setProgress(threshold70);
+                                    lastProgress = threshold70;
+                                    sb.setOnSeekBarChangeListener(gainChangeListener);
+                                }
+                        );
+                        return;
+                    }
+                    // ── High warning (40 dB) ───────────────────────────
+                    if (curDb > 40f && curDb <= 70f && !allowAbove40 && lastProgress <= threshold40) {
+                        sb.setEnabled(false);
+                        sb.setOnSeekBarChangeListener(null);
+                        sb.setProgress(threshold40);
+                        lastProgress = threshold40;
+                        showThresholdDialog(
+                                "High Gain Warning",
+                                "You are about to exceed 40 dB of amplification. This may cause noticeable distortion. Continue?",
+                                () -> {
+                                    allowAbove40 = true;
+                                    sb.setEnabled(true);
+                                    sb.setProgress(progress);
+                                    lastProgress = progress;
+                                    applyGain(progress, maxProgress, maxDb);
+                                    sb.setOnSeekBarChangeListener(gainChangeListener);
+                                },
+                                () -> {
+                                    sb.setEnabled(true);
+                                    sb.setProgress(threshold40);
+                                    lastProgress = threshold40;
+                                    sb.setOnSeekBarChangeListener(gainChangeListener);
+                                }
+                        );
+                        return;
+                    }
+                    // reset confirmations if moved back down
+                    if (curDb <= 40f) allowAbove40 = false;
+                    if (curDb <= 70f) allowAbove70 = false;
+
+                    // finally apply the new gain
+                    sb.setProgress(progress);
+                    applyGain(progress, maxProgress, maxDb);
+                    lastProgress = progress;
+                } else {
+                    // programmatic update: just sync lastProgress
+                    lastProgress = progress;
                 }
             }
+
             @Override public void onStartTrackingTouch(SeekBar sb) { }
-            @Override public void onStopTrackingTouch(SeekBar sb) { }
-        });
+            @Override public void onStopTrackingTouch(SeekBar sb)  { }
+        };
+
+
+
+// 2) force one initial tint/layout pass immediately:
+        amplificationSeekBar.post(() ->
+                gainChangeListener.onProgressChanged(
+                        amplificationSeekBar,
+                        amplificationSeekBar.getProgress(),
+                        false
+                )
+        );;
 
         toggleButton.setVisibility(View.INVISIBLE);
         toggleButton.setEnabled(false);
@@ -251,6 +374,31 @@ public class FocusActivity extends AppCompatActivity
             }
             return true;
         });
+    }
+
+    private void applyGain(int progress, int maxProgress, float maxDb) {
+        float curDb = (progress / (float) maxProgress) * maxDb;
+        float ampFactor = (float) Math.pow(10, curDb / 20f);
+        // store or use ampFactor however you need…
+    }
+
+    private void showThresholdDialog(
+            String title, String message,
+            Runnable onConfirm, Runnable onCancel
+    ) {
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(message)
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    onCancel.run();
+                    dialog.dismiss();
+                })
+                .setPositiveButton("I'm sure", (dialog, which) -> {
+                    onConfirm.run();
+                    dialog.dismiss();
+                })
+                .setCancelable(false)
+                .show();
     }
 
     private void bindAdaptersAndListeners() {
@@ -307,22 +455,12 @@ public class FocusActivity extends AppCompatActivity
 
 
 
+//––– REPLACE WITH this –––
         amplificationSeekBar = findViewById(R.id.seekBar);
         amplificationSeekBar.setMax(100);
         amplificationSeekBar.setProgress(50);
-        amplificationSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar sb, int p, boolean u) {
-                amplificationFactor = p / 50f;
-                if (enrolledSpeakersAdapter != null) {
-                    enrolledSpeakersAdapter.updatePlaybackVolume(amplificationFactor);
-                }
-                if (globalSpeakersAdapter != null) {
-                    globalSpeakersAdapter.updatePlaybackVolume(amplificationFactor);
-                }
-            }
-            @Override public void onStartTrackingTouch(SeekBar sb) { }
-            @Override public void onStopTrackingTouch(SeekBar sb) { }
-        });
+// attach your threshold-checking listener:
+        amplificationSeekBar.setOnSeekBarChangeListener(gainChangeListener);
     }
 
     /** Called when user taps “Stop Scan” during an in-progress scan */

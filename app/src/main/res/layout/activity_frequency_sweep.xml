@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0FDFA"
+    android:fillViewport="true"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="Left Ear Test"
+            android:textColor="#1A6958"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/stepper_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_margin="24dp">
+            <!-- Step 1 -->
+            <FrameLayout android:layout_width="30dp" android:layout_height="30dp">
+                <ImageView android:id="@+id/step1Image" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/circle_default" />
+                <TextView android:id="@+id/step1Text" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:text="1" android:textColor="#0F766E" />
+            </FrameLayout>
+            <!-- Dotted line and Steps 2–8 similar -->
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/imageViewEar"
+            android:layout_width="312dp"
+            android:layout_height="226dp"
+            android:scaleType="fitCenter"
+            android:layout_marginBottom="16dp" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="0"
+            android:layout_marginBottom="24dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonStart"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Start"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="20dp"
+            android:backgroundTint="#0F766E" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonHeard"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="I Heard"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="20dp"
+            android:backgroundTint="#0F766E"
+            android:visibility="gone"
+            android:layout_marginTop="16dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonNotHeard"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="I Didn't"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="20dp"
+            android:backgroundTint="#D32F2F"
+            android:visibility="gone"
+            android:layout_marginTop="12dp" />
+
+    </LinearLayout>
+</ScrollView>

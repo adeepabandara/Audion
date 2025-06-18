@@ -57,6 +57,8 @@ dependencies {
     implementation "com.airbnb.android:lottie:6.0.0"
     implementation "net.java.dev.jna:jna:5.5.0@aar"
     implementation "com.alphacephei:vosk-android:0.3.32+"  
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+    implementation "androidx.core:core-ktx:<latest-version>"
     implementation group: 'com.alphacephei', name: 'vosk-android', version: '0.3.32+'
     
     implementation 'com.github.KihonRyuu:TourGuide:v1.0.18-SNAPSHOT'

@@ -13,6 +13,9 @@
     <color name="card_bg">#E7FAF5</color>
     <color name="red_alert">#E53E3E</color>
     <color name="red_alert_light">#FFCDD2</color>
+    <color name="green_hear">#0F766E</color><!-- or any green you use -->
+    <color name="red_cant">#D93025</color><!-- Google-style error red -->
+    <color name="stepper_default_text">#666666</color>
 
 
 

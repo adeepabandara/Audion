@@ -13,6 +13,8 @@ import com.example.audion.data.UserDao;
 import com.example.audion.data.HearingProfile;
 import com.example.audion.data.HearingProfileDao;
 import com.example.audion.R;
+import android.view.Window;
+import android.view.WindowManager;
 
 public class UserCreationActivity extends AppCompatActivity {
 
@@ -22,6 +24,7 @@ public class UserCreationActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_creation);
 

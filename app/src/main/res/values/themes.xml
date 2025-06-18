@@ -17,6 +17,8 @@
         <item name="android:navigationBarColor">@android:color/white</item>
 
         <item name="android:windowDrawsSystemBarBackgrounds">true</item><!-- optional -->
+        <item name="android:windowFullscreen">true</item>
+
 
 
         <!-- Enable Action Bar -->
