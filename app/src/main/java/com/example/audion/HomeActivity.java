@@ -1,5 +1,8 @@
 package com.example.audion;
 
+
+
+
 import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -23,6 +26,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+
 import android.content.res.ColorStateList;
 import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.Drawable;
@@ -36,6 +41,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.audion.data.AppDatabase;
+import com.example.audion.data.CalibrationDao;
+import com.example.audion.data.CalibrationEntry;
 import com.example.audion.data.HearingProfile;
 import com.example.audion.data.HearingTestResult;
 import com.example.audion.data.HearingTestResultDao;
@@ -44,6 +51,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.tabs.TabLayout;
 import android.widget.LinearLayout;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -213,12 +221,8 @@ public class HomeActivity extends AppCompatActivity {
                 startActivity(new Intent(this, MusicPlayerActivity.class));
                 overridePendingTransition(0, 0);
                 return true;
-            } else if (id == R.id.navigation_help) {
-                startActivity(new Intent(this, HelpActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
             } else if (id == R.id.navigation_settings) {
-                startActivity(new Intent(this, BaselineCalibrationActivity.class));
+                startActivity(new Intent(this, GraphActivity.class));
                 overridePendingTransition(0, 0);
                 return true;
             }
@@ -362,6 +366,37 @@ public class HomeActivity extends AppCompatActivity {
                         false
                 )
         );
+
+
+        new Thread(() -> {
+            CalibrationDao calDao = AppDatabase
+                    .getInstance(this)
+                    .calibrationDao();
+
+            // userId is always 1 in your case, profileId is whatever’s currently selected
+            List<CalibrationEntry> entries =
+                    calDao.getForUserProfile(USER_ID, currentProfileId);
+
+            if (!entries.isEmpty()) {
+                // take the first entry (or pick LEFT/RIGHT if you want to be fancy)
+                int baselineStep = entries.get(0).getBaselineStep();
+
+                // clamp it to [0..maxProg]
+                final int maxProg = amplificationSeekBar.getMax();
+                final int prog    = Math.max(0, Math.min(baselineStep, maxProg));
+
+                // now post back to the UI thread
+                runOnUiThread(() -> {
+                    amplificationSeekBar.setProgress(prog);
+                    // repaint the bar’s colors & thresholds
+                    gainChangeListener.onProgressChanged(
+                            amplificationSeekBar,
+                            prog,
+                            false
+                    );
+                });
+            }
+        }).start();
 
 
         // Noise Removal Switch listener

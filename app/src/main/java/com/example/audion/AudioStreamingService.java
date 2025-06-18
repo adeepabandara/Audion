@@ -27,6 +27,8 @@ import com.example.audion.data.CalibrationDao;
 import com.example.audion.data.CalibrationEntry;
 import com.example.audion.data.HearingProfile;
 import com.example.audion.data.HearingProfileDao;
+import com.example.audion.data.HearingTestResult;
+import com.example.audion.data.HearingTestResultDao;
 import com.example.audion.R;
 
 import java.util.HashMap;
@@ -61,18 +63,20 @@ public class AudioStreamingService extends Service {
     private AudioTrack  audioTrack;
     private boolean isProcessing;
     private Thread processThread;
-
-    // move totalFramesWritten to a field so it can be mutated in the lambda
     private long totalFramesWritten = 0;
 
     // per‐frequency overrides from the UI
     private final Map<String, Map<Integer, Integer>> bandOverrides = new HashMap<>();
-    // baseline from calibration step
+    // calibration baseline per ear
     private final Map<String, Integer> baselineMap = new HashMap<>();
+    // pure-tone audiogram steps per ear/frequency
+    private final Map<String, Map<Integer, Integer>> audiogramMap = new HashMap<>();
+
+    // the four band-pass filters
+    private BandPassFilter[] filterbank = new BandPassFilter[4];
 
     private final BroadcastReceiver stopStreamingReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
+        @Override public void onReceive(Context context, Intent intent) {
             isProcessing = false;
             stopForeground(true);
             stopSelf();
@@ -81,86 +85,94 @@ public class AudioStreamingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // 1) Handle in‐service gain‐update broadcasts immediately on the main thread.
+        // handle gain update broadcasts
         if (intent != null && ACTION_UPDATE_GAIN.equals(intent.getAction())) {
             String ear = intent.getStringExtra(EXTRA_EAR);
             int freq  = intent.getIntExtra(EXTRA_FREQ, -1);
             int ampl  = intent.getIntExtra(EXTRA_AMPL, -1);
             if (ear != null && freq > 0 && ampl >= 0) {
                 bandOverrides
-                  .computeIfAbsent(ear, k -> new HashMap<>())
-                  .put(freq, ampl);
+                        .computeIfAbsent(ear, k -> new HashMap<>())
+                        .put(freq, ampl);
                 Log.d(TAG, "Override " + ear + " " + freq + "→" + ampl);
             }
             return START_STICKY;
         }
 
-        // 2) Normal startup: register stop‐receiver, post foreground notification
+        // normal startup
         ContextCompat.registerReceiver(
-            this,
-            stopStreamingReceiver,
-            new IntentFilter("com.example.audion.STOP_STREAMING"),
-            ContextCompat.RECEIVER_NOT_EXPORTED
+                this,
+                stopStreamingReceiver,
+                new IntentFilter("com.example.audion.STOP_STREAMING"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
         );
 
         createNotificationChannel();
         NotificationCompat.Builder nb =
-            new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Audio Streaming")
-                .setContentText("Running…")
-                .setSmallIcon(R.drawable.ic_play);
+                new NotificationCompat.Builder(this, CHANNEL_ID)
+                        .setContentTitle("Audio Streaming")
+                        .setContentText("Running…")
+                        .setSmallIcon(R.drawable.ic_play);
         startForeground(1, nb.build());
 
-        // 3) Load all saved baselines off the UI thread
+        // load calibration and audiogram baselines
         new Thread(() -> {
             int userId = 1;
-
-            // a) pick or create a hearing‐profile
+            // pick or create a hearing profile
             HearingProfileDao hpDao = AppDatabase
-                .getInstance(this)
-                .hearingProfileDao();
+                    .getInstance(this)
+                    .hearingProfileDao();
             List<HearingProfile> all = hpDao.getAllProfiles();
-            int profileId;
-            if (all.isEmpty()) {
-                // HearingProfile(String name, String notes)
-                profileId = (int) hpDao.insert(new HearingProfile("Default Profile", ""));
-            } else {
-                profileId = 0;
-                for (HearingProfile p : all) {
-                    if (p.getId() > profileId) profileId = p.getId();
-                }
-            }
+            int profileId = all.isEmpty()
+                    ? (int) hpDao.insert(new HearingProfile("Default Profile", ""))
+                    : all.get(0).getId();
 
-            // b) fetch all calibration entries for this user/profile
+            // calibration entries
             CalibrationDao calDao = AppDatabase
-                .getInstance(this)
-                .calibrationDao();
+                    .getInstance(this)
+                    .calibrationDao();
             List<CalibrationEntry> entries =
-                calDao.getForUserProfile(userId, profileId);
-
-            // c) populate baselineMap, and also seed the global amplification factor
-            int sumSteps = 0, count = 0;
+                    calDao.getForUserProfile(userId, profileId);
             for (CalibrationEntry c : entries) {
-                baselineMap.put(
-                    c.getEarSide(),
-                    c.getBaselineStep()
-                );
-                sumSteps += c.getBaselineStep();
-                count++;
-                Log.d(TAG, "Loaded baseline "
-                    + c.getEarSide() + " → " + c.getBaselineStep());
+                baselineMap.put(c.getEarSide(), c.getBaselineStep());
+                Log.d(TAG, "Loaded calibration " +
+                        c.getEarSide() + " → " + c.getBaselineStep());
             }
-            // d) initialize the app-wide amplification from the average baseline
-            if (count > 0) {
-                float avgGain = (sumSteps / (float)count) / 100f;
-                SharedPreferences.Editor e = 
-                    getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
-                e.putFloat(KEY_AMPLIFICATION, avgGain).apply();
-                Log.d(TAG, "Initialized global amp to " + avgGain);
+
+            // audiogram results
+            HearingTestResultDao htrDao = AppDatabase
+                    .getInstance(this)
+                    .hearingTestResultDao();
+            List<HearingTestResult> results =
+                    htrDao.getResultsForUserAndProfile(userId, profileId);
+            for (HearingTestResult r : results) {
+                audiogramMap
+                        .computeIfAbsent(r.getEarSide(), k -> new HashMap<>())
+                        .put(r.getFrequency(), r.getAmplitudeStep());
+                Log.d(TAG, "Loaded audiogram " +
+                        r.getEarSide() + " " + r.getFrequency() + "→" + r.getAmplitudeStep());
             }
+
+            // seed global amplification from average calibration
+            if (!baselineMap.isEmpty()) {
+                int sum = 0;
+                for (int v : baselineMap.values()) sum += v;
+                float avg = (sum / (float)baselineMap.size()) / 100f;
+                SharedPreferences.Editor e =
+                        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit();
+                e.putFloat(KEY_AMPLIFICATION, avg).apply();
+                Log.d(TAG, "Initialized global amp to " + avg);
+            }
+
+            // ─── Initialize our 4-band filterbank here ───────────────────────
+            // Bands: 250–750, 750–1500, 1500–3000, 3000–6000 Hz
+            filterbank[0] = new BandPassFilter(250, 750, SAMPLE_RATE);
+            filterbank[1] = new BandPassFilter(750, 1500, SAMPLE_RATE);
+            filterbank[2] = new BandPassFilter(1500, 3000, SAMPLE_RATE);
+            filterbank[3] = new BandPassFilter(3000, 6000, SAMPLE_RATE);
         }).start();
 
-        // 4) finally, kick off your audio‐processing thread
+        // start audio processing
         startAudioProcessing();
         return START_STICKY;
     }
@@ -192,149 +204,178 @@ public class AudioStreamingService extends Service {
                 .build();
 
         isProcessing = true;
-        totalFramesWritten = 0;  // reset the field
+        totalFramesWritten = 0;
 
         processThread = new Thread(() -> {
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
-
-            float[] inFloat     = new float[RNNoise.FRAME_SIZE];
-            float[] rnInput     = new float[RNNoise.FRAME_SIZE];
-            float[] rnOutScaled = new float[RNNoise.FRAME_SIZE];
-            float[] rnOut       = new float[RNNoise.FRAME_SIZE];
-            float[] processed   = new float[RNNoise.FRAME_SIZE];
+            float[] inBuf   = new float[RNNoise.FRAME_SIZE];
+            float[] rnIn    = new float[RNNoise.FRAME_SIZE];
+            float[] rnOut   = new float[RNNoise.FRAME_SIZE];
+            float[] procBuf = new float[RNNoise.FRAME_SIZE];
 
             audioTrack.play();
             audioRecord.startRecording();
 
             while (isProcessing) {
-                if (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
-                    break;
-                }
-                int read = audioRecord.read(
-                    inFloat, 0, RNNoise.FRAME_SIZE,
-                    AudioRecord.READ_BLOCKING);
-                if (read <= 0) break;
+                int r = audioRecord.read(
+                        inBuf, 0, RNNoise.FRAME_SIZE,
+                        AudioRecord.READ_BLOCKING);
+                if (r <= 0) break;
 
-                SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                SharedPreferences sp =
+                        getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
                 float globalAmp = sp.getFloat(KEY_AMPLIFICATION, 1f);
                 boolean nr      = sp.getBoolean(KEY_NOISE_REMOVAL, false);
 
-                // RNNoise expects ±32767
-                for (int i = 0; i < read; i++) {
-                    rnInput[i] = inFloat[i] * Short.MAX_VALUE;
-                }
+                // RNNoise processing
+                for (int i = 0; i < r; i++) rnIn[i] = inBuf[i] * Short.MAX_VALUE;
                 if (nr) {
-                    rnOutScaled = rnnoise.processFrame(rnInput).audio;
+                    rnOut = rnnoise.processFrame(rnIn).audio;
                 } else {
-                    System.arraycopy(rnInput, 0, rnOutScaled, 0, read);
+                    System.arraycopy(rnIn, 0, rnOut, 0, r);
                 }
-                for (int i = 0; i < read; i++) {
-                    rnOut[i] = rnOutScaled[i] / Short.MAX_VALUE;
-                }
+                for (int i = 0; i < r; i++) rnOut[i] /= Short.MAX_VALUE;
 
-                // pick first‐available override map
-                String ear = bandOverrides.keySet()
-                    .stream().findFirst().orElse("LEFT");
-                Map<Integer,Integer> ov =
-                    bandOverrides.getOrDefault(ear, new HashMap<>());
-                float bandGain = 1f;
-                if (!ov.isEmpty()) {
+                // ─── 4-Band Filterbank Split → Gain → Recombine ───────────────
+                float[][] bandBufs = new float[4][r];
+                for (int b = 0; b < 4; b++) {
+                    filterbank[b].process(rnOut, bandBufs[b], r);
+                }
+                // per-band gain prescription
+                String ear = bandOverrides.keySet().stream().findFirst().orElse("LEFT");
+                Map<Integer,Integer> ov = bandOverrides.getOrDefault(ear, new HashMap<>());
+                int baseStep = baselineMap.getOrDefault(ear, 100);
+                Map<Integer,Integer> ag = audiogramMap.getOrDefault(ear, new HashMap<>());
+
+                // calculate one gain per band (average of overrides + calibration + audiogram)
+                float[] bandGains = new float[4];
+                for (int b = 0; b < 4; b++) {
+                    float gainSum = globalAmp;
+                    gainSum *= (baseStep / 100f);
+                    // override average
+                    if (!ov.isEmpty()) {
+                        float s=0; for (int v:ov.values()) s+=v/100f; gainSum *= s/ov.size();
+                    }
+                    // audiogram average
+                    if (!ag.isEmpty()) {
+                        float s=0; for (int v:ag.values()) s+=v/100f; gainSum *= s/ag.size();
+                    }
+                    bandGains[b] = gainSum;
+                }
+                // apply gains & sum
+                for (int i = 0; i < r; i++) {
                     float sum = 0;
-                    for (int v : ov.values()) sum += (v / 100f);
-                    bandGain = sum / ov.size();
+                    for (int b = 0; b < 4; b++) {
+                        sum += bandBufs[b][i] * bandGains[b];
+                    }
+                    procBuf[i] = (float)Math.tanh(sum);  // soft-clip immediately
                 }
-                int baseStep    = baselineMap.getOrDefault(ear, 100);
-                float baseGain  = baseStep / 100f;
-                float finalGain = globalAmp * bandGain * baseGain;
 
-                processFrameWithOversamplingFloat(rnOut, processed, finalGain);
-
-                float inRms  = calculateRMSFloat(inFloat, read);
-                float outRms = calculateRMSFloat(processed, read);
+                // waveform broadcast remains intact
+                float inRms  = calculateRMSFloat(inBuf, r);
+                float outRms = calculateRMSFloat(procBuf, r);
                 float normIn  = Math.max(0f, Math.min(1f, inRms));
                 float normOut = Math.max(0f, Math.min(1f, outRms));
-                sendBroadcast(new Intent("com.example.audion.WAVEFORM_UPDATE")
+                Intent wave = new Intent("com.example.audion.WAVEFORM_UPDATE")
                         .setPackage(getPackageName())
-                        .putExtra("inputLevel", normIn)
-                        .putExtra("outputLevel", normOut));
+                        .putExtra("inputLevel",  normIn)
+                        .putExtra("outputLevel", normOut);
+                sendBroadcast(wave);
 
-                audioTrack.write(processed, 0, read, AudioTrack.WRITE_BLOCKING);
-                totalFramesWritten += read;  // now mutating the field
-
-                long framesPlayed = audioTrack.getPlaybackHeadPosition();
-                double latencyMs  = ((totalFramesWritten - framesPlayed)
-                                    / (double) SAMPLE_RATE) * 1000.0;
-                sendBroadcast(new Intent("com.example.audion.LATENCY_UPDATE")
-                        .putExtra("LATENCY_MS", latencyMs));
+                audioTrack.write(procBuf, 0, r, AudioTrack.WRITE_BLOCKING);
+                totalFramesWritten += r;
             }
         }, "AudioProc");
 
         processThread.start();
     }
 
-    private float calculateRMSFloat(float[] buf, int length) {
-        float sum = 0;
-        for (int i = 0; i < length; i++) sum += buf[i] * buf[i];
-        return (float) Math.sqrt(sum / length);
+    private float calculateRMSFloat(float[] buf, int len) {
+        float sum = 0; for (int i = 0; i < len; i++) sum += buf[i] * buf[i];
+        return (float)Math.sqrt(sum / len);
     }
 
-    private float softClipFloat(float x) {
-        return (float) Math.tanh(x);
-    }
-
-    private void processFrameWithOversamplingFloat(
-            float[] in, float[] out, float amp) {
-        int N  = RNNoise.FRAME_SIZE;
-        int up = 2 * N - 1;
-        float[] tmp = new float[up];
-        for (int i = 0; i < N; i++) {
-            tmp[2*i] = in[i];
-            if (i < N-1) tmp[2*i+1] = 0.5f*(in[i] + in[i+1]);
-        }
-        for (int i = 0; i < up; i++) {
-            tmp[i] = safeClip(tmp[i] * amp);
-        }
-        for (int j = 0; j < N; j++) {
-            out[j] = (j < N-1)
-                   ? 0.5f*(tmp[2*j] + tmp[2*j+1])
-                   : tmp[2*j];
-        }
-    }
-
-    /** Soft-clip helper */
-    private float safeClip(float x) {
-        return (float) Math.tanh(x);
-    }
-
-    @Override
-    public void onDestroy() {
+    @Override public void onDestroy() {
         super.onDestroy();
         unregisterReceiver(stopStreamingReceiver);
         isProcessing = false;
         try { processThread.join(500); } catch (InterruptedException ignored) {}
-        if (audioRecord != null) {
-            audioRecord.stop();
-            audioRecord.release();
-        }
-        if (audioTrack != null) {
-            audioTrack.stop();
-            audioTrack.release();
-        }
-        if (rnnoise != null) rnnoise.destroy();
+        if (audioRecord != null) { audioRecord.stop(); audioRecord.release(); }
+        if (audioTrack  != null) { audioTrack.stop();  audioTrack.release();  }
+        if (rnnoise     != null) { rnnoise.destroy();                     }
     }
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+    @Nullable @Override public IBinder onBind(Intent intent) { return null; }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel ch = new NotificationChannel(
                     CHANNEL_ID, "Audio Streaming", NotificationManager.IMPORTANCE_LOW);
-            getSystemService(NotificationManager.class)
-                .createNotificationChannel(ch);
+            getSystemService(NotificationManager.class).createNotificationChannel(ch);
         }
+    }
+
+    // ─── Simple 2nd‐order Butterworth bandpass helper ─────────────────────────
+// ─── Proper 2nd-order Butterworth band-pass filter ─────────────────────
+    private static class BandPassFilter {
+        private final double b0, b1, b2, a1, a2;
+        private double x1, x2, y1, y2;
+
+        /**
+         * @param fLow Lower cutoff frequency in Hz
+         * @param fHigh Upper cutoff frequency in Hz
+         * @param fs Sampling rate in Hz
+         */
+        public BandPassFilter(double fLow, double fHigh, double fs) {
+            // center frequency and Q
+            double f0 = Math.sqrt(fLow * fHigh);
+            double w0 = 2 * Math.PI * f0 / fs;
+            double BW = fHigh - fLow;
+            double Q  = f0 / BW;
+
+            double alpha = Math.sin(w0) / (2 * Q);
+            double cosw0 = Math.cos(w0);
+
+            // RBJ cookbook coefficients (band-pass)
+            double A0 = 1 + alpha;
+            double B0 = alpha;
+            double B1 = 0;
+            double B2 = -alpha;
+            double A1 = -2 * cosw0;
+            double A2 = 1 - alpha;
+
+            // normalize
+            b0 = B0 / A0;
+            b1 = B1 / A0;
+            b2 = B2 / A0;
+            this.a1 = A1 / A0;
+            this.a2 = A2 / A0;
+
+            x1 = x2 = y1 = y2 = 0;
+        }
+
+        /**
+         * Process one block of samples.
+         * @param in  input buffer (length >= n)
+         * @param out output buffer (length >= n)
+         * @param n   number of samples
+         */
+        public void process(float[] in, float[] out, int n) {
+            for (int i = 0; i < n; i++) {
+                double x0 = in[i];
+                double y0 = b0 * x0
+                        + b1 * x1
+                        + b2 * x2
+                        - a1 * y1
+                        - a2 * y2;
+                out[i] = (float)y0;
+                // shift delays
+                x2 = x1; x1 = x0;
+                y2 = y1; y1 = y0;
+            }
+        }
+
+
+        private double A0(){ return 1 + Math.sin(Math.log(2)/2); } // placeholder
     }
 }

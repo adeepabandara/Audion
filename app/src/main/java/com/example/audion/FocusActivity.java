@@ -339,6 +339,8 @@ public class FocusActivity extends AppCompatActivity
                 )
         );;
 
+
+
         toggleButton.setVisibility(View.INVISIBLE);
         toggleButton.setEnabled(false);
         enrollButton.setEnabled(false);

@@ -52,22 +52,30 @@
                 android:id="@+id/toggleButton"
                 android:visibility="gone"
                 style="@style/Widget.MaterialComponents.Button"
-                android:layout_width="0dp"
-                android:layout_height="0dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:minWidth="180dp"
+                android:minHeight="180dp"
+                android:background="@drawable/circle_button_background"
+                android:fontFamily="monospace"
+                android:gravity="center"
+                android:paddingTop="16dp"
                 android:text="Start"
-                android:textSize="20sp"
                 android:textColor="@android:color/white"
+                android:textSize="20sp"
                 app:icon="@drawable/ic_play"
-                app:iconSize="95dp"
                 app:iconGravity="top"
                 app:iconPadding="0dp"
+                app:iconSize="95dp"
                 app:iconTint="@null"
-                app:cornerRadius="100dp"
                 app:layout_constraintWidth_percent="0.5"
                 app:layout_constraintDimensionRatio="1:1"
                 app:layout_constraintTop_toBottomOf="@id/spacer"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"/>
+
+
 
             <!-- WaveformView under toggle -->
             <com.example.audion.WaveformView

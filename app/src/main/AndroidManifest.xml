@@ -50,9 +50,15 @@
                 <activity android:name=".FrequencyActivity" 
            android:windowSoftInputMode="adjustResize"/>
 
+           
+
+                <activity android:name=".AudiogramFragment" 
+           android:windowSoftInputMode="adjustResize"/>
+
+
 
            
-                <activity android:name=".AudiogramActivity" 
+                <activity android:name=".GraphActivity" 
            android:windowSoftInputMode="adjustResize"/>
 
                            <activity android:name=".BaselineCalibrationActivity" 
