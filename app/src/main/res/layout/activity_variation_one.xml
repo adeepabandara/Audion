@@ -20,11 +20,83 @@
         app:tabSelectedTextColor="@color/primary"
         app:tabTextColor="@color/primary" />
 
+    <!-- Personalization Status Banner -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/personalizationStatusCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tabLayout"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:strokeWidth="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/personalizationStatusIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginRight="12dp"
+                android:src="@drawable/ic_hearing"
+                android:tint="@color/red_alert" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/personalizationStatusTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hearing Personalization Incomplete"
+                    android:textColor="@color/red_alert"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/personalizationStatusSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Run hearing test for personalized audio"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp" />
+
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/personalizationActionButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="START TEST"
+                android:textSize="12sp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
     <ScrollView
         android:id="@+id/mainScrollView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/tabLayout"
+        android:layout_below="@id/personalizationStatusCard"
         android:layout_above="@id/bottomNavigationView"
         android:overScrollMode="always"
         android:clipToPadding="false"
@@ -135,6 +207,48 @@
                     android:layout_height="wrap_content"
                     app:thumbTint="@color/switch_thumb_tint"
                     app:trackTint="@color/switch_track_tint" />
+            </LinearLayout>
+
+            <!-- Hearing Profile Card -->
+            <LinearLayout
+                android:id="@+id/hearingProfileCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="60dp"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/rounded_mint_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="24dp"
+                android:paddingRight="24dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginRight="12dp"
+                    android:src="@drawable/ic_hearing"
+                    android:tint="@color/primary" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Your Hearing Profile"
+                    android:textSize="16sp"
+                    android:textColor="@color/primary"
+                    android:gravity="center_vertical" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/viewHearingProfileButton"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="VIEW"
+                    android:textSize="14sp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp" />
+
             </LinearLayout>
 
             <LinearLayout

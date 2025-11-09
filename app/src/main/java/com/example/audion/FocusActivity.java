@@ -92,16 +92,16 @@ public class FocusActivity extends AppCompatActivity
     private Runnable scanTextRunnable;
     private int scanTextIndex = 0;
 
-    private RNNoise rnnoise;
     private DirectDiarizationManager diarizationManager;
-    private AudioRecord audioRecord;
-    private AudioTrack audioTrack;
     private boolean isProcessing = false;
-    private ProcessThread processThread;
 
     private boolean speakerIsolationEnabled = false;
     private EnrollmentActivity.EnrolledSpeaker selectedEnrolledSpeaker = null;
     private int currentChunkId = 0;
+    
+    // Speaker isolation update handler
+    private final Handler speakerCheckHandler = new Handler(Looper.getMainLooper());
+    private Runnable speakerCheckRunnable;
 
     private AudioRecord enrollmentRecorder;
     private boolean isEnrolling = false;
@@ -349,9 +349,6 @@ public class FocusActivity extends AppCompatActivity
 
         // Background init
         new Thread(() -> {
-            rnnoise = new RNNoise();
-            rnnoise.initialize();
-
             initializeDiarizationManager();
 
             runOnUiThread(() -> {
@@ -422,6 +419,14 @@ public class FocusActivity extends AppCompatActivity
             toggleButton.setVisibility(View.VISIBLE);
             toggleButton.setEnabled(true);
             updateToggleUi(false);
+            
+            // Update Focus Mode manager with new speaker
+            if (speaker != null) {
+                FocusModeManager.getInstance().setSelectedSpeakerEmbedding(speaker.getEmbedding());
+            }
+            
+            // Update speaker isolation state when speaker is selected
+            updateSpeakerIsolationState();
         });
         enrolledSpeakersRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         enrolledSpeakersRecyclerView.setAdapter(enrolledSpeakersAdapter);
@@ -594,34 +599,37 @@ public class FocusActivity extends AppCompatActivity
             if (!diarizationManager.isInitialized())
                 diarizationManager.initialize();
 
-            audioRecord = new AudioRecord(
-                MediaRecorder.AudioSource.VOICE_RECOGNITION,
-                SAMPLE_RATE, CHANNEL_CONFIG_IN, AUDIO_FORMAT, BUFFER_SIZE_IN);
-            audioTrack = new AudioTrack.Builder()
-                .setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build())
-                .setAudioFormat(new AudioFormat.Builder()
-                    .setEncoding(AUDIO_FORMAT)
-                    .setSampleRate(SAMPLE_RATE)
-                    .setChannelMask(CHANNEL_CONFIG_OUT)
-                    .build())
-                .setBufferSizeInBytes(BUFFER_SIZE_OUT)
-                .setTransferMode(AudioTrack.MODE_STREAM)
-                .build();
+            // Initialize Focus Mode manager with diarization and selected speaker
+            FocusModeManager.getInstance().initialize(this, diarizationManager);
+            if (selectedEnrolledSpeaker != null) {
+                FocusModeManager.getInstance().setSelectedSpeakerEmbedding(
+                    selectedEnrolledSpeaker.getEmbedding()
+                );
+            }
 
-            audioRecord.startRecording();
-            audioTrack.play();
+            // Start SimpleAudioStreamingService with Phase 2+3 DSP
+            startAudioStreamingServiceInFocusMode();
+            
             isProcessing = true;
             speakerIsolationEnabled = true;
             updateToggleUi(true);
             focusWaveform.setVisibility(View.VISIBLE);
             focusWaveform.levels.clear();
-
-            processThread = new ProcessThread();
-            processThread.setPriority(Thread.MAX_PRIORITY);
-            processThread.start();
+            
+            // Enable speaker isolation in service
+            updateSpeakerIsolationState();
+            
+            // Start continuous speaker state monitoring (check every 100ms)
+            speakerCheckRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    if (isProcessing && speakerIsolationEnabled) {
+                        updateSpeakerIsolationState();
+                        speakerCheckHandler.postDelayed(this, 100); // Check every 100ms
+                    }
+                }
+            };
+            speakerCheckHandler.post(speakerCheckRunnable);
 
         } catch (Exception e) {
             Log.e(TAG, "Error starting processing", e);
@@ -633,20 +641,22 @@ public class FocusActivity extends AppCompatActivity
     private void stopProcessing() {
         isProcessing = false;
         speakerIsolationEnabled = false;
-        if (processThread != null) {
-            try { processThread.join(1000); } catch (Exception ignored) { }
+        
+        // Stop continuous speaker state monitoring
+        if (speakerCheckRunnable != null) {
+            speakerCheckHandler.removeCallbacks(speakerCheckRunnable);
+            speakerCheckRunnable = null;
         }
-        if (audioRecord != null) {
-            audioRecord.stop();
-            audioRecord.release();
-            audioRecord = null;
-        }
-        if (audioTrack != null) {
-            audioTrack.stop();
-            audioTrack.flush();
-            audioTrack.release();
-            audioTrack = null;
-        }
+        
+        // Shutdown Focus Mode manager
+        FocusModeManager.getInstance().shutdown();
+        
+        // Disable speaker isolation in service
+        sendSpeakerIsolationBroadcast(false, true, currentChunkId);
+        
+        // Stop SimpleAudioStreamingService
+        stopAudioStreamingService();
+        
         focusWaveform.setVisibility(View.GONE);
         updateToggleUi(false);
     }
@@ -699,6 +709,9 @@ public class FocusActivity extends AppCompatActivity
             globalSpeakersRecyclerView.setVisibility(View.VISIBLE);
             globalSpeakersAdapter.notifyDataSetChanged();
         });
+        
+        // Update speaker isolation state when speaker history changes
+        updateSpeakerIsolationState();
     }
     @Override public void onBufferFillProgress(float p) { }
     @Override public void onProcessingProgress(float p) {
@@ -714,47 +727,7 @@ public class FocusActivity extends AppCompatActivity
         );
     }
 
-    private class ProcessThread extends Thread {
-        private static final int FRAME_SIZE = RNNoise.FRAME_SIZE;
-        @Override public void run() {
-            float[] inBuf  = new float[BUFFER_SIZE_IN/4];
-            float[] outBuf = new float[BUFFER_SIZE_IN/4];
 
-            while (isProcessing) {
-                int r = audioRecord.read(inBuf, 0, inBuf.length,
-                                         AudioRecord.READ_BLOCKING);
-                if (r < 0) break;
-                System.arraycopy(inBuf,  0, outBuf,  0, r);
-
-                // RNNoise
-                for (int i = 0; i + FRAME_SIZE <= r; i += FRAME_SIZE) {
-                    float[] fb = new float[FRAME_SIZE];
-                    System.arraycopy(outBuf, i, fb, 0, FRAME_SIZE);
-                    RNNoise.ProcessResult res = rnnoise.processFrame(fb);
-                    System.arraycopy(res.audio, 0, outBuf, i, FRAME_SIZE);
-                }
-
-                if (diarizationManager != null) {
-                    diarizationManager.processAudioFrame(outBuf);
-                    currentChunkId = diarizationManager.getCurrentChunkId();
-                }
-
-                if (speakerIsolationEnabled && selectedEnrolledSpeaker != null) {
-                    isolateEnrolledSpeaker(outBuf, r);
-                }
-
-                for (int i = 0; i < r; i++) {
-                    outBuf[i] *= amplificationFactor;
-                }
-                audioTrack.write(outBuf, 0, r, AudioTrack.WRITE_BLOCKING);
-                float sum = 0f;
-                for (int j = 0; j < r; j++) sum += outBuf[j] * outBuf[j];
-                float rms = (float)Math.sqrt(sum / r);
-                lbm.sendBroadcast(new Intent("com.example.audion.WAVEFORM_UPDATE")
-                        .putExtra("outputLevel", rms));;
-            }
-        }
-    }
 
     private void isolateEnrolledSpeaker(float[] buf, int size) {
         try {
@@ -769,6 +742,52 @@ public class FocusActivity extends AppCompatActivity
             for (int i = 0; i < size; i++) buf[i] = 0f;
         } catch (Exception ignored) { }
     }
+    
+    /**
+     * Check if the selected enrolled speaker is currently active and send broadcast to service.
+     * This allows SimpleAudioStreamingService to apply speaker isolation in real-time.
+     */
+    private void updateSpeakerIsolationState() {
+        if (selectedEnrolledSpeaker == null || diarizationManager == null) {
+            // No speaker selected or diarization not ready - disable isolation
+            sendSpeakerIsolationBroadcast(false, true, currentChunkId);
+            return;
+        }
+        
+        boolean speakerActive = false;
+        try {
+            // Check if selected speaker is among currently active speakers
+            for (var s : diarizationManager.getActiveSpeakers(currentChunkId)) {
+                if (diarizationManager.isSpeakerMatchingEnrollment(
+                        s.getGlobalId(),
+                        selectedEnrolledSpeaker.getEmbedding()
+                )) {
+                    speakerActive = true;
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            Log.w("FocusActivity", "Error checking active speakers", e);
+        }
+        
+        // Send broadcast to service with current state
+        sendSpeakerIsolationBroadcast(true, speakerActive, currentChunkId);
+    }
+    
+    /**
+     * Send broadcast to SimpleAudioStreamingService to update speaker isolation state.
+     */
+    private void sendSpeakerIsolationBroadcast(boolean enabled, boolean speakerActive, int chunkId) {
+        Intent intent = new Intent("com.example.audion.ACTION_SET_SPEAKER_ISOLATION");
+        intent.putExtra("isolationEnabled", enabled);
+        intent.putExtra("speakerActive", speakerActive);
+        intent.putExtra("chunkId", chunkId);
+        sendBroadcast(intent);
+        
+        Log.d("FocusActivity", String.format("[Focus Mode] Broadcasting speaker isolation: enabled=%b, active=%b, chunk=%d",
+            enabled, speakerActive, chunkId));
+    }
+
 
     private void startEnrollment() {
         if (!hasPermissions()) { requestPermissions(); return; }
@@ -1015,7 +1034,6 @@ public class FocusActivity extends AppCompatActivity
 
     @Override protected void onDestroy() {
         if (isProcessing) stopProcessing();
-        if (rnnoise != null) { rnnoise.destroy(); rnnoise = null; }
         if (diarizationManager != null) {
             diarizationManager.release();
             diarizationManager = null;
@@ -1026,5 +1044,27 @@ public class FocusActivity extends AppCompatActivity
     /** Called by adapters for inline status updates */
     public void updateStatus(String message) {
         // runOnUiThread(() -> statusText.setText(message));
+    }
+    
+    /**
+     * Start SimpleAudioStreamingService with Phase 2+3 DSP (includes RNNoise + clinical processing)
+     */
+    private void startAudioStreamingServiceInFocusMode() {
+        Log.d(TAG, "Starting SimpleAudioStreamingService with Phase 2+3 DSP for Focus Mode");
+        
+        // SimpleAudioStreamingService doesn't require mode setting - it always uses Phase 2+3 pipeline
+        // Focus-specific functionality (speaker isolation, diarization) is handled by FocusActivity itself
+        Intent serviceIntent = new Intent(this, SimpleAudioStreamingService.class);
+        ContextCompat.startForegroundService(this, serviceIntent);
+        
+        Log.i(TAG, "Focus Mode: Using Phase 2+3 DSP with WDRC, feedback cancellation, and scene analysis");
+    }
+    
+    /**
+     * Stop SimpleAudioStreamingService
+     */
+    private void stopAudioStreamingService() {
+        Log.d(TAG, "Stopping SimpleAudioStreamingService");
+        stopService(new Intent(this, SimpleAudioStreamingService.class));
     }
 }

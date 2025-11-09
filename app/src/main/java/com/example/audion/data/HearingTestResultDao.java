@@ -2,6 +2,7 @@ package com.example.audion.data;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 import java.util.List;
@@ -14,6 +15,9 @@ public interface HearingTestResultDao {
 
     @Insert
     void insert(HearingTestResult result);
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertOrReplace(HearingTestResult result);
 
     @Update
     void update(HearingTestResult result);
@@ -44,5 +48,8 @@ public interface HearingTestResultDao {
 
 
     @Query("SELECT * FROM hearing_test_results WHERE userId = :userId AND hearingProfileId = :profileId")
-List<HearingTestResult> getResultsForUserAndProfile(int userId, int profileId);
+    List<HearingTestResult> getResultsForUserAndProfile(int userId, int profileId);
+
+    @Query("SELECT * FROM hearing_test_results WHERE userId = :userId AND hearingProfileId = :profileId")
+    List<HearingTestResult> getResultsByUserAndProfile(int userId, int profileId);
 }

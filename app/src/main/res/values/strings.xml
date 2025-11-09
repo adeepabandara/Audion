@@ -1,7 +1,31 @@
 <resources>
-    <string name="app_name"></string>
+    <string name="app_name">Audion</string>
 
     <string name="status_text_description">
     1. Listen and identify the speaker.\n2. Select a speaker and click on the Start button
 </string>
+
+    <!-- Onboarding Strings -->
+    <string name="onboarding_main_title">We believe in</string>
+    <string name="onboarding_natural">Natural</string>
+    <string name="onboarding_technology">Technology</string>
+    <string name="onboarding_description">Experience the perfect harmony of natural sound processing and cutting-edge technology. Our app enhances your hearing experience with personalized audio amplification that adapts to your unique needs, creating a seamless bridge between you and the world around you.</string>
+    <string name="onboarding_apple_button_text">Let\'s get started</string>
+
+    <!-- Name Screen Strings -->
+    <string name="name_question">What\'s your name?</string>
+    <string name="name_hint">Your name</string>
+    <string name="name_continue_text">Continue</string>
+    <string name="name_legal_text">By tapping "Continue", you agree to our Terms of Service and Privacy Policy</string>
+    
+    <!-- New Onboarding Carousel Strings -->
+    <string name="whats_your_name_title">What\'s your name?</string>
+    <string name="enter_your_name_hint">Enter your name</string>
+    <string name="continue_button">Continue</string>
+    <string name="ready_to_test_title">Personalize Your Hearing</string>
+    <string name="hearing_test_description">No appointments, no trouble. Audion helps you get your pure-tone audiogram right from your phone.</string>
+    <string name="start_test_button">Get Started</string>
+    <string name="test_later_link">Continue Later</string>
+    <string name="onboarding_illustration_desc">Onboarding illustration</string>
+    <string name="hearing_test_illustration_desc">Hearing test illustration</string>
 </resources>

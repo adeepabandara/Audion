@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="16dp">
+
+        <!-- No Data Message (hidden when data is available) -->
+        <TextView
+            android:id="@+id/noDataText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="100dp"
+            android:fontFamily="@font/poppins"
+            android:gravity="center"
+            android:text="No test data available"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:visibility="gone"/>
+
+        <!-- Audiogram Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="12dp"
+            android:fontFamily="@font/poppins"
+            android:text="Pure Tone Audiogram"
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+
+            <com.example.audion.views.AudiogramView
+                android:id="@+id/audiogramView"
+                android:layout_width="match_parent"
+                android:layout_height="400dp"
+                android:padding="8dp"/>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Calibration Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:fontFamily="@font/poppins"
+            android:text="Comfortable Listening Levels"
+            android:textColor="@android:color/black"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+
+            <com.example.audion.views.CalibrationSummaryView
+                android:id="@+id/calibrationSummaryView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"/>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Summary Text -->
+        <TextView
+            android:id="@+id/summaryText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="100dp"
+            android:background="#FFFFFF"
+            android:fontFamily="@font/poppins"
+            android:lineSpacingExtra="4dp"
+            android:padding="16dp"
+            android:text="Your comfortable listening range is between 65–80 dB HL across key frequencies."
+            android:textColor="@color/onboarding_text_secondary"
+            android:textSize="14sp"/>
+
+    </LinearLayout>
+
+</ScrollView>

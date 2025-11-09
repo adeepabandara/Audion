@@ -13,7 +13,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.audion.AudioStreamingService;
 import com.example.audion.R;
 import com.example.audion.data.AppDatabase;
 import com.example.audion.data.HearingTestResult;
@@ -103,12 +102,7 @@ public class RightEarFragment extends Fragment {
                     btnSave.setVisibility(View.VISIBLE);
                     saveShown=true;
                 }
-                Intent i=new Intent(requireContext(),AudioStreamingService.class);
-                i.setAction(AudioStreamingService.ACTION_UPDATE_GAIN);
-                i.putExtra(AudioStreamingService.EXTRA_EAR,"right");
-                i.putExtra(AudioStreamingService.EXTRA_FREQ,freq);
-                i.putExtra(AudioStreamingService.EXTRA_AMPL,prog);
-                requireContext().startService(i);
+                // Real-time gain adjustment removed - now using simple amplification control
             }
             @Override public void onStartTrackingTouch(SeekBar s){}
             @Override public void onStopTrackingTouch(SeekBar s){}
@@ -117,6 +111,19 @@ public class RightEarFragment extends Fragment {
 
     private void onSave(){
         new Thread(() -> {
+            // Ensure HearingProfile exists before inserting HearingTestResult
+            AppDatabase db = AppDatabase.getInstance(requireActivity());
+            com.example.audion.data.HearingProfileDao profileDao = db.hearingProfileDao();
+            com.example.audion.data.HearingProfile profile = profileDao.getHearingProfileById(profileId);
+            if (profile == null) {
+                // Create a default profile if it doesn't exist
+                android.util.Log.d("RightEarFragment", "Creating default HearingProfile with ID: " + profileId);
+                com.example.audion.data.HearingProfile newProfile = new com.example.audion.data.HearingProfile("Standard Mode", "default_icon");
+                long newId = profileDao.insert(newProfile);
+                profileId = (int) newId;
+                android.util.Log.d("RightEarFragment", "Created HearingProfile with new ID: " + profileId);
+            }
+            
             for(int freq:FREQUENCIES){
                 View row=rowMap.get(freq);
                 int prog=((SeekBar)row.findViewById(

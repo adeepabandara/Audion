@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Theme Colors for Onboarding -->
+    <color name="onboarding_background">#1F2937</color>
+    <color name="onboarding_text_primary">#F9FAFB</color>
+    <color name="onboarding_text_secondary">#D1D5DB</color>
+    <color name="onboarding_text_tertiary">#6B7280</color>
+    
+    <!-- Progress Indicator Colors (Dark Theme) -->
+    <color name="indicator_active">#0F766E</color>
+    <color name="indicator_inactive">#B4B4B8</color>
+</resources>

@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_pastel_gradient"
+    android:fitsSystemWindows="true">
+
+    <!-- ───────── Scrollable content ───────── -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/contentScroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:padding="32dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/buttonBlock"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Ear label -->
+            <TextView
+                android:id="@+id/tvEarLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Right Ear"
+                android:textColor="@android:color/white"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif"
+                android:layout_marginTop="16dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Countdown pre-instruction -->
+            <TextView
+                android:id="@+id/textInstruction"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="You will hear the tone in..."
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:alpha="0.8"
+                app:layout_constraintTop_toBottomOf="@id/tvEarLabel"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Volume percentage chip -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/volumeChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Volume: 50%"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                app:chipBackgroundColor="#0F766E"
+                app:chipStrokeWidth="0dp"
+                app:chipCornerRadius="20dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/textInstruction"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Instructions text (no card background) -->
+            <TextView
+                android:id="@+id/tvStaticInstruction"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="• Every time you hear the tone tap 👍\n• If the tone is not audible, tap 👎"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif"
+                android:lineSpacingExtra="4dp"
+                android:gravity="center"
+                android:alpha="0.9"
+                app:layout_constraintTop_toBottomOf="@id/volumeChip"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Countdown value -->
+            <TextView
+                android:id="@+id/textCountdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="3"
+                android:textColor="@android:color/white"
+                android:textSize="64sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/tvStaticInstruction"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Lottie animation -->
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/toneAnimation"
+                android:layout_width="200dp"
+                android:layout_height="165dp"
+                android:layout_marginTop="32dp"
+                android:adjustViewBounds="true"
+                android:scaleType="fitCenter"
+                app:lottie_autoPlay="true"
+                app:lottie_fileName="calibration.json"
+                app:lottie_loop="true"
+                app:layout_constraintTop_toBottomOf="@id/tvStaticInstruction"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Volume slider (hidden) -->
+            <SeekBar
+                android:id="@+id/seekBarVolume"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="24dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/toneAnimation"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ───────── Fixed button block ───────── -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/buttonBlock"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="24dp"
+        android:background="@drawable/bg_pastel_gradient"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- Circular thumbs buttons -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonNotHear"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginEnd="16dp"
+            android:backgroundTint="@android:color/white"
+            app:strokeColor="#EF4444"
+            app:strokeWidth="2dp"
+            app:cornerRadius="40dp"
+            android:text="👎"
+            android:textColor="#EF4444"
+            android:textAllCaps="false"
+            android:textSize="24sp"
+            android:fontFamily="sans-serif"
+            android:elevation="0dp"
+            app:elevation="0dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/buttonNextStep"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/buttonHear"
+            app:layout_constraintHorizontal_chainStyle="packed" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonHear"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginStart="16dp"
+            android:backgroundTint="@android:color/white"
+            app:strokeColor="#10B981"
+            app:strokeWidth="2dp"
+            app:cornerRadius="40dp"
+            android:text="👍"
+            android:textColor="#10B981"
+            android:textAllCaps="false"
+            android:textSize="24sp"
+            android:fontFamily="sans-serif"
+            android:elevation="0dp"
+            app:elevation="0dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/buttonNextStep"
+            app:layout_constraintStart_toEndOf="@id/buttonNotHear"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_chainStyle="packed" />
+
+        <!-- Next button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonNextStep"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="#0F766E"
+            android:text="Next"
+            android:textColor="#FFFFFF"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif"
+            app:cornerRadius="32dp"
+            android:elevation="0dp"
+            app:elevation="0dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/buttonNotHear"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

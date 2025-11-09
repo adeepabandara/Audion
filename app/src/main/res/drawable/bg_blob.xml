@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="72dp"
+    android:viewportWidth="120"
+    android:viewportHeight="72">
+    
+    <!-- Abstract blob shape with soft pastel gradient -->
+    <path
+        android:pathData="M60,10C80,10 95,20 100,35C105,50 90,60 70,62C50,64 30,55 25,40C20,25 40,10 60,10Z"
+        android:fillType="evenOdd">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="60"
+                android:centerY="36"
+                android:gradientRadius="50"
+                android:startColor="#F3E8FF"
+                android:centerColor="#E9D5FF"
+                android:endColor="#DBEAFE" />
+        </aapt:attr>
+    </path>
+    
+    <!-- Secondary blob for depth -->
+    <path
+        android:pathData="M45,25C60,22 75,28 80,40C85,52 75,58 60,55C45,52 35,45 38,35C40,25 45,25 45,25Z"
+        android:fillColor="#F0ABFC"
+        android:fillAlpha="0.3" />
+        
+</vector>

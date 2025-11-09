@@ -1,0 +1,1447 @@
+package com.example.audion;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+
+import android.content.Intent;
+import android.media.AudioDeviceInfo;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.example.audion.audio.ToneGenerator; // Legacy fallback support
+import com.example.audion.data.AppDatabase;
+import com.example.audion.data.HearingTestResult;
+import com.example.audion.data.HearingTestResultDao;
+import com.example.audion.data.AudiometryResult;
+import com.example.audion.data.AudiometryResultDao;
+import com.google.android.material.button.MaterialButton;
+
+// ANSI Audiometry imports
+import com.audion.audiometry.ANSI_AudiometryEngine;
+import com.audion.audiometry.RETSPLTable;
+import java.util.Map;
+import java.util.HashMap;
+
+public class PureToneTestActivity extends AppCompatActivity {
+
+    // ANSI S3.6 standard frequencies for pure tone audiometry
+    private final int[] frequencies = {250, 500, 1000, 2000, 3000, 4000, 6000, 8000};
+    private int currentFreqIndex = 0;
+    private String currentEar;
+    
+    // Test parameters from intent
+    private int userId;
+    private int hearingProfileId;
+
+    private ProgressBar progressBar;
+    private MaterialButton buttonStart, buttonHeard, buttonNotHeard;
+    private TextView frequencyDisplay, instructionText, thresholdDisplay;
+    
+    // Clinical audiometry state management
+    private boolean testStarted = false;
+    
+    // Hughson-Westlake threshold testing
+    private Map<Integer, Integer> thresholdResults; // frequency -> threshold in dB HL
+    private int currentThresholdLevel = 30; // Starting level in dB HL
+    private int consecutiveNoResponses = 0;
+    private int consecutiveResponses = 0;
+    private boolean thresholdFound = false;
+    
+    // Clinical audio generation
+    private com.example.audion.audio.ClinicalAudioGenerator audioGenerator;
+    private static final int TONE_DURATION_MS = 1500; // 1.5 seconds
+    private static final int TIMEOUT_DURATION_MS = 2500; // 2.5 seconds for response
+    private android.os.Handler timeoutHandler;
+
+    // Circular stepper components
+    private ImageView[] stepImages;
+    private TextView[] stepTexts;
+
+    private Thread playbackThread;
+    private volatile boolean stopPlayback = false;
+    private volatile boolean isRamping = false;
+    private volatile boolean reachedMaxVolume = false;
+    private int lastAmplitudeStep = 0;
+
+    private HearingTestResultDao hearingTestResultDao;
+    private AudiometryResultDao audiometryResultDao;
+    private int userId, hearingProfileId;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        Log.d("PureToneTest", "=== PureToneTestActivity onCreate START ===");
+        Log.d("PureToneTest", "System timestamp: " + System.currentTimeMillis());
+        
+        try {
+            supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_pure_tone_test_simplified);
+        
+        Log.d("PureToneTest", "Simplified layout set successfully");
+
+        // Initialize currentEar from the Intent
+        currentEar = getIntent().getStringExtra("EAR");
+        Log.d("PureToneTest", "Received EAR parameter: " + currentEar);
+        
+        if (currentEar == null) {
+            currentEar = "RIGHT"; // Default to RIGHT ear for pure tone test
+            Log.d("PureToneTest", "EAR was null, defaulting to: " + currentEar);
+        }
+
+        // Get intent extras
+        userId = getIntent().getIntExtra("USER_ID", -1);
+        hearingProfileId = getIntent().getIntExtra("HEARING_PROFILE_ID", -1);
+        if (userId < 0 || hearingProfileId < 0) {
+            Toast.makeText(this, "Missing USER_ID or HEARING_PROFILE_ID", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
+        // Initialize UI elements
+        setupSimplifiedUI();
+
+        // Initialize UI with simplified layout
+        setupSimplifiedUI();
+
+        // Initialize database components
+        hearingTestResultDao = AppDatabase.getInstance(this).hearingTestResultDao();
+        audiometryResultDao = AppDatabase.getInstance(this).audiometryResultDao();
+        
+        // Initialize clinical audio generator
+        audioGenerator = new ClinicalAudioGenerator();
+        Log.d("PureToneTest", "Initialized Clinical Pure Tone Testing mode");
+                
+                // Set up audio playback listener for ANSI engine
+                audiometryEngine.setAudioPlaybackListener(new ANSI_AudiometryEngine.AudioPlaybackListener() {
+                    @Override
+                    public void onToneStarted(int frequencyHz, int levelDbHL) {
+                        Log.d("PureToneTest", "ANSI tone started: " + frequencyHz + "Hz at " + levelDbHL + "dB HL");
+                        runOnUiThread(() -> {
+                            // Update UI to show tone is playing
+                            if (buttonHeard != null) {
+                                buttonHeard.setEnabled(true);
+                                buttonHeard.setAlpha(1.0f);
+                            }
+                            if (buttonNotHeard != null) {
+                                buttonNotHeard.setEnabled(true);
+                                buttonNotHeard.setAlpha(1.0f);
+                            }
+                        });
+                    }
+                    
+                    @Override
+                    public void onToneCompleted(int frequencyHz, int levelDbHL) {
+                        Log.d("PureToneTest", "ANSI tone completed: " + frequencyHz + "Hz at " + levelDbHL + "dB HL");
+                        // Keep buttons enabled for user response
+                    }
+                    
+                    @Override
+                    public void onToneError(String error) {
+                        Log.e("PureToneTest", "ANSI tone error: " + error);
+                        runOnUiThread(() -> {
+                            Toast.makeText(PureToneTestActivity.this, "Audio error: " + error, Toast.LENGTH_SHORT).show();
+                            // Fall back to legacy if audio fails
+                            useANSITesting = false;
+                            startLegacyRampTest();
+                        });
+                    }
+                });
+                
+                retsplTable = new RETSPLTable();
+                audiogramResults = new HashMap<>();
+                Log.d("PureToneTest", "ANSI audiometry engine initialized for " + currentEar + " ear");
+            } catch (Exception e) {
+                Log.e("PureToneTest", "Failed to initialize ANSI engine: " + e.getMessage(), e);
+                useANSITesting = false;
+                audiometryEngine = null;
+                Toast.makeText(this, "Audio system error - using fallback mode", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        buttonStart.setOnClickListener(v -> {
+            // Add button press animation
+            animateButtonPress(v);
+            
+            String buttonText = buttonStart.getText().toString();
+            Log.d("PureToneTest", "▶️ START BUTTON CLICKED - Text: " + buttonText);
+            
+            try {
+                if ("START TEST".equals(buttonText) && !testStarted) {
+                    // Initial test start - begin clinical hearing test
+                    Log.d("PureToneTest", "Starting clinical pure tone test for " + currentEar + " ear");
+                    Toast.makeText(this, "🎧 Starting clinical hearing test for " + currentEar + " ear", Toast.LENGTH_SHORT).show();
+                    
+                    testStarted = true;
+                    currentFreqIndex = 0;
+                    
+                    // Update UI
+                    runOnUiThread(() -> {
+                        buttonStart.setVisibility(View.GONE);
+                        buttonHeard.setVisibility(View.VISIBLE);
+                        progressBar.setProgress(0);
+                    });
+                    
+                    // Start clinical testing with delay
+                    new android.os.Handler().postDelayed(() -> {
+                        startClinicalTest();
+                    }, 500);
+                    
+                } else if ("Start again".equals(buttonText)) {
+                    // Handle completion - navigate to next step
+                    Log.d("PureToneTest", "Pure tone test completed for " + currentEar + " ear, navigating to next step");
+                    
+                    if ("RIGHT".equals(currentEar)) {
+                        // Right ear pure tone test done, proceed to left ear instruction
+                        Log.d("PureToneTest", "Right ear pure tone test completed, navigating to left ear instruction");
+                        Intent leftEarIntent = new Intent(this, LeftEarInstructionActivity.class);
+                        leftEarIntent.putExtra("USER_ID", userId);
+                        leftEarIntent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                        startActivity(leftEarIntent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
+                        finish();
+                    } else {
+                        // Both ears pure tone tests completed, navigate to TestResultsActivity
+                        Log.d("PureToneTest", "Both ears pure tone tests completed, navigating to results");
+                        Toast.makeText(this, "✅ Pure tone tests completed!", Toast.LENGTH_LONG).show();
+                        
+                        Intent resultsIntent = new Intent(this, TestResultsActivity.class);
+                        resultsIntent.putExtra("USER_ID", userId);
+                        resultsIntent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                        startActivity(resultsIntent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
+                        finish();
+                    }
+                } else {
+                    // Unexpected state
+                    Log.w("PureToneTest", "Unexpected start button state: " + buttonText + ", testStarted: " + testStarted);
+                }
+            } catch (Exception e) {
+                Log.e("PureToneTest", "Error in Start button click", e);
+            }
+        });
+        
+        buttonHeard.setOnClickListener(v -> {
+            // CRITICAL: Block if test hasn't started yet
+            if (!testStarted) {
+                Log.w("PureToneTest", "Heard button clicked before test started - blocking");
+                Toast.makeText(this, "⚠️ Press START TEST first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Add button press animation
+            animateButtonPress(v);
+            
+            Log.d("PureToneTest", "CLINICAL: User heard tone at " + currentThresholdLevel + "dB HL - " + 
+                  frequencies[currentFreqIndex] + "Hz, ear: " + currentEar);
+            
+            // Stop current tone immediately
+            if (audioGenerator != null) {
+                audioGenerator.stopTone();
+            }
+            
+            // Cancel timeout
+            if (timeoutHandler != null) {
+                timeoutHandler.removeCallbacksAndMessages(null);
+            }
+            
+            // Process clinical response
+            processClinicalResponse(true);
+        });
+        
+        // Initialize clinical components
+        thresholdResults = new HashMap<>();
+        audioGenerator = new com.example.audion.audio.ClinicalAudioGenerator();
+        timeoutHandler = new android.os.Handler();
+
+        // Initialize UI
+        setupClinicalUI();
+        
+        Log.d("PureToneTest", "=== Clinical PureToneTestActivity onCreate COMPLETED ===");
+        
+        } catch (Exception e) {
+            Log.e("PureToneTest", "Error in PureToneTestActivity onCreate", e);
+            // Handle the error gracefully
+            Toast.makeText(this, "Failed to initialize pure tone test", Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+    
+    /**
+     * CLINICAL METHODOLOGY: Process user response using Hughson-Westlake procedure
+     * @param heard true if user heard the tone, false if timeout (no response)
+     */
+    private void processClinicalResponse(boolean heard) {
+        int frequency = frequencies[currentFreqIndex];
+        
+        Log.d("PureToneTest", "CLINICAL: Processing response - freq: " + frequency + "Hz, level: " + 
+              currentThresholdLevel + "dB HL, heard: " + heard);
+        
+        if (heard) {
+            // User heard the tone - threshold is at or below this level
+            consecutiveResponses++;
+            consecutiveNoResponses = 0;
+            
+            // Decrease level by 10 dB for next presentation (Hughson-Westlake)
+            currentThresholdLevel -= 10;
+            
+            // Safety limit - don't go below -10 dB HL
+            if (currentThresholdLevel < -10) {
+                // Threshold found at minimum testable level
+                recordThresholdAndAdvance(-10);
+                return;
+            }
+            
+        } else {
+            // No response (timeout) - threshold is above this level
+            consecutiveNoResponses++;
+            consecutiveResponses = 0;
+            
+            // Check if we found threshold (ascending method)
+            if (consecutiveNoResponses >= 2 && currentThresholdLevel > 0) {
+                // Found threshold - record previous heard level
+                int threshold = currentThresholdLevel + 10; // Last heard level
+                recordThresholdAndAdvance(Math.min(threshold, 120)); // Cap at 120 dB HL
+                return;
+            }
+            
+            // Increase level by 5 dB for next presentation
+            currentThresholdLevel += 5;
+            
+            // Safety limit - don't exceed 120 dB HL
+            if (currentThresholdLevel > 120) {
+                // No response at maximum level - record as "No Response"
+                recordThresholdAndAdvance(125); // 125 indicates no response
+                return;
+            }
+        }
+        
+        // Continue testing at new level
+        presentNextTone();
+    }
+    
+    /**
+     * Present the next clinical tone with timeout
+     */
+    private void presentNextTone() {
+        int frequency = frequencies[currentFreqIndex];
+        
+        runOnUiThread(() -> {
+            // Update UI
+            frequencyDisplay.setText(frequency + " Hz");
+            thresholdDisplay.setText("Level: " + currentThresholdLevel + " dB HL");
+            instructionText.setText("Press 'Heard Tone' when you hear the sound");
+            
+            // Disable button during tone presentation
+            buttonHeard.setEnabled(false);
+            buttonHeard.setAlpha(0.5f);
+        });
+        
+        Log.d("PureToneTest", "CLINICAL: Presenting tone - " + frequency + "Hz at " + 
+              currentThresholdLevel + "dB HL");
+        
+        // Present tone with clinical parameters
+        audioGenerator.playClinicalTone(frequency, TONE_DURATION_MS, currentThresholdLevel, 
+                                      false, // false = dB HL (audiometry)
+                                      new com.example.audion.audio.ClinicalAudioGenerator.ToneCompletionCallback() {
+            @Override
+            public void onToneStarted() {
+                runOnUiThread(() -> {
+                    // Enable response button
+                    buttonHeard.setEnabled(true);
+                    buttonHeard.setAlpha(1.0f);
+                    
+                    // Start timeout timer
+                    timeoutHandler.postDelayed(() -> {
+                        // Timeout - no response
+                        Log.d("PureToneTest", "CLINICAL: Timeout - no response at " + 
+                              currentThresholdLevel + "dB HL");
+                        processClinicalResponse(false);
+                    }, TIMEOUT_DURATION_MS);
+                });
+            }
+            
+            @Override
+            public void onToneCompleted() {
+                // Tone finished playing normally
+            }
+            
+            @Override
+            public void onToneStopped() {
+                // Tone was stopped by user response - good
+            }
+            
+            @Override
+            public void onToneError(String error) {
+                Log.e("PureToneTest", "Clinical tone error: " + error);
+                runOnUiThread(() -> {
+                    Toast.makeText(PureToneTestActivity.this, "Audio error: " + error, Toast.LENGTH_SHORT).show();
+                    // Continue to next frequency to avoid getting stuck
+                    advanceToNextFrequency();
+                });
+            }
+        });
+    }
+    
+    /**
+     * Record threshold and advance to next frequency or complete test
+     */
+    private void recordThresholdAndAdvance(int thresholdDbHL) {
+        int frequency = frequencies[currentFreqIndex];
+        
+        // Store threshold result
+        thresholdResults.put(frequency, thresholdDbHL);
+        
+        Log.i("PureToneTest", "CLINICAL: Threshold found for " + frequency + "Hz: " + thresholdDbHL + "dB HL");
+        
+        // Save to database
+        saveThresholdResult(frequency, thresholdDbHL);
+        
+        // Reset for next frequency
+        currentThresholdLevel = 30; // Start next frequency at 30 dB HL
+        consecutiveResponses = 0;
+        consecutiveNoResponses = 0;
+        thresholdFound = false;
+        
+        // Advance to next frequency
+        advanceToNextFrequency();
+    }
+    
+    /**
+     * Save threshold result to database
+     */
+    private void saveThresholdResult(int frequency, int thresholdDbHL) {
+        new Thread(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(this);
+                AudiometryResultDao audiometryDao = db.audiometryResultDao();
+                
+                // Create audiometry result
+                // Calculate approximate SPL from HL (simplified conversion)
+                float thresholdDbSPL = thresholdDbHL + 20.0f; // Rough approximation for now
+                
+                AudiometryResult result = new AudiometryResult(
+                    userId,
+                    currentEar,
+                    frequency,
+                    thresholdDbHL,
+                    thresholdDbSPL,
+                    true, // isReliable - assume true for now
+                    3,    // reversalCount - default
+                    hearingProfileId
+                );
+                
+                // Delete any existing result for this combination to prevent duplicates
+                audiometryDao.deleteResult(userId, hearingProfileId, currentEar, frequency);
+                
+                // Insert new result
+                audiometryDao.insert(result);
+                
+                Log.d("PureToneTest", "CLINICAL: Saved threshold - " + frequency + "Hz: " + 
+                      thresholdDbHL + "dB HL for " + currentEar + " ear");
+                
+            } catch (Exception e) {
+                Log.e("PureToneTest", "Error saving threshold result: " + e.getMessage(), e);
+            }
+        }).start();
+    }
+    
+    /**
+     * Set up clinical audiometry UI
+     */
+    private void setupClinicalUI() {
+        // Find UI elements
+        buttonStart = findViewById(R.id.buttonStart);
+        buttonHeard = findViewById(R.id.buttonHeard);
+        progressBar = findViewById(R.id.progressBar);
+        frequencyDisplay = findViewById(R.id.frequencyDisplay);
+        instructionText = findViewById(R.id.instructionText);
+        thresholdDisplay = findViewById(R.id.thresholdDisplay);
+        
+        // Set up ear image
+        ImageView earImage = findViewById(R.id.imageViewEar);
+        if ("LEFT".equals(currentEar)) {
+            try {
+                earImage.setImageResource(R.drawable.left_ear);
+            } catch (Exception e) {
+                Log.w("PureToneTest", "Left ear image not found");
+            }
+        } else {
+            try {
+                earImage.setImageResource(R.drawable.right_ear);
+            } catch (Exception e) {
+                Log.w("PureToneTest", "Right ear image not found");
+            }
+        }
+        
+        // Initial UI state
+        buttonHeard.setText("Heard Tone");
+        buttonHeard.setVisibility(View.GONE);
+        frequencyDisplay.setText("Pure Tone Audiometry");
+        instructionText.setText("Press START TEST to begin hearing assessment");
+        thresholdDisplay.setText(currentEar + " Ear");
+        
+        // Progress indicator
+        progressBar.setMax(frequencies.length);
+        progressBar.setProgress(0);
+    }
+    
+    /**
+     * Start the audiometry test using ANSI engine if enabled, otherwise fallback to legacy
+     */
+    /**
+     * Start clinical hearing test using standard frequencies
+     */
+    private void startClinicalTest() {
+        Log.d("PureToneTest", "CLINICAL: Starting test with frequencies: " + java.util.Arrays.toString(frequencies));
+        
+        if (currentFreqIndex >= frequencies.length) {
+            // All frequencies complete for this ear
+            completeEarTest();
+            return;
+        }
+        
+        // Start with first frequency at 30 dB HL
+        currentThresholdLevel = 30;
+        consecutiveResponses = 0;
+        consecutiveNoResponses = 0;
+        thresholdFound = false;
+        
+        // Present first tone
+        presentNextTone();
+    }
+    
+
+    
+    /**
+     * Complete test for current ear and navigate appropriately
+     */
+    private void completeEarTest() {
+        Log.i("PureToneTest", "CLINICAL: Completed " + currentEar + " ear test");
+        
+        runOnUiThread(() -> {
+            // Show completion message
+            String message = "✅ " + currentEar + " ear test complete!";
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            
+            // Update UI
+            instructionText.setText("Test completed for " + currentEar + " ear");
+            buttonHeard.setVisibility(View.GONE);
+            buttonStart.setText("Continue");
+            buttonStart.setVisibility(View.VISIBLE);
+        });
+        
+        // Navigate to next step
+        if ("RIGHT".equals(currentEar)) {
+            // Navigate to LEFT ear test
+            new android.os.Handler().postDelayed(() -> {
+                Intent leftEarIntent = new Intent(this, LeftEarInstructionActivity.class);
+                leftEarIntent.putExtra("USER_ID", userId);
+                leftEarIntent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                startActivity(leftEarIntent);
+                finish();
+            }, 2000);
+        } else {
+            // Both ears complete - check calibration status
+            new android.os.Handler().postDelayed(() -> {
+                checkCalibrationStatusAndNavigate();
+            }, 2000);
+        }
+    }
+
+    private void startANSITestOrLegacy() {
+        Log.d("PureToneTest", "startANSITestOrLegacy called - useANSITesting: " + useANSITesting + ", ear: " + currentEar);
+        
+        if (!testStarted) {
+            Log.e("PureToneTest", "startANSITestOrLegacy called but test not started - blocking");
+            return;
+        }
+        
+        try {
+            if (useANSITesting && audiometryEngine != null) {
+                // Use ANSI audiometry engine for clinical testing
+                int testFrequency = frequencies[currentFreqIndex];
+                Log.d("PureToneTest", "Starting ANSI audiometry test for frequency: " + testFrequency + "Hz");
+                
+                // Validate frequency before starting test
+                Log.d("PureToneTest", "Validating frequency " + testFrequency + "Hz with ANSI engine");
+                
+                // Show test UI
+                showResponseUI();
+                
+                // Initialize ANSI test for current frequency using correct method name
+                boolean started = audiometryEngine.startThresholdTest(currentEar, testFrequency);
+                
+                if (started) {
+                    Log.i("PureToneTest", "ANSI threshold test started successfully for " + testFrequency + "Hz");
+                } else {
+                    Log.w("PureToneTest", "ANSI threshold test failed to start for " + testFrequency + "Hz, falling back to legacy");
+                    Toast.makeText(this, "Frequency " + testFrequency + "Hz not supported by ANSI engine, using legacy test", Toast.LENGTH_SHORT).show();
+                    startRampForCurrentFrequency();
+                }
+                
+            } else {
+                // Fallback to legacy ramp test
+                Log.d("PureToneTest", "Starting legacy ramp test for frequency: " + frequencies[currentFreqIndex] + "Hz");
+                startRampForCurrentFrequency();
+            }
+        } catch (Exception e) {
+            Log.e("PureToneTest", "Error in startANSITestOrLegacy", e);
+            Toast.makeText(this, "Error starting test", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void initializeSteppers() {
+        // Check if we're using the simplified layout (no steppers)
+        if (stepImages == null || stepImages.length == 0) {
+            Log.d("PureToneTest", "Using simplified layout - no steppers to initialize");
+            return;
+        }
+        
+        // Reset all steppers to inactive state (legacy layout)
+        for (int i = 0; i < stepImages.length; i++) {
+            if (stepImages[i] != null) {
+                try {
+                    stepImages[i].setImageResource(R.drawable.circle_inactive);
+                } catch (Exception e) {
+                    Log.w("PureToneTest", "Could not set stepper image: " + e.getMessage());
+                }
+            }
+            if (stepTexts[i] != null) {
+                try {
+                    stepTexts[i].setTextColor(ContextCompat.getColor(this, R.color.text_inactive));
+                } catch (Exception e) {
+                    Log.w("PureToneTest", "Could not set stepper text color: " + e.getMessage());
+                }
+            }
+        }
+        
+        // Mark current step as active
+        updateStepperProgress();
+    }
+    
+    private void updateStepperProgress() {
+        // Check if we're using the simplified layout (no steppers)
+        if (stepImages == null || stepImages.length == 0) {
+            // Update simplified layout progress indicators
+            updateSimplifiedProgress();
+            return;
+        }
+        
+        // Update stepper visual state based on current frequency index (1:1 mapping) - legacy layout
+        for (int i = 0; i < stepImages.length && i < stepTexts.length; i++) {
+            if (stepImages[i] != null && stepTexts[i] != null) {
+                try {
+                    if (i < currentFreqIndex) {
+                        // Completed step - use primary color
+                        stepImages[i].setImageResource(R.drawable.circle_completed);
+                        stepTexts[i].setTextColor(ContextCompat.getColor(this, android.R.color.white));
+                    } else if (i == currentFreqIndex) {
+                        // Current active step - use primary color
+                        stepImages[i].setImageResource(R.drawable.circle_active);
+                        stepTexts[i].setTextColor(ContextCompat.getColor(this, R.color.primary));
+                    } else {
+                        // Future step - inactive
+                        stepImages[i].setImageResource(R.drawable.circle_inactive);
+                        stepTexts[i].setTextColor(ContextCompat.getColor(this, R.color.text_inactive));
+                    }
+                } catch (Exception e) {
+                    Log.w("PureToneTest", "Could not update stepper " + i + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+    
+    private void updateSimplifiedProgress() {
+        // Update progress for simplified layout
+        TextView progressText = findViewById(R.id.progressText);
+        TextView frequencyText = findViewById(R.id.frequencyText);
+        
+        if (progressText != null) {
+            progressText.setText("Test " + (currentFreqIndex + 1) + " of " + frequencies.length);
+        }
+        
+        if (frequencyText != null && currentFreqIndex < frequencies.length) {
+            frequencyText.setText(frequencies[currentFreqIndex] + " Hz");
+        }
+    }
+
+    private void startRampForCurrentFrequency() {
+        Log.d("PureToneTest", "startRampForCurrentFrequency called for " + currentEar + " ear, frequency index: " + currentFreqIndex);
+        Log.d("PureToneTest", "useANSITesting = " + useANSITesting + ", audiometryEngine = " + (audiometryEngine != null ? "initialized" : "null"));
+        
+        // Add safety check for frequency index
+        if (currentFreqIndex < 0 || currentFreqIndex >= frequencies.length) {
+            Log.e("PureToneTest", "Invalid frequency index: " + currentFreqIndex + ", resetting to 0");
+            currentFreqIndex = 0;
+        }
+        
+        try {
+            if (useANSITesting && audiometryEngine != null) {
+                Log.d("PureToneTest", "Starting ANSI threshold test...");
+                startANSIThresholdTest();
+            } else {
+                Log.d("PureToneTest", "Starting legacy ramp test...");
+                startLegacyRampTest();
+            }
+        } catch (Exception e) {
+            Log.e("PureToneTest", "Error in startRampForCurrentFrequency: " + e.getMessage(), e);
+            Toast.makeText(this, "Error starting test: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+    
+    private void startANSIThresholdTest() {
+        final int freq = frequencies[currentFreqIndex];
+        Log.d("PureToneTest", "Starting ANSI threshold test for frequency: " + freq + " Hz");
+        
+        // Show ANSI testing UI
+        showANSITestingUI();
+        
+        new Thread(() -> {
+            try {
+                // Start ANSI threshold procedure for this frequency
+                boolean started = audiometryEngine.startThresholdTest(currentEar, freq);
+                
+                if (!started) {
+                    Log.e("PureToneTest", "Failed to start ANSI threshold test");
+                    runOnUiThread(() -> {
+                        Toast.makeText(PureToneTestActivity.this, "Failed to start test", Toast.LENGTH_SHORT).show();
+                        useANSITesting = false;
+                        startLegacyRampTest();
+                    });
+                    return;
+                }
+                
+                // The ANSI engine will manage the test procedure
+                // User responses are handled via processResponse() calls from button clicks
+                Log.d("PureToneTest", "ANSI threshold test started successfully for " + freq + "Hz");
+                
+            } catch (Exception e) {
+                Log.e("PureToneTest", "Error starting ANSI test: " + e.getMessage());
+                runOnUiThread(() -> {
+                    Toast.makeText(PureToneTestActivity.this, "Error starting test", Toast.LENGTH_SHORT).show();
+                    useANSITesting = false;
+                    startLegacyRampTest();
+                });
+            }
+        }).start();
+    }
+    
+    private void startLegacyRampTest() {
+        Log.d("PureToneTest", "Using legacy ramp test for frequency index: " + currentFreqIndex);
+        
+        // Check audio device before starting
+        checkAudioDevice();
+        
+        // Initialize ramping state
+        isRamping = true;
+        reachedMaxVolume = false;
+        
+        // Show only thumbs up button initially
+        showRampingUI();
+        
+        stopPlayback = false;
+        progressBar.setProgress(0);
+
+        final int freq = frequencies[currentFreqIndex];
+        Log.d("PureToneTest", "Starting legacy tone playback for frequency: " + freq + " Hz");
+        
+        playbackThread = new Thread(() -> {
+            // Calculate proper buffer size
+            int minBufferSize = AudioTrack.getMinBufferSize(44100, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+            int bufferSize = Math.max(minBufferSize * 4, 44100); // 4x minimum or 1 second
+            
+            Log.d("PureToneTest", "Audio buffer setup - minSize: " + minBufferSize + ", using: " + bufferSize);
+            
+            AudioTrack track = new AudioTrack(
+                AudioManager.STREAM_MUSIC,
+                44100,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                bufferSize,
+                AudioTrack.MODE_STREAM
+            );
+            
+            Log.d("PureToneTest", "AudioTrack created - State: " + track.getState() + ", PlayState: " + track.getPlayState());
+            
+            if (track.getState() != AudioTrack.STATE_INITIALIZED) {
+                Log.e("PureToneTest", "AudioTrack initialization failed - State: " + track.getState());
+                runOnUiThread(() -> Toast.makeText(this, "Audio initialization failed", Toast.LENGTH_SHORT).show());
+                return;
+            }
+            
+            track.play();
+            Log.d("PureToneTest", "AudioTrack.play() called - PlayState now: " + track.getPlayState());
+            Log.d("PureToneTest", "Starting tone generation for " + freq + "Hz at 20% initial volume");
+
+            // Start at 20% volume (audible level) and ramp up
+            for (int i = 20; i <= 100 && !stopPlayback; i += 2) {
+                double amp = i / 100.0;
+                short[] chunk = ToneGenerator.generateSineWaveChunk(44100, 100, freq, amp); // 100ms chunks
+                
+                int bytesWritten = track.write(chunk, 0, chunk.length);
+                if (bytesWritten < 0) {
+                    Log.e("PureToneTest", "AudioTrack write error: " + bytesWritten);
+                    break;
+                }
+                
+                lastAmplitudeStep = i;
+                final int progress = (i - 20) * 100 / 80; // Scale to 0-100
+                
+                runOnUiThread(() -> progressBar.setProgress(progress));
+                
+                // Check if we've reached maximum volume
+                if (i >= 100) {
+                    reachedMaxVolume = true;
+                    runOnUiThread(() -> {
+                        // Switch to thumbs down button at max volume
+                        showMaxVolumeUI();
+                    });
+                    break;
+                }
+                
+                // No Thread.sleep() - let AudioTrack buffer handle timing
+                // This prevents audio dropouts and keeps UI responsive
+            }
+
+            track.stop();
+            track.release();
+            
+            isRamping = false;
+        });
+        playbackThread.start();
+    }
+
+    private void recordHeardAndAdvance() {
+        Log.d("PureToneTest", "recordHeardAndAdvance called - ear: " + currentEar + ", frequency: " + frequencies[currentFreqIndex] + "Hz, amplitude: " + lastAmplitudeStep);
+        
+        new Thread(() -> {
+            try {
+                int freq = frequencies[currentFreqIndex];
+                
+                // Validate parameters before database insertion
+                if (userId <= 0 || hearingProfileId <= 0) {
+                    Log.e("PureToneTest", "Invalid user/profile IDs - userId: " + userId + ", profileId: " + hearingProfileId);
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Invalid user data - cannot save result", Toast.LENGTH_SHORT).show();
+                        // Continue anyway to avoid getting stuck
+                        advanceToNextFrequencyOrComplete();
+                    });
+                    return;
+                }
+                
+                // Ensure HearingProfile exists before inserting HearingTestResult
+                AppDatabase db = AppDatabase.getInstance(this);
+                com.example.audion.data.HearingProfileDao profileDao = db.hearingProfileDao();
+                com.example.audion.data.HearingProfile profile = profileDao.getHearingProfileById(hearingProfileId);
+                if (profile == null) {
+                    // Create a default profile if it doesn't exist
+                    Log.d("PureToneTest", "Creating default HearingProfile with ID: " + hearingProfileId);
+                    com.example.audion.data.HearingProfile newProfile = new com.example.audion.data.HearingProfile("Standard Mode", "default_icon");
+                    long newId = profileDao.insert(newProfile);
+                    hearingProfileId = (int) newId;
+                    Log.d("PureToneTest", "Created HearingProfile with new ID: " + hearingProfileId);
+                }
+                
+                HearingTestResult result = new HearingTestResult(
+                    userId, currentEar, freq, lastAmplitudeStep, hearingProfileId
+                );
+                
+                Log.d("PureToneTest", "Inserting result into database: userId=" + userId + ", ear=" + currentEar + ", freq=" + freq + ", amp=" + lastAmplitudeStep + ", profileId=" + hearingProfileId);
+                
+                hearingTestResultDao.insert(result);
+                
+                Log.d("PureToneTest", "Database insertion successful, advancing to next frequency or completing test");
+                runOnUiThread(this::advanceToNextFrequencyOrComplete);
+                
+            } catch (Exception e) {
+                Log.e("PureToneTest", "Error in recordHeardAndAdvance", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Failed to save result: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Continue anyway to avoid getting stuck
+                    advanceToNextFrequencyOrComplete();
+                });
+            }
+        }).start();
+    }
+
+    private void recordNotHeardAndAdvance() {
+        Log.d("PureToneTest", "recordNotHeardAndAdvance called - ear: " + currentEar + ", frequency: " + frequencies[currentFreqIndex] + "Hz");
+        
+        new Thread(() -> {
+            try {
+                int freq = frequencies[currentFreqIndex];
+                
+                // Validate parameters before database insertion
+                if (userId <= 0 || hearingProfileId <= 0) {
+                    Log.e("PureToneTest", "Invalid user/profile IDs - userId: " + userId + ", profileId: " + hearingProfileId);
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Invalid user data - cannot save result", Toast.LENGTH_SHORT).show();
+                        // Continue anyway to avoid getting stuck
+                        advanceToNextFrequencyOrComplete();
+                    });
+                    return;
+                }
+                
+                // Ensure HearingProfile exists before inserting HearingTestResult
+                AppDatabase db = AppDatabase.getInstance(this);
+                com.example.audion.data.HearingProfileDao profileDao = db.hearingProfileDao();
+                com.example.audion.data.HearingProfile profile = profileDao.getHearingProfileById(hearingProfileId);
+                if (profile == null) {
+                    // Create a default profile if it doesn't exist
+                    Log.d("PureToneTest", "Creating default HearingProfile with ID: " + hearingProfileId);
+                    com.example.audion.data.HearingProfile newProfile = new com.example.audion.data.HearingProfile("Standard Mode", "default_icon");
+                    long newId = profileDao.insert(newProfile);
+                    hearingProfileId = (int) newId;
+                    Log.d("PureToneTest", "Created HearingProfile with new ID: " + hearingProfileId);
+                }
+                
+                HearingTestResult result = new HearingTestResult(
+                    userId, currentEar, freq, 100, hearingProfileId  // 100 means max amplitude (couldn't hear)
+                );
+                
+                Log.d("PureToneTest", "Inserting NOT HEARD result into database: userId=" + userId + ", ear=" + currentEar + ", freq=" + freq + ", amp=100, profileId=" + hearingProfileId);
+                
+                hearingTestResultDao.insert(result);
+                
+                Log.d("PureToneTest", "Database insertion successful, advancing to next frequency or completing test");
+                runOnUiThread(this::advanceToNextFrequencyOrComplete);
+                
+            } catch (Exception e) {
+                Log.e("PureToneTest", "Error in recordNotHeardAndAdvance", e);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Failed to save result: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    // Continue anyway to avoid getting stuck
+                    advanceToNextFrequencyOrComplete();
+                });
+            }
+        }).start();
+    }
+
+    private volatile boolean isAdvancing = false; // Add flag to prevent double navigation
+    
+    /**
+     * CRITICAL FIX: Check calibration status to determine proper navigation after LEFT ear completion
+     * This prevents the infinite loop by intelligently routing to calibration or results
+     */
+    private void checkCalibrationStatusAndNavigate() {
+        new Thread(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(PureToneTestActivity.this);
+                com.example.audion.data.CalibrationProfileDao calibrationProfileDao = db.calibrationProfileDao();
+                
+                // Check if calibration profiles exist for both ears
+                com.example.audion.data.CalibrationProfileEntity rightEarCalibration = 
+                    calibrationProfileDao.getLatestProfileForEar(userId, "RIGHT", hearingProfileId);
+                com.example.audion.data.CalibrationProfileEntity leftEarCalibration = 
+                    calibrationProfileDao.getLatestProfileForEar(userId, "LEFT", hearingProfileId);
+                
+                boolean hasRightCalibration = (rightEarCalibration != null);
+                boolean hasLeftCalibration = (leftEarCalibration != null);
+                
+                Log.i("NavigationFlow", "=== CALIBRATION STATUS CHECK ===");
+                Log.i("NavigationFlow", "User ID: " + userId + ", Hearing Profile ID: " + hearingProfileId);
+                Log.i("NavigationFlow", "Right ear calibration exists: " + hasRightCalibration);
+                Log.i("NavigationFlow", "Left ear calibration exists: " + hasLeftCalibration);
+                Log.i("NavigationFlow", "================================");
+                
+                runOnUiThread(() -> {
+                    if (!hasRightCalibration && !hasLeftCalibration) {
+                        // No calibration done yet - start with LEFT ear calibration
+                        Log.i("NavigationFlow", "No calibration found, starting with LEFT ear calibration");
+                        Toast.makeText(this, "✅ Pure tone tests complete! Starting calibration...", Toast.LENGTH_LONG).show();
+                        
+                        Intent calibrationIntent = new Intent(this, CalibrationInstructionActivity.class);
+                        calibrationIntent.putExtra("EAR", "LEFT");
+                        calibrationIntent.putExtra("USER_ID", userId);
+                        calibrationIntent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                        startActivity(calibrationIntent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
+                        finish();
+                    } else if (hasRightCalibration && hasLeftCalibration) {
+                        // Both calibrations complete - go to results
+                        Log.i("NavigationFlow", "All tests completed, navigating to TestResultsActivity");
+                        Toast.makeText(this, "🎉 All tests complete! Viewing results...", Toast.LENGTH_LONG).show();
+                        
+                        Intent resultsIntent = new Intent(this, TestResultsActivity.class);
+                        resultsIntent.putExtra("USER_ID", userId);
+                        resultsIntent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                        startActivity(resultsIntent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
+                        finish();
+                    } else {
+                        // Partial calibration - complete the missing ear
+                        String missingEar = hasLeftCalibration ? "RIGHT" : "LEFT";
+                        Log.i("NavigationFlow", "Partial calibration found, completing " + missingEar + " ear");
+                        Toast.makeText(this, "✅ Pure tone tests complete! Finishing " + missingEar.toLowerCase() + " ear calibration...", Toast.LENGTH_LONG).show();
+                        
+                        Intent calibrationIntent = new Intent(this, CalibrationInstructionActivity.class);
+                        calibrationIntent.putExtra("EAR", missingEar);
+                        calibrationIntent.putExtra("USER_ID", userId);
+                        calibrationIntent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                        startActivity(calibrationIntent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
+                        finish();
+                    }
+                });
+                
+            } catch (Exception e) {
+                Log.e("NavigationFlow", "Error checking calibration status: " + e.getMessage(), e);
+                runOnUiThread(() -> {
+                    // Fallback - go to results to prevent infinite loop
+                    Toast.makeText(this, "⚠️ Navigation error - proceeding to results", Toast.LENGTH_SHORT).show();
+                    Intent resultsIntent = new Intent(this, TestResultsActivity.class);
+                    resultsIntent.putExtra("USER_ID", userId);
+                    resultsIntent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                    startActivity(resultsIntent);
+                    overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
+                    finish();
+                });
+            }
+        }).start();
+    }
+    
+    private void advanceToNextFrequencyOrComplete() {
+        // Prevent multiple simultaneous calls
+        if (isAdvancing) {
+            Log.d("PureToneTest", "advanceToNextFrequencyOrComplete already in progress, ignoring call");
+            return;
+        }
+        
+        isAdvancing = true;
+        Log.d("PureToneTest", "advanceToNextFrequencyOrComplete called - currentFreqIndex: " + currentFreqIndex + ", ear: " + currentEar);
+        
+        try {
+            currentFreqIndex++;
+            
+            // Update stepper progress when advancing
+            updateStepperProgress();
+            
+            if (currentFreqIndex >= frequencies.length) {
+                Log.i("NavigationFlow", "All frequencies completed for " + currentEar + " ear, determining next step");
+                
+                // Automatically navigate to next step instead of showing completion UI
+                if ("RIGHT".equals(currentEar)) {
+                    // Right ear pure tone test done, proceed to left ear instruction
+                    Log.i("NavigationFlow", "Right ear pure tone test completed, navigating to left ear instruction");
+                    Toast.makeText(this, "✅ Right ear test complete! Now testing left ear...", Toast.LENGTH_SHORT).show();
+                    Intent leftEarIntent = new Intent(this, LeftEarInstructionActivity.class);
+                    leftEarIntent.putExtra("USER_ID", userId);
+                    leftEarIntent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                    startActivity(leftEarIntent);
+                    overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
+                    finish();
+                } else {
+                    // Both ears pure tone tests completed - check if calibration is needed
+                    Log.i("NavigationFlow", "Both ears pure tone tests completed, checking calibration status");
+                    checkCalibrationStatusAndNavigate();
+                }
+                return;
+            }
+            
+            Log.d("PureToneTest", "Moving to next frequency - index: " + currentFreqIndex + ", frequency: " + frequencies[currentFreqIndex] + "Hz");
+            progressBar.setProgress(0);
+            
+            // Automatically start the next frequency after a brief delay
+            new android.os.Handler().postDelayed(() -> {
+                startRampForCurrentFrequency();
+            }, 1000); // 1 second delay
+            
+        } catch (Exception e) {
+            Log.e("PureToneTest", "Error in advanceToNextFrequencyOrComplete", e);
+            Toast.makeText(this, "Navigation error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        } finally {
+            isAdvancing = false;
+        }
+    }
+    
+    private void advanceToNextFrequency() {
+        // Prevent multiple simultaneous calls
+        if (isAdvancing) {
+            Log.d("PureToneTest", "advanceToNextFrequency already in progress, ignoring call");
+            return;
+        }
+        
+        isAdvancing = true;
+        Log.d("PureToneTest", "advanceToNextFrequency called - currentFreqIndex: " + currentFreqIndex + ", ear: " + currentEar);
+        
+        try {
+            currentFreqIndex++;
+            
+            // Update stepper progress when advancing
+            updateStepperProgress();
+            
+            if (currentFreqIndex >= frequencies.length) {
+                Log.d("PureToneTest", "All frequencies completed for " + currentEar + " ear");
+                
+                Toast.makeText(this,
+                    (currentEar.equalsIgnoreCase("LEFT") ? "Left Ear" : "Right Ear") + " Pure Tone Test Complete!",
+                    Toast.LENGTH_SHORT
+                ).show();
+                
+                // Show completion UI with Start again button
+                showCompletionUI();
+                
+                // For now, don't automatically navigate - let user click Start again
+                // TODO: Implement Start again button functionality to navigate to next step or restart
+                return;
+            }
+            
+            Log.d("PureToneTest", "Moving to next frequency - index: " + currentFreqIndex + ", frequency: " + frequencies[currentFreqIndex] + "Hz");
+            progressBar.setProgress(0);
+            showStartUI();
+            
+        } catch (Exception e) {
+            Log.e("PureToneTest", "Error in advanceToNextFrequency", e);
+            Toast.makeText(this, "Navigation error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        } finally {
+            isAdvancing = false;
+        }
+    }
+
+    private void showStartUI() {
+        Log.d("PureToneTest", "showStartUI called - setting up initial UI state");
+        
+        buttonStart.setText("START TEST");
+        buttonStart.setVisibility(View.VISIBLE);
+        buttonHeard.setVisibility(View.GONE);
+        buttonNotHeard.setVisibility(View.GONE);
+        
+        LinearLayout responseButtonsRow = findViewById(R.id.responseButtonsRow);
+        if (responseButtonsRow != null) {
+            responseButtonsRow.setVisibility(View.GONE);
+        }
+        
+        // Reset test state
+        testStarted = false;
+        
+        Log.d("PureToneTest", "showStartUI completed - START TEST button visible, test buttons hidden");
+    }
+
+    private void showRampingUI() {
+        // Hide buttons first
+        buttonStart.setVisibility(View.GONE);
+        buttonNotHeard.setVisibility(View.GONE);
+        
+        // Show thumbs up button
+        buttonHeard.setVisibility(View.VISIBLE);
+        
+        LinearLayout responseButtonsRow = findViewById(R.id.responseButtonsRow);
+        if (responseButtonsRow != null) {
+            responseButtonsRow.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void showMaxVolumeUI() {
+        // At max volume, hide thumbs up and show thumbs down
+        buttonStart   .setVisibility(View.GONE);
+        buttonHeard   .setVisibility(View.GONE);
+        buttonNotHeard.setVisibility(View.VISIBLE);
+        LinearLayout responseButtonsRow = findViewById(R.id.responseButtonsRow);
+        if (responseButtonsRow != null) {
+            responseButtonsRow.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void showResponseUI() {
+        buttonStart   .setVisibility(View.GONE);
+        buttonHeard   .setVisibility(View.VISIBLE);
+        buttonNotHeard.setVisibility(View.VISIBLE);
+        LinearLayout responseButtonsRow = findViewById(R.id.responseButtonsRow);
+        if (responseButtonsRow != null) {
+            responseButtonsRow.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void showCompletionUI() {
+        // Hide all response buttons and show start again button below
+        buttonHeard   .setVisibility(View.GONE);
+        buttonNotHeard.setVisibility(View.GONE);
+        LinearLayout responseButtonsRow = findViewById(R.id.responseButtonsRow);
+        if (responseButtonsRow != null) {
+            responseButtonsRow.setVisibility(View.GONE);
+        }
+        
+        // Show start again button in the bottom container
+        buttonStart   .setText("Start again");
+        buttonStart   .setVisibility(View.VISIBLE);
+    }
+    
+    private void showANSITestingUI() {
+        // Show both buttons for ANSI testing (user responds to each tone)
+        buttonHeard.setVisibility(View.VISIBLE);
+        buttonNotHeard.setVisibility(View.VISIBLE);
+        buttonStart.setVisibility(View.GONE);
+        
+        // Update button text for ANSI testing
+        buttonHeard.setText("I Heard It");
+        buttonNotHeard.setText("I Didn't Hear It");
+    }
+    
+    private void saveANSIResultAndAdvance(int frequency, int thresholdDbHL, float thresholdDbSPL) {
+        new Thread(() -> {
+            try {
+                // Check if we have a reliable threshold
+                boolean isReliable = audiometryEngine.isTestReliable(currentEar, frequency);
+                int reversalCount = 3; // Default for completed test
+                
+                // Create new ANSI audiometry result
+                AudiometryResult ansiResult = new AudiometryResult(
+                    userId, currentEar, frequency, 
+                    (float) thresholdDbHL, thresholdDbSPL, 
+                    isReliable, reversalCount, hearingProfileId
+                );
+                
+                // Save to new audiometry results table
+                audiometryResultDao.insert(ansiResult);
+                
+                // Also save to legacy table for compatibility
+                HearingTestResult legacyResult = new HearingTestResult(
+                    userId, currentEar, frequency, lastAmplitudeStep, hearingProfileId
+                );
+                hearingTestResultDao.insert(legacyResult);
+                
+                Log.d("PureToneTest", "ANSI result saved: " + frequency + "Hz = " + thresholdDbHL + "dB HL");
+                
+                runOnUiThread(this::advanceToNextFrequencyOrComplete);
+                
+            } catch (Exception e) {
+                Log.e("PureToneTest", "Error saving ANSI result: " + e.getMessage());
+                runOnUiThread(() -> {
+                    Toast.makeText(PureToneTestActivity.this, "Error saving test result", Toast.LENGTH_SHORT).show();
+                    advanceToNextFrequencyOrComplete();
+                });
+            }
+        }).start();
+    }
+    
+    private void checkANSITestCompletion() {
+        new Thread(() -> {
+            try {
+                final int freq = frequencies[currentFreqIndex];
+                
+                // Check if the current test is complete
+                if (audiometryEngine.isThresholdComplete(currentEar, freq)) {
+                    // Get the threshold result
+                    int thresholdDbHL = audiometryEngine.getThreshold(currentEar, freq);
+                    
+                    Log.d("PureToneTest", "ANSI threshold determined: " + freq + "Hz = " + thresholdDbHL + "dB HL");
+                    
+                    // Store result in audiogram
+                    audiogramResults.put(freq, (float) thresholdDbHL);
+                    
+                    // Convert to amplitude step for legacy database compatibility
+                    RETSPLTable.TransducerType transducerType = RETSPLTable.TransducerType.INSERT;
+                    float thresholdDbSPL = RETSPLTable.convertHLtoSPL(freq, (float) thresholdDbHL, transducerType);
+                    lastAmplitudeStep = (int) ((thresholdDbSPL + 10) / 110 * 100); // Convert to 0-100 scale
+                    
+                    runOnUiThread(() -> {
+                        progressBar.setProgress(100);
+                        // Save ANSI results to new database table
+                        saveANSIResultAndAdvance(freq, thresholdDbHL, thresholdDbSPL);
+                    });
+                }
+                
+            } catch (Exception e) {
+                Log.e("PureToneTest", "Error checking ANSI test completion: " + e.getMessage());
+                runOnUiThread(() -> {
+                    Toast.makeText(PureToneTestActivity.this, "Test error occurred", Toast.LENGTH_SHORT).show();
+                    // Continue with next frequency to avoid getting stuck
+                    advanceToNextFrequencyOrComplete();
+                });
+            }
+        }).start();
+    }
+    
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d("PureToneTest", "=== PureToneTestActivity onStart - currentEar: " + currentEar + " ===");
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d("PureToneTest", "=== PureToneTestActivity onResume - currentEar: " + currentEar + " ===");
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d("PureToneTest", "=== PureToneTestActivity onPause - currentEar: " + currentEar + " ===");
+    }
+    
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d("PureToneTest", "=== PureToneTestActivity onStop - currentEar: " + currentEar + " ===");
+    }
+    
+    private void animateButtonPress(View button) {
+        Animation buttonPress = AnimationUtils.loadAnimation(this, R.anim.button_press);
+        button.startAnimation(buttonPress);
+    }
+
+    private void checkAudioDevice() {
+        AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (audioManager == null) {
+            Toast.makeText(this, "❌ AudioManager not available", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Check system volume
+        int currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        float volumePercent = (currentVolume * 100f) / maxVolume;
+        
+        Log.d("PureToneTest", "🔊 System volume: " + currentVolume + "/" + maxVolume + " (" + volumePercent + "%)");
+        
+        if (volumePercent < 50) {
+            Toast.makeText(this, "⚠️ Media volume is low (" + (int)volumePercent + "%). Please increase volume for hearing test.", Toast.LENGTH_LONG).show();
+        }
+        
+        AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+        boolean hasWiredHeadset = false;
+        boolean hasBluetoothA2dp = false;
+        
+        for (AudioDeviceInfo device : devices) {
+            switch (device.getType()) {
+                case AudioDeviceInfo.TYPE_WIRED_HEADSET:
+                case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
+                    hasWiredHeadset = true;
+                    Log.d("PureToneTest", "Wired headphones detected: " + device.getProductName());
+                    break;
+                case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
+                    hasBluetoothA2dp = true;
+                    Log.d("PureToneTest", "Bluetooth headphones detected: " + device.getProductName());
+                    break;
+            }
+        }
+        
+        if (!hasWiredHeadset && !hasBluetoothA2dp) {
+            runOnUiThread(() -> {
+                Toast.makeText(this, "⚠️ For best results, please connect headphones or earbuds", Toast.LENGTH_LONG).show();
+                // Play system beep to test audio
+                try {
+                    android.media.ToneGenerator toneGen = new android.media.ToneGenerator(AudioManager.STREAM_MUSIC, 80);
+                    toneGen.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 500);
+                    toneGen.release();
+                    Log.d("PureToneTest", "🔔 System beep test played");
+                } catch (Exception e) {
+                    Log.e("PureToneTest", "❌ System beep failed: " + e.getMessage());
+                }
+            });
+        }
+    }
+    
+    
+    @Override
+    protected void onDestroy() {
+        Log.d("PureToneTest", "=== Clinical PureToneTestActivity onDestroy - currentEar: " + currentEar + " ===");
+        
+        // Clean up clinical audio resources
+        if (audioGenerator != null) {
+            audioGenerator.release();
+            audioGenerator = null;
+        }
+        
+        // Clean up timeout handler
+        if (timeoutHandler != null) {
+            timeoutHandler.removeCallbacksAndMessages(null);
+            timeoutHandler = null;
+        }
+        
+        super.onDestroy();
+        
+        // Clean up ANSI audiometry engine
+        if (audiometryEngine != null) {
+            try {
+                audiometryEngine.release();
+                Log.d("PureToneTest", "ANSI audiometry engine cleaned up");
+            } catch (Exception e) {
+                Log.e("PureToneTest", "Error cleaning up ANSI engine: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void setupSimplifiedUI() {
+        // Find UI elements
+        TextView title = findViewById(R.id.title);
+        TextView earLabel = findViewById(R.id.earLabel);
+        TextView progressText = findViewById(R.id.progressText);
+        TextView frequencyText = findViewById(R.id.frequencyText);
+        ImageView earImage = findViewById(R.id.imageViewEar);
+        progressBar = findViewById(R.id.progressBar);
+        buttonStart = findViewById(R.id.buttonStart);
+        buttonHeard = findViewById(R.id.buttonHeard);
+        buttonNotHeard = findViewById(R.id.buttonNotHeard);
+        LinearLayout responseButtonsRow = findViewById(R.id.responseButtonsRow);
+
+        // Set up title and ear information
+        if (title != null) {
+            title.setText("Pure Tone Test");
+        }
+        if (earLabel != null) {
+            earLabel.setText(currentEar.equalsIgnoreCase("LEFT") ? "Left Ear" : "Right Ear");
+        }
+
+        // Set ear image
+        if (earImage != null) {
+            try {
+                if ("LEFT".equalsIgnoreCase(currentEar)) {
+                    earImage.setImageResource(R.drawable.left_ear);
+                } else {
+                    earImage.setImageResource(R.drawable.right_ear);
+                }
+            } catch (Exception e) {
+                Log.w("PureToneTest", "Could not set ear image: " + e.getMessage());
+            }
+        }
+
+        // Initialize progress display
+        if (progressText != null) {
+            progressText.setText("Test 1 of " + frequencies.length);
+        }
+        if (frequencyText != null) {
+            frequencyText.setText(frequencies[0] + " Hz");
+        }
+
+        // Set up progress bar
+        if (progressBar != null) {
+            progressBar.setMax(100);
+            progressBar.setProgress(0);
+        }
+
+        // Hide response buttons initially
+        if (responseButtonsRow != null) {
+            responseButtonsRow.setVisibility(View.GONE);
+        }
+
+        // Verify all essential UI elements exist
+        if (progressBar == null || buttonStart == null || buttonHeard == null || buttonNotHeard == null) {
+            Log.e("PureToneTest", "One or more UI elements not found in simplified layout");
+            Toast.makeText(this, "UI initialization failed - missing buttons", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
+        Log.d("PureToneTest", "Simplified UI setup completed successfully");
+    }
+}

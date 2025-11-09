@@ -4,83 +4,87 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="@drawable/bg_pastel_gradient"
     android:fitsSystemWindows="true"
-    >
+    android:paddingHorizontal="@dimen/onboarding_horizontal_padding">
 
-    <!-- Scrollable content -->
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/mainScroll"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:fillViewport="true"
-        android:padding="20dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/buttonSubmit"
+    <!-- Main Title: What's your name? -->
+    <TextView
+        android:id="@+id/tvMainTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/onboarding_title_margin_top"
+        android:fontFamily="sans-serif"
+        android:text="What's your"
+        android:textColor="@color/onboarding_text_primary"
+        android:textSize="@dimen/onboarding_main_title_size"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
+    <!-- Name -->
+    <TextView
+        android:id="@+id/tvName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:lineSpacingExtra="@dimen/onboarding_title_line_spacing"
+        android:text="Name?"
+        android:textColor="@color/onboarding_text_primary"
+        android:textSize="@dimen/onboarding_bold_title_size"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvMainTitle" />
 
-            <TextView
-                android:id="@+id/tvGreeting"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="16dp"
-                android:text="👋 Hi there!"
-                android:textColor="#1A6958"
-                android:textSize="32sp"
-                android:textStyle="bold"
-                android:fontFamily="@font/dm_sans"
-                android:layout_gravity="left"/>
+    <!-- Description -->
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/onboarding_spacing_title_to_paragraph"
+        android:fontFamily="sans-serif"
+        android:lineSpacingExtra="@dimen/onboarding_paragraph_line_spacing"
+        android:maxWidth="@dimen/onboarding_paragraph_max_width"
+        android:text="Tell us your name so we can personalize your hearing experience and keep track of your progress."
+        android:textColor="@color/onboarding_text_secondary"
+        android:textSize="@dimen/onboarding_paragraph_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvName"
+        app:layout_constraintWidth_max="@dimen/onboarding_paragraph_max_width" />
 
-            <TextView
-                android:id="@+id/tvFollowUp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:text="What is your name?"
-                android:textColor="#4A4A4A"
-                android:textSize="24sp"
-                android:textFontWeight="500"
-                android:fontFamily="@font/dm_sans"/>
+    <!-- Name Input -->
+    <EditText
+        android:id="@+id/editTextName"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginTop="32dp"
+        android:background="@drawable/onboarding_button_bg"
+        android:hint="Enter your name"
+        android:padding="16dp"
+        android:textColor="@color/onboarding_text_primary"
+        android:textColorHint="@color/onboarding_text_secondary"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvDescription" />
 
-            <EditText
-                android:id="@+id/editTextName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:background="@drawable/edittext_border_green"
-                android:hint="Name"
-                android:padding="12dp"
-                android:textColor="#333333"
-                android:textColorHint="#999999"
-                android:textSize="18sp"
-                android:fontFamily="@font/dm_sans"/>
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <!-- Fixed button -->
-    <com.google.android.material.button.MaterialButton
+    <!-- Continue Button -->
+    <Button
         android:id="@+id/buttonSubmit"
         android:layout_width="0dp"
-        android:layout_height="60dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="#0F766E"
-        android:text="Continue"
+        android:layout_height="@dimen/onboarding_button_height"
+        android:layout_marginBottom="@dimen/onboarding_spacing_indicators_to_button"
+        android:background="@drawable/onboarding_button_bg"
+        android:fontFamily="sans-serif"
+        android:text="Let's get started"
         android:textAllCaps="false"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:fontFamily="@font/dm_sans"
-        app:cornerRadius="32dp"
-        app:layout_constraintStart_toStartOf="parent"
+        android:textColor="@color/onboarding_button_text"
+        android:textSize="@dimen/onboarding_button_text_size"
+        android:textStyle="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,8 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
-    android:padding="20dp"
+    android:background="@drawable/bg_pastel_gradient"
     android:fitsSystemWindows="true">
 
     <!-- ───────── Scrollable content ───────── -->
@@ -14,16 +13,15 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
+        android:padding="32dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/buttonBlock"
+        app:layout_constraintBottom_toTopOf="@id/buttonContainer"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:layout_height="wrap_content">
 
             <!-- Ear label -->
             <TextView
@@ -31,145 +29,316 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Right Ear"
-                android:textColor="#1A6958"
+                android:textColor="@android:color/black"
                 android:textSize="32sp"
                 android:textStyle="bold"
-                android:layout_marginTop="16dp"/>
+                android:fontFamily="sans-serif"
+                android:layout_marginTop="32dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
             <!-- Countdown pre-instruction -->
             <TextView
                 android:id="@+id/textInstruction"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:text="You will hear the tone in..."
-                android:textColor="#4A4A4A"
-                android:textSize="14dp"
-                android:textAppearance="?attr/textAppearanceBody1"
-                android:layout_marginTop="20dp"
-                android:gravity="center"/>
-
-
-
-            <!-- Short bullet instructions in mint card -->
-            <TextView
-                android:id="@+id/tvStaticInstruction"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/rounded_mint_card"
-                android:padding="12dp"
-                android:text="• Every time you hear the tone tap 👍.\n\n• If the tone is not audible, tap 👎."
-                android:textColor="#4A4A4A"
-                android:textAppearance="?attr/textAppearanceBody1"
-                android:textSize="14sp"
-                android:layout_marginTop="24dp"/>
-
-            <!-- Countdown value -->
-            <TextView
-                android:id="@+id/textCountdown"
-                android:layout_width="wrap_content"
-                android:layout_height="148dp"
-                android:layout_marginTop="32dp"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"
+                android:fontFamily="sans-serif"
+                android:layout_marginTop="24dp"
                 android:gravity="center"
-                android:text="3"
-                android:textColor="#0F766E"
-                android:textSize="64sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
+                android:alpha="0.8"
+                app:layout_constraintTop_toBottomOf="@id/tvEarLabel"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Volume percentage chip -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/volumeChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Volume: 50%"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                app:chipBackgroundColor="#0F766E"
+                app:chipStrokeWidth="0dp"
+                app:chipCornerRadius="20dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/textInstruction"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Instructions text in transparent card -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/instructionCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:layout_marginHorizontal="16dp"
+                app:cardBackgroundColor="#08FFFFFF"
+                app:cardElevation="0dp"
+                app:strokeColor="#20000000"
+                app:strokeWidth="1dp"
+                app:cardCornerRadius="12dp"
+                app:layout_constraintTop_toBottomOf="@id/volumeChip"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- First instruction with green thumbs up -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="left|center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:id="@+id/tvStaticInstruction"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="• Every time you hear the tone tap "
+                            android:textColor="@android:color/black"
+                            android:textSize="16sp"
+                            android:fontFamily="sans-serif"
+                            android:alpha="0.9" />
+
+                        <!-- Green circular thumbs up -->
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="4dp"
+                            android:background="@drawable/ic_thumbs_up_green">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="👍"
+                                android:textColor="@android:color/white"
+                                android:textSize="12sp"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    </LinearLayout>
+
+                    <!-- Second instruction with red thumbs down -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="left|center_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="• If the tone is not audible, tap "
+                            android:textColor="@android:color/black"
+                            android:textSize="16sp"
+                            android:fontFamily="sans-serif"
+                            android:alpha="0.9" />
+
+                        <!-- Red circular thumbs down -->
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_marginStart="4dp"
+                            android:background="@drawable/ic_thumbs_down_red">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="👎"
+                                android:textColor="@android:color/white"
+                                android:textSize="12sp"
+                                app:layout_constraintTop_toTopOf="parent"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
 
             <!-- Lottie animation -->
             <com.airbnb.lottie.LottieAnimationView
                 android:id="@+id/toneAnimation"
                 android:layout_width="200dp"
                 android:layout_height="165dp"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="32dp"
                 android:adjustViewBounds="true"
                 android:scaleType="fitCenter"
                 app:lottie_autoPlay="true"
                 app:lottie_fileName="calibration.json"
-                app:lottie_loop="true" />
+                app:lottie_loop="true"
+                app:layout_constraintTop_toBottomOf="@id/instructionCard"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
-            <!-- Volume slider -->
+            <!-- Volume slider (hidden) -->
             <SeekBar
                 android:id="@+id/seekBarVolume"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:max="100"
-                android:layout_marginTop="24dp"/>
-        </LinearLayout>
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="32dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/toneAnimation"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- ───────── Fixed button block ───────── -->
+    <!-- ───────── Fixed bottom buttons ───────── -->
     <LinearLayout
-        android:id="@+id/buttonBlock"
+        android:id="@+id/buttonContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@android:color/transparent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- Thumbs row -->
-        <LinearLayout
+        <!-- Circular thumbs buttons in horizontal container -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:weightSum="2"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="#08FFFFFF"
+            app:cardElevation="0dp"
+            app:strokeColor="#20000000"
+            app:strokeWidth="1dp"
+            app:cardCornerRadius="12dp">
 
-            <!-- 👎 Can’t Hear -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:padding="16dp">
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonNotHear"
-                android:layout_width="0dp"
-                android:layout_height="80dp"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                android:backgroundTint="@color/background"
-                app:strokeColor="@color/red_cant"
-                app:strokeWidth="3dp"
-                app:cornerRadius="40dp"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginEnd="24dp"
+                android:backgroundTint="#EF4444"
+                app:strokeColor="#EF4444"
+                app:strokeWidth="0dp"
+                app:cornerRadius="60dp"
                 android:text="👎"
-                android:textColor="@color/red_cant"
+                android:textColor="@android:color/white"
                 android:textAllCaps="false"
                 android:textSize="32sp"
-                android:fontFamily="@font/dm_sans"/>
+                android:fontFamily="sans-serif"
+                android:elevation="4dp"
+                app:elevation="4dp"
+                android:visibility="gone" />
 
-            <Space
-                android:layout_width="16dp"
-                android:layout_height="0dp" />
-
-            <!-- 👍 Hear It -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonHear"
-                android:layout_width="0dp"
-                android:layout_height="80dp"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                android:backgroundTint="@color/background"
-                app:strokeColor="@color/green_hear"
-                app:strokeWidth="3dp"
-                app:cornerRadius="40dp"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginStart="24dp"
+                android:backgroundTint="#10B981"
+                app:strokeColor="#10B981"
+                app:strokeWidth="0dp"
+                app:cornerRadius="60dp"
                 android:text="👍"
-                android:textColor="@color/green_hear"
+                android:textColor="@android:color/white"
                 android:textAllCaps="false"
                 android:textSize="32sp"
-                android:fontFamily="@font/dm_sans"/>
-        </LinearLayout>
+                android:fontFamily="sans-serif"
+                android:elevation="4dp"
+                app:elevation="4dp"
+                android:visibility="gone" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
 
         <!-- Next button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonNextStep"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginBottom="16dp"
+            android:layout_height="56dp"
             android:backgroundTint="#0F766E"
             android:text="Next"
             android:textColor="#FFFFFF"
             android:textAllCaps="false"
             android:textSize="16sp"
+            android:fontFamily="sans-serif"
             app:cornerRadius="32dp"
-            android:fontFamily="@font/dm_sans"
-            android:visibility="gone"/>
+            android:elevation="0dp"
+            app:elevation="0dp"
+            android:visibility="gone" />
+
     </LinearLayout>
+
+    <!-- ───────── Countdown Overlay ───────── -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/countdownOverlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_pastel_gradient"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Countdown number -->
+        <TextView
+            android:id="@+id/textCountdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3"
+            android:textColor="@android:color/black"
+            android:textSize="48sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif"
+            android:gravity="center"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintVertical_bias="0.4" />
+
+        <!-- Countdown message -->
+        <TextView
+            android:id="@+id/textCountdownMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Get ready..."
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/textCountdown"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

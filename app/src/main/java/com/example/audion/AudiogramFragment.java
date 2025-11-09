@@ -59,10 +59,12 @@ public class AudiogramFragment extends Fragment {
                     .hearingTestResultDao()
                     .getResultsForEar(earSide, 1);
 
-            // 2) Build entries
+            // 2) Build entries using clinical dB HL values
             List<Entry> entries = new ArrayList<>();
             for (HearingTestResult r : pts) {
-                entries.add(new Entry(r.getFrequency(), r.getAmplitudeStep()));
+                // Use frequency directly (chart will handle display)
+                // Use thresholdDbHL for clinical audiogram (NOT amplitudeStep)
+                entries.add(new Entry(r.getFrequency(), r.getThresholdDbHL()));
             }
 
             // 3) Sort by frequency
@@ -77,7 +79,7 @@ public class AudiogramFragment extends Fragment {
 
                 // 4) Create and style DataSet
                 LineDataSet ds = new LineDataSet(entries, earSide + " Audiogram");
-                ds.setMode(LineDataSet.Mode.STEPPED);
+                ds.setMode(LineDataSet.Mode.LINEAR);  // Standard audiogram connection (not stepped)
                 ds.setLineWidth(2f);
                 ds.setDrawCircles(true);
                 ds.setCircleRadius(4f);
@@ -97,7 +99,7 @@ public class AudiogramFragment extends Fragment {
                 chart.setDrawGridBackground(true);
                 chart.setGridBackgroundColor(Color.WHITE);
 
-                // 5) Configure axes
+                // 5) Configure axes for clinical audiogram
                 float minX = entries.get(0).getX();
                 float maxX = entries.get(entries.size() - 1).getX();
 
@@ -108,8 +110,12 @@ public class AudiogramFragment extends Fragment {
                 x.setGranularity(1f);
                 x.setGranularityEnabled(true);
 
+                // Clinical audiogram Y-axis: inverted (0 dB at top = better hearing)
                 YAxis left = chart.getAxisLeft();
-                left.setAxisMinimum(0f);
+                left.setAxisMinimum(-10f);    // Allow slight negative values
+                left.setAxisMaximum(120f);     // Maximum hearing loss
+                left.setInverted(true);        // CRITICAL: 0 at top, 120 at bottom
+                left.setGranularity(10f);      // 10 dB increments
                 chart.getAxisRight().setEnabled(false);
 
                 // 6) Refresh

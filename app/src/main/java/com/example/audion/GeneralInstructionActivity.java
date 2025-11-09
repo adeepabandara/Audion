@@ -33,7 +33,7 @@ public class GeneralInstructionActivity extends AppCompatActivity {
             if (hearingProfileId == -1) {
                 createNewHearingProfileAndProceed();
             } else {
-                proceedToLeftEarInstruction();
+                proceedToRightEarInstruction();
             }
         });
     }
@@ -46,15 +46,16 @@ public class GeneralInstructionActivity extends AppCompatActivity {
             HearingProfile newProfile = new HearingProfile("New Profile", "icon_placeholder");
             long newId = hpDao.insert(newProfile);
             hearingProfileId = (int) newId;
-            runOnUiThread(this::proceedToLeftEarInstruction);
+            runOnUiThread(this::proceedToRightEarInstruction);
         }).start();
     }
 
-    private void proceedToLeftEarInstruction() {
-        Intent intent = new Intent(GeneralInstructionActivity.this, BaselineCalibrationActivity.class);
+    private void proceedToRightEarInstruction() {
+        Intent intent = new Intent(GeneralInstructionActivity.this, RightEarInstructionActivity.class);
         intent.putExtra("USER_ID", userId);
         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
         startActivity(intent);
+        overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
         finish();
     }
 }

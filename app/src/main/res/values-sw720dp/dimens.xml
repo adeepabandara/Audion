@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Large Tablet (10+ inch) Responsive Dimensions -->
+    
+    <!-- Onboarding Dimensions -->
+    <dimen name="onboarding_horizontal_padding">64dp</dimen>
+    
+    <!-- Carousel Dimensions -->
+    <dimen name="carousel_indicator_width">40dp</dimen>
+    <dimen name="carousel_indicator_height">6dp</dimen>
+    <dimen name="carousel_top_margin">80dp</dimen>
+    <dimen name="carousel_button_bottom_margin">80dp</dimen>
+    
+    <!-- Slide Dimensions -->
+    <dimen name="slide_title_top_margin">140dp</dimen>
+    <dimen name="slide_title_text_size">36sp</dimen>
+    <dimen name="slide_title_max_text_size">40sp</dimen>
+    <dimen name="slide_title_min_text_size">32sp</dimen>
+    <dimen name="slide_image_top_margin">64dp</dimen>
+    <dimen name="slide_image_horizontal_margin">96dp</dimen>
+    <dimen name="slide_description_top_margin">40dp</dimen>
+    <dimen name="slide_description_text_size">20sp</dimen>
+    <dimen name="slide_description_max_text_size">22sp</dimen>
+    <dimen name="slide_description_min_text_size">18sp</dimen>
+    
+    <!-- Name Screen Dimensions -->
+    <dimen name="name_title_top_margin">140dp</dimen>
+    <dimen name="name_title_text_size">36sp</dimen>
+    <dimen name="name_title_max_text_size">40sp</dimen>
+    <dimen name="name_title_min_text_size">32sp</dimen>
+    <dimen name="name_edittext_top_margin">64dp</dimen>
+    <dimen name="name_edittext_padding">28dp</dimen>
+    <dimen name="name_edittext_text_size">22sp</dimen>
+    
+    <!-- Start Test Screen Dimensions -->
+    <dimen name="start_test_title_top_margin">80dp</dimen>
+    <dimen name="start_test_title_text_size">36sp</dimen>
+    <dimen name="start_test_title_max_text_size">40sp</dimen>
+    <dimen name="start_test_title_min_text_size">32sp</dimen>
+    <dimen name="start_test_image_top_margin">64dp</dimen>
+    <dimen name="start_test_description_top_margin">40dp</dimen>
+    <dimen name="start_test_link_bottom_margin">80dp</dimen>
+    
+    <!-- Button Dimensions -->
+    <dimen name="button_min_height">72dp</dimen>
+</resources>

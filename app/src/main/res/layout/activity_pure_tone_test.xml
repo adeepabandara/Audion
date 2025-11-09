@@ -263,12 +263,15 @@
                 android:layout_weight="1"/>
 
             <LinearLayout
+                android:id="@+id/responseButtonsRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center"
                 android:weightSum="2"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="16dp"
+                android:background="@android:color/transparent"
+                android:visibility="gone">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/buttonNotHeard"
@@ -284,7 +287,8 @@
                     android:textColor="@color/red_cant"
                     android:textSize="32sp"
                     android:textAllCaps="false"
-                    android:fontFamily="@font/dm_sans"/>
+                    android:fontFamily="@font/dm_sans"
+                    android:visibility="gone"/>
 
                 <Space
                     android:layout_width="16dp"
@@ -304,7 +308,8 @@
                     android:textColor="@color/green_hear"
                     android:textSize="32sp"
                     android:textAllCaps="false"
-                    android:fontFamily="@font/dm_sans"/>
+                    android:fontFamily="@font/dm_sans"
+                    android:visibility="gone"/>
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
@@ -314,12 +319,13 @@
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="16dp"
                 android:backgroundTint="#0F766E"
-                android:text="Start"
+                android:text="START TEST"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textAllCaps="false"
-                app:cornerRadius="20dp"/>
+                app:cornerRadius="20dp"
+                android:visibility="visible"/>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

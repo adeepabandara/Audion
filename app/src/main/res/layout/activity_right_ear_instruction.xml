@@ -1,92 +1,141 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F0FDFA"
-    android:fillViewport="true"
-    android:padding="20dp">
+    android:background="@android:color/white"
+    android:fitsSystemWindows="true">
 
-    <!-- Outer container centers the fixed-width inner container horizontally -->
-    <LinearLayout
-        android:layout_width="match_parent"
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical">
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:fontFamily="@font/poppins"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:text="Let's Begin with Your Right Ear"
+        android:textColor="@android:color/black"
+        android:textSize="28sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/tvSubtitle"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintVertical_bias="0.5" />
 
-        <!-- Inner fixed-width container preserving original component styling -->
-        <LinearLayout
-            android:id="@+id/layout_pure_tone_test"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+    <!-- Subtitle -->
+    <TextView
+        android:id="@+id/tvSubtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="32dp"
+        android:fontFamily="@font/poppins"
+        android:textStyle="bold"
+        android:gravity="start"
+        android:text="Before you start"
+        android:textColor="@android:color/black"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintBottom_toTopOf="@id/tvInstruction1" />
 
-            <!-- Title (centered) -->
-            <TextView
-                android:id="@+id/title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:gravity="left"
-                android:text="Right Ear Test"
-                android:textColor="#1A6958"
-                android:textSize="32sp"
-                android:textStyle="bold" />
+    <!-- Instruction 1 -->
+    <TextView
+        android:id="@+id/tvInstruction1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/poppins"
+        android:gravity="start"
+        android:text="Sit somewhere calm."
+        android:textColor="#6B7280"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSubtitle"
+        app:layout_constraintBottom_toTopOf="@id/tvInstruction2" />
 
-            <!-- Intro Text -->
-            <TextView
-                android:id="@+id/body"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:fontFamily="@font/poppins"
-                android:lineSpacingExtra="4dp"
-                android:text="Fantastic! Let's focus on your right ear now."
-                android:textColor="#4A4A4A"
-                android:textSize="14sp" />
+    <!-- Instruction 2 -->
+    <TextView
+        android:id="@+id/tvInstruction2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/poppins"
+        android:gravity="start"
+        android:text="Pair or plug in your earphones."
+        android:textColor="#6B7280"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvInstruction1"
+        app:layout_constraintBottom_toTopOf="@id/tvInstruction3" />
 
-            <!-- Follow-up Instruction -->
-            <TextView
-                android:id="@+id/bodyFollowUp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:fontFamily="@font/poppins"
-                android:text="Press the Start button, and listen carefully. If you hear a sound, simply press the button."
-                android:textColor="#4A4A4A"
-                android:textSize="14sp" />
+    <!-- Instruction 3 -->
+    <TextView
+        android:id="@+id/tvInstruction3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/poppins"
+        android:gravity="start"
+        android:text="Keep only the right earphone on."
+        android:textColor="#6B7280"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvInstruction2"
+        app:layout_constraintBottom_toTopOf="@id/tvInstruction4" />
 
-            <!-- Ear Image -->
-            <ImageView
-                android:id="@+id/imageViewEar"
-                android:layout_width="312dp"
-                android:layout_height="325dp"
-                android:layout_gravity="center"
-                android:scaleType="fitCenter"
-                android:src="@drawable/right_ear" />
+    <!-- Instruction 4 -->
+    <TextView
+        android:id="@+id/tvInstruction4"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/poppins"
+        android:gravity="start"
+        android:text="Tap ✓ once you hear a tone."
+        android:textColor="#6B7280"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvInstruction3"
+        app:layout_constraintBottom_toTopOf="@id/buttonStartRightEarTest" />
 
-            <!-- Spacer to push button to the bottom -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+    <!-- Start Test Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonStartRightEarTest"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="@dimen/onboarding_horizontal_padding"
+        android:layout_marginEnd="@dimen/onboarding_horizontal_padding"
+        android:layout_marginBottom="32dp"
+        android:backgroundTint="#0F766E"
+        android:text="Start Test"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textAllCaps="false"
+        android:fontFamily="@font/poppins"
+        app:cornerRadius="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
-            <!-- Start Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonStartRightEarTest"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="16dp"
-                android:backgroundTint="#0F766E"
-                android:fontFamily="@font/poppins_light"
-                android:text="Start"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                app:cornerRadius="20dp" />
-        </LinearLayout>
-    </LinearLayout>
-</ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

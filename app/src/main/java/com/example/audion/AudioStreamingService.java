@@ -45,6 +45,9 @@ public class AudioStreamingService extends Service {
     public static final String EXTRA_FREQ = "frequency";
     public static final String EXTRA_AMPL = "amplitude";
 
+    public static final String ACTION_SET_PROCESSING_MODE = "com.example.audion.ACTION_SET_PROCESSING_MODE";
+    public static final String EXTRA_PROCESSING_MODE = "processingMode";
+    
     public static final String PREFS_NAME        = "com.example.audion.PREFERENCES";
     public static final String KEY_NOISE_REMOVAL = "noiseRemoval";
     public static final String KEY_AMPLIFICATION = "amplificationFactor";

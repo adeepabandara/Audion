@@ -13,4 +13,6 @@ public interface CalibrationDao {
     @Query("SELECT * FROM calibration_entries WHERE userId = :userId AND profileId = :profileId")
     List<CalibrationEntry> getForUserProfile(int userId, int profileId);
 
+    @Query("SELECT * FROM calibration_entries WHERE userId = :userId AND profileId = :profileId")
+    List<CalibrationEntry> getCalibrationsByUserAndProfile(int userId, int profileId);
 }

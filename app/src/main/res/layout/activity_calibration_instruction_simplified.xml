@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:fitsSystemWindows="true">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/onboarding_horizontal_padding"
+        android:layout_marginEnd="@dimen/onboarding_horizontal_padding"
+        android:layout_marginTop="64dp"
+        android:autoSizeMaxTextSize="@dimen/start_test_title_max_text_size"
+        android:autoSizeMinTextSize="@dimen/start_test_title_min_text_size"
+        android:autoSizeStepGranularity="1sp"
+        android:autoSizeTextType="uniform"
+        android:ellipsize="end"
+        android:fontFamily="@font/poppins"
+        android:gravity="center_horizontal"
+        android:maxLines="2"
+        android:text="Calibration Test"
+        android:textColor="@android:color/black"
+        android:textSize="@dimen/start_test_title_text_size"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/imageViewEar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <!-- Placeholder Image - Replace with appropriate calibration illustration -->
+    <ImageView
+        android:id="@+id/imageViewEar"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="64dp"
+        android:layout_marginEnd="64dp"
+        android:layout_marginTop="@dimen/start_test_image_top_margin"
+        android:adjustViewBounds="true"
+        android:contentDescription="Calibration test illustration"
+        android:scaleType="fitCenter"
+        android:src="@drawable/logo_color"
+        app:layout_constraintBottom_toTopOf="@id/tvDescription"
+        app:layout_constraintDimensionRatio="H,1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/onboarding_horizontal_padding"
+        android:layout_marginEnd="@dimen/onboarding_horizontal_padding"
+        android:layout_marginTop="@dimen/start_test_description_top_margin"
+        android:autoSizeMaxTextSize="@dimen/slide_description_max_text_size"
+        android:autoSizeMinTextSize="@dimen/slide_description_min_text_size"
+        android:autoSizeStepGranularity="1sp"
+        android:autoSizeTextType="uniform"
+        android:ellipsize="end"
+        android:fontFamily="@font/poppins"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:maxLines="5"
+        android:text="We'll play tones at different volumes.\n\nAdjust the volume slider until it feels comfortable for you.\n\nThis helps us personalize your hearing profile."
+        android:textColor="@android:color/black"
+        android:textSize="@dimen/slide_description_text_size"
+        app:layout_constraintBottom_toTopOf="@id/buttonBegin"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/imageViewEar" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonBegin"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="@dimen/onboarding_horizontal_padding"
+        android:layout_marginEnd="@dimen/onboarding_horizontal_padding"
+        android:layout_marginBottom="32dp"
+        android:backgroundTint="#0F766E"
+        android:fontFamily="@font/poppins"
+        android:text="Begin Calibration"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:cornerRadius="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

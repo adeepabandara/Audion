@@ -43,9 +43,12 @@ import androidx.core.content.ContextCompat;
 import com.example.audion.data.AppDatabase;
 import com.example.audion.data.CalibrationDao;
 import com.example.audion.data.CalibrationEntry;
+import com.example.audion.data.CalibrationProfileDao;
+import com.example.audion.data.CalibrationProfileEntity;
 import com.example.audion.data.HearingProfile;
 import com.example.audion.data.HearingTestResult;
 import com.example.audion.data.HearingTestResultDao;
+import com.audion.audio.GainPrescriptionHelper;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
@@ -118,6 +121,15 @@ public class HomeActivity extends AppCompatActivity {
 
     private SeekBar.OnSeekBarChangeListener gainChangeListener;
 
+    // Audio source toggle
+    private LinearLayout micToggleOption;
+    private LinearLayout phoneToggleOption;
+    private ImageView micIcon;
+    private ImageView phoneIcon;
+    private TextView micLabel;
+    private TextView phoneLabel;
+    private boolean isMicrophoneSource = true;  // true = Mic, false = Phone
+
     // Tour/overlay fields
     private TourGuide mCurrentTourGuideOverlay;
     private View      currentStepTarget;
@@ -132,22 +144,35 @@ public class HomeActivity extends AppCompatActivity {
 
 
 
-        setContentView(R.layout.activity_variation_one);
+        setContentView(R.layout.activity_home_standard);
 
         // Bind views
 
         waveformView         = findViewById(R.id.waveformView);
         toggleButton         = findViewById(R.id.toggleButton);
-        tvSelectedProfile    = findViewById(R.id.tvSelectedProfile);
-        ivProfileIcon        = findViewById(R.id.ivProfileIcon);
         bottomNav            = findViewById(R.id.bottomNavigationView);
         amplificationSeekBar = findViewById(R.id.seekBar);
         noiseStatusText      = findViewById(R.id.noiseStatusText);
         noiseRemovalSwitch   = findViewById(R.id.noiseRemovalSwitch);
         tabLayout            = findViewById(R.id.tabLayout);
+        
+        // Audio source toggle views
+        micToggleOption      = findViewById(R.id.micToggleOption);
+        phoneToggleOption    = findViewById(R.id.phoneToggleOption);
+        micIcon              = findViewById(R.id.micIcon);
+        phoneIcon            = findViewById(R.id.phoneIcon);
+        micLabel             = findViewById(R.id.micLabel);
+        phoneLabel           = findViewById(R.id.phoneLabel);
+        
+        // Optional views (may not exist in all layouts)
+        tvSelectedProfile    = findViewById(R.id.tvSelectedProfile);
+        ivProfileIcon        = findViewById(R.id.ivProfileIcon);
         volumeCard           = findViewById(R.id.volumeCard);
 
         hearingTestResultDao = AppDatabase.getInstance(this).hearingTestResultDao();
+
+        // Check and update personalization status banner
+        updatePersonalizationStatusBanner();
 
         // Request RECORD_AUDIO permission if needed
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
@@ -230,16 +255,16 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         // ─── Amplification SeekBar with confirmation dialogs ─────────────────────────
-        final float maxDb = 100f;  // SeekBar spans 0–100 dB
+        final float maxDb = 40f;  // SeekBar spans 0–40 dB (safe consumer hearing assistance limit)
 
         // (A) Intercept touch so user cannot drag past thresholds if not confirmed
         amplificationSeekBar.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_MOVE) {
                 float curDb = (lastProgress / (float) amplificationSeekBar.getMax()) * maxDb;
-                if (curDb >= 40f && !allowAbove40) {
+                if (curDb >= 20f && !allowAbove40) {
                     return true; // block further movement
                 }
-                if (curDb >= 70f && !allowAbove70) {
+                if (curDb >= 30f && !allowAbove70) {
                     return true;
                 }
             }
@@ -255,8 +280,8 @@ public class HomeActivity extends AppCompatActivity {
                 // compute dB, thresholds
                 float curDb = (progress / (float) sb.getMax()) * maxDb;
                 int maxProgress = sb.getMax();
-                int threshold40 = Math.round((60f / maxDb) * maxProgress);
-                int threshold70 = Math.round((90f / maxDb) * maxProgress);
+                int threshold40 = Math.round((20f / maxDb) * maxProgress);  // 20 dB warning threshold
+                int threshold70 = Math.round((30f / maxDb) * maxProgress);  // 30 dB warning threshold
 
                 // grab the three layers of the track
                 LayerDrawable ld = (LayerDrawable) sb.getProgressDrawable().mutate();
@@ -270,9 +295,9 @@ public class HomeActivity extends AppCompatActivity {
                 int redAlert     = ContextCompat.getColor(HomeActivity.this, R.color.red_alert);
                 int lightRedAlert   = ContextCompat.getColor(HomeActivity.this, R.color.red_alert_light);
 
-                // tint the filled portion: red if ≥40 dB, otherwise primary
-                prLayer.setTint(curDb >= 60f ? redAlert : primaryColor);
-                // the 0→40dB zone (secondaryProgress) stays background
+                // tint the filled portion: red if ≥20 dB, otherwise primary
+                prLayer.setTint(curDb >= 20f ? redAlert : primaryColor);
+                // the 0→20dB zone (secondaryProgress) stays background
                 secLayer.setTint(bgColor);
                 // the rest of the bar is always red
                 bgLayer.setTint(lightRedAlert);
@@ -280,19 +305,19 @@ public class HomeActivity extends AppCompatActivity {
 
                 // also tint the thumb the same way
                 Drawable thumb = sb.getThumb().mutate();
-                thumb.setTint(curDb >= 60f ? redAlert : primaryColor);
+                thumb.setTint(curDb >= 20f ? redAlert : primaryColor);
                 sb.setThumb(thumb);
 
                 if (fromUser) {
-                    // Extreme warning (70 dB)
-                    if (curDb > 70f && !allowAbove70 && lastProgress <= threshold70) {
+                    // Extreme warning (30 dB)
+                    if (curDb > 30f && !allowAbove70 && lastProgress <= threshold70) {
                         sb.setEnabled(false);
                         sb.setOnSeekBarChangeListener(null);
                         sb.setProgress(threshold70);
                         lastProgress = threshold70;
                         showThresholdDialog(
-                                "Extreme Gain Warning",
-                                "You are about to exceed 70 dB of amplification. This can cause severe distortion or hearing damage. Continue?",
+                                "High Amplification",
+                                "Amplification above 30 dB is for severe hearing loss. Ensure comfortable listening levels. Continue?",
                                 () -> {
                                     allowAbove70 = true;
                                     sb.setEnabled(true);
@@ -310,15 +335,15 @@ public class HomeActivity extends AppCompatActivity {
                         );
                         return;
                     }
-                    // High warning (40 dB)
-                    if (curDb > 40f && curDb <= 70f && !allowAbove40 && lastProgress <= threshold40) {
+                    // High warning (20 dB)
+                    if (curDb > 20f && curDb <= 30f && !allowAbove40 && lastProgress <= threshold40) {
                         sb.setEnabled(false);
                         sb.setOnSeekBarChangeListener(null);
                         sb.setProgress(threshold40);
                         lastProgress = threshold40;
                         showThresholdDialog(
-                                "High Gain Warning",
-                                "You are about to exceed 40 dB of amplification. This may cause noticeable distortion. Continue?",
+                                "Moderate Amplification",
+                                "Amplification above 20 dB is for moderate hearing loss. Your hearing is protected. Continue?",
                                 () -> {
                                     allowAbove40 = true;
                                     sb.setEnabled(true);
@@ -337,8 +362,8 @@ public class HomeActivity extends AppCompatActivity {
                         return;
                     }
                     // reset confirmations if moved back down
-                    if (curDb <= 40f) allowAbove40 = false;
-                    if (curDb <= 70f) allowAbove70 = false;
+                    if (curDb <= 20f) allowAbove40 = false;
+                    if (curDb <= 30f) allowAbove70 = false;
 
                     // finally apply the new gain
                     sb.setProgress(progress);
@@ -408,46 +433,126 @@ public class HomeActivity extends AppCompatActivity {
             noiseStatusText.setText(
                     checked ? "Noise Cancellation ON" : "Noise Cancellation OFF"
             );
+            // Notify service of preference change
+            Intent broadcast = new Intent("com.example.audion.PREFERENCES_CHANGED");
+            sendBroadcast(broadcast);
+            Log.e("HomeActivity", "★★★ Broadcast sent: Noise Removal = " + (checked ? "ON" : "OFF"));
         });
+        // Read with default true (noise reduction ON by default)
         boolean isOn = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                .getBoolean(KEY_NOISE_REMOVAL, false);
+                .getBoolean(KEY_NOISE_REMOVAL, true);
         noiseRemovalSwitch.setChecked(isOn);
         noiseStatusText.setText(isOn
                 ? "Noise Cancellation ON"
                 : "Noise Cancellation OFF"
         );
 
-        // Profile selection
-        tvSelectedProfile.setOnClickListener(v -> {
-            reorderProfiles(profileList, currentProfileId);
-            ProfileSelectionBottomSheet bs =
-                    ProfileSelectionBottomSheet.newInstance(
-                            new ArrayList<>(profileList),
-                            currentProfileId
-                    );
-            bs.setOnProfileSelectedListener(profile -> {
-                currentProfileId = profile.getId();
-                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                        .edit()
-                        .putInt(KEY_SELECTED_PROFILE_ID, currentProfileId)
-                        .apply();
-                tvSelectedProfile.setText(profile.getName());
-                ivProfileIcon.setImageResource(iconResForKey(profile.getIcon()));
-                updateGainsForProfile(currentProfileId);
+        // Audio Source Toggle listeners
+        setupAudioSourceToggle();
+
+        // Profile selection (if view exists)
+        if (tvSelectedProfile != null) {
+            tvSelectedProfile.setOnClickListener(v -> {
+                reorderProfiles(profileList, currentProfileId);
+                ProfileSelectionBottomSheet bs =
+                        ProfileSelectionBottomSheet.newInstance(
+                                new ArrayList<>(profileList),
+                                currentProfileId
+                        );
+                bs.setOnProfileSelectedListener(profile -> {
+                    currentProfileId = profile.getId();
+                    getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                            .edit()
+                            .putInt(KEY_SELECTED_PROFILE_ID, currentProfileId)
+                            .apply();
+                    tvSelectedProfile.setText(profile.getName());
+                    if (ivProfileIcon != null) {
+                        ivProfileIcon.setImageResource(iconResForKey(profile.getIcon()));
+                    }
+                    updateGainsForProfile(currentProfileId);
+                });
+                bs.show(getSupportFragmentManager(), "ProfileSelectionBS");
             });
-            bs.show(getSupportFragmentManager(), "ProfileSelection");
-        });
+        }
 
         loadHearingProfiles();
     }
 
+    private void setupAudioSourceToggle() {
+        // Set initial state
+        updateToggleUI(isMicrophoneSource);
+        
+        // Microphone toggle click
+        micToggleOption.setOnClickListener(v -> {
+            if (!isMicrophoneSource) {
+                isMicrophoneSource = true;
+                updateToggleUI(true);
+                // Save preference
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("audio_source_mic", true)
+                    .apply();
+                // Notify service
+                sendBroadcast(new Intent("com.example.audion.PREFERENCES_CHANGED"));
+                Log.i("HomeActivity", "Audio source: Microphone");
+            }
+        });
+        
+        // Phone audio toggle click
+        phoneToggleOption.setOnClickListener(v -> {
+            if (isMicrophoneSource) {
+                isMicrophoneSource = false;
+                updateToggleUI(false);
+                // Save preference
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("audio_source_mic", false)
+                    .apply();
+                // Notify service
+                sendBroadcast(new Intent("com.example.audion.PREFERENCES_CHANGED"));
+                Log.i("HomeActivity", "Audio source: Phone Audio");
+            }
+        });
+        
+        // Restore saved state
+        isMicrophoneSource = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getBoolean("audio_source_mic", true);
+        updateToggleUI(isMicrophoneSource);
+    }
+    
+    private void updateToggleUI(boolean isMic) {
+        if (isMic) {
+            // Microphone selected
+            micToggleOption.setBackgroundResource(R.drawable.toggle_option_selected);
+            phoneToggleOption.setBackgroundResource(R.drawable.toggle_option_unselected);
+            micIcon.setColorFilter(getResources().getColor(R.color.primary));
+            phoneIcon.setColorFilter(getResources().getColor(R.color.onboarding_text_secondary));
+            micLabel.setTextColor(getResources().getColor(R.color.primary));
+            micLabel.setTypeface(null, android.graphics.Typeface.BOLD);
+            phoneLabel.setTextColor(getResources().getColor(R.color.onboarding_text_secondary));
+            phoneLabel.setTypeface(null, android.graphics.Typeface.NORMAL);
+        } else {
+            // Phone audio selected
+            micToggleOption.setBackgroundResource(R.drawable.toggle_option_unselected);
+            phoneToggleOption.setBackgroundResource(R.drawable.toggle_option_selected);
+            micIcon.setColorFilter(getResources().getColor(R.color.onboarding_text_secondary));
+            phoneIcon.setColorFilter(getResources().getColor(R.color.primary));
+            micLabel.setTextColor(getResources().getColor(R.color.onboarding_text_secondary));
+            micLabel.setTypeface(null, android.graphics.Typeface.NORMAL);
+            phoneLabel.setTextColor(getResources().getColor(R.color.primary));
+            phoneLabel.setTypeface(null, android.graphics.Typeface.BOLD);
+        }
+    }
+
     private void applyGain(int progress, int maxProgress, float maxDb) {
         float curDb = (progress / (float) maxProgress) * maxDb;
-        float ampFactor = (float) Math.pow(10, curDb / 20f);
+        // Store as dB directly (not linear factor) for SimpleAudioEngine
         getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                 .edit()
-                .putFloat(KEY_AMPLIFICATION, ampFactor)
+                .putFloat(KEY_AMPLIFICATION, curDb)  // Store dB value directly
                 .apply();
+        // Notify service of preference change
+        sendBroadcast(new Intent("com.example.audion.PREFERENCES_CHANGED"));
     }
 
     private void showThresholdDialog(
@@ -557,12 +662,12 @@ public class HomeActivity extends AppCompatActivity {
     private void startAudioStreamingService() {
         ContextCompat.startForegroundService(
                 this,
-                new Intent(this, AudioStreamingService.class)
+                new Intent(this, SimpleAudioStreamingService.class)
         );
     }
 
     private void stopAudioStreamingService() {
-        stopService(new Intent(this, AudioStreamingService.class));
+        stopService(new Intent(this, SimpleAudioStreamingService.class));
     }
 
     private void openFocusActivity() {
@@ -950,6 +1055,111 @@ private void startNoiseTour() {
             case "noodles":        return R.drawable.ic_noodles;
             case "glass_cocktail": return R.drawable.ic_glass_cocktail;
             default:               return R.drawable.ic_home;
+        }
+    }
+    
+    /**
+     * Check calibration status and update the personalization status banner
+     */
+    private void updatePersonalizationStatusBanner() {
+        try {
+            // Get the status card and its child views
+            com.google.android.material.card.MaterialCardView statusCard = findViewById(R.id.personalizationStatusCard);
+            TextView statusTitle = findViewById(R.id.personalizationStatusTitle);
+            TextView statusSubtitle = findViewById(R.id.personalizationStatusSubtitle);
+            ImageView statusIcon = findViewById(R.id.personalizationStatusIcon);
+            com.google.android.material.button.MaterialButton actionButton = findViewById(R.id.personalizationActionButton);
+            
+            if (statusCard == null) return;
+            
+            // Check if calibration data exists for current user and profile
+            SharedPreferences prefs = getSharedPreferences("HearingProfilePrefs", MODE_PRIVATE);
+            int userId = prefs.getInt("selected_user_id", 1);
+            int hearingProfileId = prefs.getInt("selected_hearing_profile_id", 1);
+            
+            // Query clinical data on background thread (Phase 1)
+            AppDatabase db = AppDatabase.getInstance(this);
+            new Thread(() -> {
+                try {
+                    // Check audiogram data
+                    HearingTestResultDao audiogramDao = db.hearingTestResultDao();
+                    List<HearingTestResult> allResults = audiogramDao.getResultsForUserAndProfile(userId, hearingProfileId);
+                    int leftAudiogramCount = 0, rightAudiogramCount = 0;
+                    for (HearingTestResult r : allResults) {
+                        if ("LEFT".equals(r.getEarSide())) leftAudiogramCount++;
+                        else if ("RIGHT".equals(r.getEarSide())) rightAudiogramCount++;
+                    }
+                    boolean hasAudiogram = (leftAudiogramCount > 0 || rightAudiogramCount > 0);
+                    
+                    // Check calibration data
+                    CalibrationProfileDao calibrationDao = db.calibrationProfileDao();
+                    int leftCalCount = calibrationDao.getProfileCountByUserAndEar(userId, "LEFT", hearingProfileId);
+                    int rightCalCount = calibrationDao.getProfileCountByUserAndEar(userId, "RIGHT", hearingProfileId);
+                    boolean hasCalibration = (leftCalCount > 0 || rightCalCount > 0);
+                    
+                    // Load calibration profiles for UCL-based SeekBar max
+                    List<CalibrationProfileEntity> leftCal = calibrationDao.getForEar(userId, "LEFT", hearingProfileId);
+                    List<CalibrationProfileEntity> rightCal = calibrationDao.getForEar(userId, "RIGHT", hearingProfileId);
+                    CalibrationProfileEntity leftCalEntity = leftCal.isEmpty() ? null : leftCal.get(0);
+                    CalibrationProfileEntity rightCalEntity = rightCal.isEmpty() ? null : rightCal.get(0);
+                    
+                    float safeMaxGainDb = GainPrescriptionHelper.calculateSafeMaxGain(leftCalEntity, rightCalEntity);
+                    
+                    // Update UI on main thread
+                    runOnUiThread(() -> {
+                        if (hasAudiogram && hasCalibration) {
+                            // Full personalization available - Phase 1 ✅
+                            statusTitle.setText("✅ Personalized for your hearing");
+                            statusTitle.setTextColor(ContextCompat.getColor(this, R.color.primary));
+                            statusSubtitle.setText("Audiogram & calibration active");
+                            statusIcon.setImageResource(R.drawable.ic_check_circle);
+                            statusIcon.setColorFilter(ContextCompat.getColor(this, R.color.primary));
+                            actionButton.setText("RE-TEST");
+                            actionButton.setOnClickListener(v -> {
+                                Intent intent = new Intent(this, GeneralInstructionActivity.class);
+                                startActivity(intent);
+                            });
+                            
+                            // Set SeekBar max based on UCL (Phase 1)
+                            if (amplificationSeekBar != null) {
+                                int seekBarMax = (int) Math.ceil(safeMaxGainDb);
+                                amplificationSeekBar.setMax(seekBarMax);
+                                Log.i(TAG, String.format("[Personalization] SeekBar max set to %d dB (from UCL)", seekBarMax));
+                            }
+                        } else {
+                            // Incomplete personalization ⚠️
+                            statusTitle.setText("⚠️ Generic settings (no hearing profile)");
+                            statusTitle.setTextColor(ContextCompat.getColor(this, R.color.red_alert));
+                            
+                            if (!hasAudiogram && !hasCalibration) {
+                                statusSubtitle.setText("Run hearing test for personalized audio");
+                            } else if (!hasAudiogram) {
+                                statusSubtitle.setText("Calibration done, audiometry needed");
+                            } else {
+                                statusSubtitle.setText("Audiometry done, calibration needed");
+                            }
+                            
+                            statusIcon.setImageResource(R.drawable.ic_hearing);
+                            statusIcon.setColorFilter(ContextCompat.getColor(this, R.color.red_alert));
+                            actionButton.setText("START TEST");
+                            actionButton.setOnClickListener(v -> {
+                                Intent intent = new Intent(this, GeneralInstructionActivity.class);
+                                startActivity(intent);
+                            });
+                            
+                            // Use default max for SeekBar
+                            if (amplificationSeekBar != null) {
+                                amplificationSeekBar.setMax(100); // Default 100 dB
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    android.util.Log.e("HomeActivity", "Error checking personalization status: " + e.getMessage());
+                }
+            }).start();
+            
+        } catch (Exception e) {
+            android.util.Log.e("HomeActivity", "Error updating personalization banner: " + e.getMessage());
         }
     }
 }

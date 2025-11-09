@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_pastel_gradient"
+    android:fitsSystemWindows="true"
+    tools:context=".NameActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingHorizontal="@dimen/name_screen_horizontal_padding"
+        android:paddingTop="64dp"
+        android:paddingBottom="32dp">
+
+        <!-- Logo Image replacing the blob -->
+        <ImageView
+            android:id="@+id/ivLogo"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_marginTop="32dp"
+            android:adjustViewBounds="true"
+            android:src="@drawable/logo_color"
+            android:scaleType="centerInside"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Question Label -->
+        <TextView
+            android:id="@+id/nameQuestion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="48dp"
+            android:fontFamily="@font/poppins"
+            android:text="@string/name_question"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/name_question_text_size"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ivLogo" />
+
+        <!-- Name Input Field -->
+        <EditText
+            android:id="@+id/nameInput"
+            style="@style/NameInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/name_input_margin_top"
+            android:fontFamily="@font/poppins"
+            android:hint="@string/name_hint"
+            android:textAlignment="center"
+            android:textColor="@color/name_text_primary"
+            android:textColorHint="@color/name_text_hint"
+            android:textSize="@dimen/name_input_text_size"
+            android:textStyle="normal"
+            android:inputType="textPersonName"
+            android:maxLines="1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/nameQuestion"
+            tools:text="Joshua" />
+
+        <!-- Continue Button - Fixed to bottom -->
+        <Button
+            android:id="@+id/continueButton"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/onboarding_button_height"
+            android:layout_marginHorizontal="@dimen/name_screen_horizontal_padding"
+            android:background="@drawable/onboarding_button_bg"
+            android:fontFamily="@font/poppins"
+            android:text="@string/name_continue_text"
+            android:textAllCaps="false"
+            android:textColor="@color/onboarding_button_text"
+            android:textSize="@dimen/onboarding_button_text_size"
+            android:textStyle="normal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

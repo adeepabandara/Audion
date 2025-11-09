@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
     android:maxSdkVersion="32" />
@@ -23,12 +24,51 @@
         tools:targetApi="31">
         <activity
             android:name=".SplashActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:theme="@style/Theme.Audion.Splash"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".OnboardingActivity"
+            android:theme="@style/Theme.Audion"
+            android:exported="true">
+        </activity>
+
+        <!-- New Onboarding Flow Activities -->
+        <activity
+            android:name=".OnboardingCarouselActivity"
+            android:theme="@style/Theme.MaterialComponents.NoActionBar"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".WhatsYourNameActivity"
+            android:theme="@style/Theme.MaterialComponents.NoActionBar"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".StartTestActivity"
+            android:theme="@style/Theme.MaterialComponents.NoActionBar"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".PureToneIntroActivity"
+            android:theme="@style/Theme.MaterialComponents.NoActionBar"
+            android:exported="false">
+        </activity>
+
+        <activity
+            android:name=".NameActivity"
+            android:theme="@style/Theme.Audion"
+            android:windowSoftInputMode="adjustPan"
+            android:exported="false">
         </activity>
 
           <activity android:name=".UserCreationActivity" 
@@ -42,7 +82,7 @@
 
           <activity
               android:name=".PureToneTestActivity"
-
+              android:theme="@style/Theme.MaterialComponents.NoActionBar"
               android:windowSoftInputMode="adjustResize" />
 
 
@@ -68,6 +108,12 @@
                                       <activity android:name=".FrequencySweepActivity" 
            android:windowSoftInputMode="adjustResize"/>
 
+           <activity android:name=".TestResultsActivity" 
+           android:theme="@style/Theme.Audion.NoActionBar"
+           android:windowSoftInputMode="adjustResize"/>
+
+           <activity android:name=".TestCompletionSplashActivity" 
+           android:theme="@style/Theme.Audion" />
 
            
                 <activity android:name=".HelpActivity" 
@@ -79,8 +125,19 @@
 
 
            <activity android:name=".SettingsActivity" />
-<activity android:name=".CalibrationInstructionActivity" />
+<activity 
+    android:name=".CalibrationInstructionActivity"
+    android:theme="@style/Theme.Audion.NoActionBar" />
 <activity android:name=".CalibrationTestActivity" />
+<!-- Refactored SeekBar-based calibration with stereo separation and MCL/UCL workflow -->
+<activity 
+    android:name=".CalibrationTestActivityRefactored"
+    android:screenOrientation="portrait"
+    android:theme="@style/Theme.Audion.NoActionBar"
+    android:windowSoftInputMode="adjustResize" />
+<activity android:name=".HearingProfileActivity" 
+           android:windowSoftInputMode="adjustResize"
+           android:theme="@style/Theme.Audion" />
 
 
                            <activity android:name=".NewProfileBottomSheet" 
@@ -88,9 +145,15 @@
 
            <activity android:name=".GeneralInstructionActivity" 
            android:windowSoftInputMode="adjustResize"/>
+           
+           <activity android:name=".EarResultActivity" 
+           android:windowSoftInputMode="adjustResize"/>
+           
            <activity android:name=".LeftEarInstructionActivity" 
+           android:theme="@style/Theme.MaterialComponents.NoActionBar"
            android:windowSoftInputMode="adjustResize"/>
            <activity android:name=".RightEarInstructionActivity" 
+           android:theme="@style/Theme.MaterialComponents.NoActionBar"
            android:windowSoftInputMode="adjustResize"/>
 
 
@@ -105,6 +168,11 @@
 
         <service
         android:name=".AudioStreamingService"
+        android:exported="false"
+        android:foregroundServiceType="mediaPlayback" />
+
+        <service
+        android:name=".SimpleAudioStreamingService"
         android:exported="false"
         android:foregroundServiceType="mediaPlayback" />
 

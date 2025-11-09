@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Onboarding Dimensions -->
+    <!-- Spacing & Padding -->
+    <dimen name="onboarding_horizontal_padding">24dp</dimen>
+    <dimen name="onboarding_title_margin_top">80dp</dimen>
+    <dimen name="onboarding_spacing_title_to_paragraph">20dp</dimen>
+    <dimen name="onboarding_spacing_paragraph_to_indicators">24dp</dimen>
+    <dimen name="onboarding_spacing_indicators_to_button">40dp</dimen>
+    <dimen name="onboarding_spacing_button_to_secondary">16dp</dimen>
+    <dimen name="onboarding_spacing_button_to_footer">12dp</dimen>
+    <dimen name="onboarding_bottom_margin">24dp</dimen>
+
+    <!-- Text Sizes -->
+    <dimen name="onboarding_main_title_size">28sp</dimen>
+    <dimen name="onboarding_bold_title_size">32sp</dimen>
+    <dimen name="onboarding_paragraph_size">14sp</dimen>
+    <dimen name="onboarding_button_text_size">16sp</dimen>
+    <dimen name="onboarding_secondary_text_size">14sp</dimen>
+    <dimen name="onboarding_footer_text_size">12sp</dimen>
+
+    <!-- Text Styling -->
+    <dimen name="onboarding_title_line_spacing">-4dp</dimen>
+    <dimen name="onboarding_paragraph_line_spacing">8dp</dimen>
+    <dimen name="onboarding_paragraph_max_width">300dp</dimen>
+
+    <!-- Indicators -->
+    <dimen name="indicator_dot_size">6dp</dimen>
+    <dimen name="indicator_dot_spacing">8dp</dimen>
+    <dimen name="indicator_active_width">16dp</dimen>
+    <dimen name="indicator_active_height">6dp</dimen>
+
+    <!-- Button -->
+    <dimen name="onboarding_button_height">52dp</dimen>
+    <dimen name="onboarding_button_corner_radius">28dp</dimen>
+    <dimen name="onboarding_button_drawable_padding">8dp</dimen>
+
+    <!-- Name Screen Dimensions -->
+    <!-- Spacing & Padding -->
+    <dimen name="name_screen_horizontal_padding">24dp</dimen>
+    <dimen name="blob_height">72dp</dimen>
+    <dimen name="blob_margin_top">24dp</dimen>
+    <dimen name="question_margin_top">16dp</dimen>
+    <dimen name="name_input_margin_top">16dp</dimen>
+    <dimen name="continue_button_margin_top">24dp</dimen>
+    <dimen name="legal_text_margin_top">16dp</dimen>
+
+    <!-- Text Sizes -->
+    <dimen name="name_question_text_size">14sp</dimen>
+    <dimen name="name_input_text_size">32sp</dimen>
+    <dimen name="continue_button_text_size">16sp</dimen>
+    <dimen name="legal_text_size">12sp</dimen>
+
+    <!-- Button Dimensions -->
+    <dimen name="continue_button_width">220dp</dimen>
+    <dimen name="continue_button_height">48dp</dimen>
+    <dimen name="continue_button_corner_radius">28dp</dimen>
+
+    <!-- Text Styling -->
+    <dimen name="legal_text_line_spacing">2dp</dimen>
+    <dimen name="name_input_padding_vertical">12dp</dimen>
+    
+    <!-- Responsive Onboarding Carousel Dimensions -->
+    <dimen name="carousel_indicator_spacing">8dp</dimen>
+    <dimen name="carousel_indicator_width">24dp</dimen>
+    <dimen name="carousel_indicator_height">4dp</dimen>
+    <dimen name="carousel_top_margin">24dp</dimen>
+    <dimen name="carousel_indicators_bottom_margin">24dp</dimen>
+    <dimen name="carousel_button_bottom_margin">48dp</dimen>
+    
+    <!-- Responsive Slide Dimensions -->
+    <dimen name="slide_title_top_margin">24dp</dimen>
+    <dimen name="slide_title_text_size">24sp</dimen>
+    <dimen name="slide_title_max_text_size">28sp</dimen>
+    <dimen name="slide_title_min_text_size">20sp</dimen>
+    <dimen name="slide_image_top_margin">32dp</dimen>
+    <dimen name="slide_image_horizontal_margin">32dp</dimen>
+    <dimen name="slide_description_top_margin">24dp</dimen>
+    <dimen name="slide_description_text_size">14sp</dimen>
+    <dimen name="slide_description_max_text_size">16sp</dimen>
+    <dimen name="slide_description_min_text_size">12sp</dimen>
+    
+    <!-- Responsive Name Screen Dimensions -->
+    <dimen name="name_title_top_margin">80dp</dimen>
+    <dimen name="name_title_text_size">24sp</dimen>
+    <dimen name="name_title_max_text_size">28sp</dimen>
+    <dimen name="name_title_min_text_size">20sp</dimen>
+    <dimen name="name_edittext_top_margin">32dp</dimen>
+    <dimen name="name_edittext_padding">20dp</dimen>
+    <dimen name="name_edittext_text_size">16sp</dimen>
+    
+    <!-- Responsive Start Test Screen Dimensions -->
+    <dimen name="start_test_title_top_margin">48dp</dimen>
+    <dimen name="start_test_title_text_size">24sp</dimen>
+    <dimen name="start_test_title_max_text_size">28sp</dimen>
+    <dimen name="start_test_title_min_text_size">20sp</dimen>
+    <dimen name="start_test_image_top_margin">32dp</dimen>
+    <dimen name="start_test_description_top_margin">24dp</dimen>
+    <dimen name="start_test_button_spacing">16dp</dimen>
+    <dimen name="start_test_link_bottom_margin">48dp</dimen>
+    
+    <!-- Touch Target Sizes (Accessibility) -->
+    <dimen name="min_touch_target">48dp</dimen>
+    <dimen name="button_min_height">56dp</dimen>
+    
+    <!-- Standard Margins -->
+    <dimen name="margin_standard">16dp</dimen>
+    <dimen name="margin_large">24dp</dimen>
+    <dimen name="margin_xlarge">32dp</dimen>
+    <dimen name="margin_small">8dp</dimen>
+    
+    <!-- Standard Text Sizes -->
+    <dimen name="text_title">22sp</dimen>
+    <dimen name="text_body">16sp</dimen>
+    <dimen name="text_caption">14sp</dimen>
+</resources>

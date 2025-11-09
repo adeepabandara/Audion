@@ -1,92 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F0FDFA"
-    android:fillViewport="true"
-    android:padding="20dp">
+    android:background="@android:color/white"
+    android:fitsSystemWindows="true">
 
-    <!-- Outer container: centers fixed‑width content -->
-    <LinearLayout
-        android:layout_width="match_parent"
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical">
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="64dp"
+        android:fontFamily="@font/poppins"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:text="Left Ear – Pure Tone Test"
+        android:textColor="@android:color/black"
+        android:textSize="28sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Inner fixed-width container (319dp) preserving original styling -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+    <!-- Ear Image -->
+    <ImageView
+        android:id="@+id/imageViewEar"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="64dp"
+        android:layout_marginEnd="64dp"
+        android:layout_marginTop="48dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/left_ear"
+        android:contentDescription="Left ear illustration"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintBottom_toTopOf="@id/tvDescription"
+        app:layout_constraintVertical_chainStyle="packed" />
 
-            <!-- Title (centered) -->
-            <TextView
-                android:id="@+id/titleTextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="left"
-                android:layout_marginBottom="16dp"
-                android:text="Left Ear Test"
-                android:textColor="#1A6958"
-                android:textSize="32sp"
-                android:textStyle="bold"
-                />
+    <!-- Description -->
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="48dp"
+        android:fontFamily="@font/poppins"
+        android:gravity="center"
+        android:text="Place your headphones on and tap 'Start Test' when you're ready.\n\nYou'll hear tones at different volumes – tap when you can hear them."
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/imageViewEar"
+        app:layout_constraintBottom_toTopOf="@id/buttonStartLeftEarTest" />
 
-            <!-- Intro Text -->
-            <TextView
-                android:id="@+id/body"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:fontFamily="@font/poppins"
-                android:lineSpacingExtra="4dp"
-                android:text="Fantastic! Let's focus on your left ear first."
-                android:textColor="#4A4A4A"
-                android:textSize="14sp" />
+    <!-- Start Test Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonStartLeftEarTest"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="@dimen/onboarding_horizontal_padding"
+        android:layout_marginEnd="@dimen/onboarding_horizontal_padding"
+        android:layout_marginBottom="32dp"
+        android:backgroundTint="#0F766E"
+        android:text="Start Test"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textAllCaps="false"
+        android:fontFamily="@font/poppins"
+        app:cornerRadius="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
-            <!-- Follow-up Instruction -->
-            <TextView
-                android:id="@+id/bodyFollowUp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                android:fontFamily="@font/poppins"
-                android:text="Press the Start button, and listen carefully. If you hear a sound, simply press the button."
-                android:textColor="#4A4A4A"
-                android:textSize="14sp" />
-
-            <!-- Ear Image -->
-            <ImageView
-                android:id="@+id/imageViewEar"
-                android:layout_width="312dp"
-                android:layout_height="307dp"
-                android:layout_gravity="center"
-                android:scaleType="fitCenter"
-                android:src="@drawable/left_ear" />
-
-            <!-- Spacer to push the button to the bottom -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-
-            <!-- Ready Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonStartLeftEarTest"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="16dp"
-                android:backgroundTint="#0F766E"
-                android:fontFamily="@font/poppins_light"
-                android:text="I’m Ready – Let’s Begin!"
-                android:textAllCaps="false"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                app:cornerRadius="20dp" />
-        </LinearLayout>
-    </LinearLayout>
-</ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

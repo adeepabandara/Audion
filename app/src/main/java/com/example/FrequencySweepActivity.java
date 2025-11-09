@@ -6,6 +6,7 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -28,9 +29,8 @@ public class FrequencySweepActivity extends AppCompatActivity {
 
     private ProgressBar progressBar;
     private MaterialButton btnStart, btnHeard, btnNotHeard;
-    private ImageView[] stepImages;
-    private TextView[] stepLabels;
     private ImageView earImage;
+    private TextView tvCountdown;
 
     private volatile boolean stopPlayback = false;
     private int lastAmplitudeStep = 0;
@@ -72,31 +72,39 @@ public class FrequencySweepActivity extends AppCompatActivity {
         TextView title = findViewById(R.id.title);
         title.setText((currentEar.equalsIgnoreCase("LEFT") ? "Left" : "Right") + " Ear Test");
 
-        stepImages = new ImageView[]{
-            findViewById(R.id.step1Image), findViewById(R.id.step2Image),
-            findViewById(R.id.step3Image), findViewById(R.id.step4Image),
-            findViewById(R.id.step5Image), findViewById(R.id.step6Image),
-            findViewById(R.id.step7Image), findViewById(R.id.step8Image)
-        };
-        stepLabels = new TextView[]{
-            findViewById(R.id.step1Text), findViewById(R.id.step2Text),
-            findViewById(R.id.step3Text), findViewById(R.id.step4Text),
-            findViewById(R.id.step5Text), findViewById(R.id.step6Text),
-            findViewById(R.id.step7Text), findViewById(R.id.step8Text)
-        };
-
         progressBar = findViewById(R.id.progressBar);
         progressBar.setMax(100);
 
+        // tvCountdown = findViewById(R.id.tvCountdown);  // Optional - may not exist in shared layout
+        
         btnStart   = findViewById(R.id.buttonStart);
         btnHeard   = findViewById(R.id.buttonHeard);
         btnNotHeard= findViewById(R.id.buttonNotHeard);
 
-        btnStart.setOnClickListener(v -> startToneRamp());
+        btnStart.setOnClickListener(v -> startCountdownAndTest());
         btnHeard.setOnClickListener(v -> { stopPlayback = true; recordResponse(true); });
         btnNotHeard.setOnClickListener(v -> { stopPlayback = true; recordResponse(false); });
 
         showStartUI();
+    }
+
+    private void startCountdownAndTest() {
+        // Hide all controls during countdown
+        showCountdownUI();
+        
+        new CountDownTimer(3000, 1000) {
+            public void onTick(long millisUntilFinished) {
+                long secondsRemaining = millisUntilFinished / 1000;
+                if (tvCountdown != null) {
+                    tvCountdown.setText(String.valueOf(secondsRemaining));
+                }
+            }
+
+            public void onFinish() {
+                hideCountdownUI();
+                startToneRamp();
+            }
+        }.start();
     }
 
     private void startToneRamp() {
@@ -137,24 +145,36 @@ private void recordResponse(boolean heard) {
 
     // 2) persist the result off the UI thread
     new Thread(() -> {
-        resultDao.insert(new HearingTestResult(
-            userId,
-            currentEar,
-            frequencies[stepIndex],
-            heard ? lastAmplitudeStep : 100,
-            profileId
-        ));
+        try {
+            // Ensure HearingProfile exists before inserting HearingTestResult
+            AppDatabase db = AppDatabase.getInstance(this);
+            com.example.audion.data.HearingProfileDao profileDao = db.hearingProfileDao();
+            com.example.audion.data.HearingProfile profile = profileDao.getHearingProfileById(profileId);
+            if (profile == null) {
+                // Create a default profile if it doesn't exist
+                android.util.Log.d("FrequencySweep", "Creating default HearingProfile with ID: " + profileId);
+                com.example.audion.data.HearingProfile newProfile = new com.example.audion.data.HearingProfile("Standard Mode", "default_icon");
+                long newId = profileDao.insert(newProfile);
+                profileId = (int) newId;
+                android.util.Log.d("FrequencySweep", "Created HearingProfile with new ID: " + profileId);
+            }
+            
+            resultDao.insert(new HearingTestResult(
+                userId,
+                currentEar,
+                frequencies[stepIndex],
+                heard ? lastAmplitudeStep : 100,
+                profileId
+            ));
+        } catch (Exception e) {
+            android.util.Log.e("FrequencySweep", "Error inserting hearing test result", e);
+        }
     }).start();
 
-    // 3) mark the UI immediately (still on the UI thread)
-    if (stepIndex >= 0 && stepIndex < stepImages.length) {
-        runOnUiThread(() -> markStepperCompleted(stepIndex));
-    }
-
-    // 4) now advance
+    // 3) now advance
     currentFreqIndex++;
 
-    // 5a) if there are more tones, reset for the next one
+    // 4) if there are more tones, reset for the next one
     if (currentFreqIndex < frequencies.length) {
         runOnUiThread(() -> {
             progressBar.setProgress(0);
@@ -184,7 +204,11 @@ private void recordResponse(boolean heard) {
             startActivity(FrequencySweepActivity.intentFor(
                 this, "LEFT", userId, profileId));
         } else {
-            startActivity(new Intent(this, HomeActivity.class));
+            // Both ears complete - navigate to test results
+            Intent resultsIntent = new Intent(this, TestResultsActivity.class);
+            resultsIntent.putExtra("USER_ID", userId);
+            resultsIntent.putExtra("HEARING_PROFILE_ID", profileId);
+            startActivity(resultsIntent);
         }
         finish();
     }
@@ -194,6 +218,29 @@ private void recordResponse(boolean heard) {
         btnStart.setVisibility(View.VISIBLE);
         btnHeard.setVisibility(View.GONE);
         btnNotHeard.setVisibility(View.GONE);
+        if (tvCountdown != null) {
+            tvCountdown.setVisibility(View.GONE);
+        }
+        progressBar.setVisibility(View.VISIBLE);
+    }
+
+    private void showCountdownUI() {
+        // Hide everything except countdown
+        btnStart.setVisibility(View.GONE);
+        btnHeard.setVisibility(View.GONE);
+        btnNotHeard.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
+        if (tvCountdown != null) {
+            tvCountdown.setVisibility(View.VISIBLE);
+            tvCountdown.setText("3");
+        }
+    }
+
+    private void hideCountdownUI() {
+        if (tvCountdown != null) {
+            tvCountdown.setVisibility(View.GONE);
+        }
+        progressBar.setVisibility(View.VISIBLE);
     }
 
     private void showResponseUI() {
@@ -207,13 +254,5 @@ private void recordResponse(boolean heard) {
         btnNotHeard.setVisibility(View.GONE);
         btnStart.setText("Repeat");
         btnStart.setVisibility(View.VISIBLE);
-    }
-
-    private void markStepperCompleted(int idx) {
-        if (idx < 0 || idx >= stepImages.length) return;
-        stepImages[idx].setImageResource(R.drawable.circle_completed);
-        stepLabels[idx].setText("✓");
-        stepLabels[idx].setTextColor(
-            ContextCompat.getColor(this, R.color.white));
     }
 }

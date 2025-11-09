@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_pastel_gradient"
+    android:fitsSystemWindows="true"
+    android:paddingHorizontal="@dimen/onboarding_horizontal_padding"
+    tools:context=".OnboardingActivity">
+
+    <!-- Main Title: We believe in -->
+    <TextView
+        android:id="@+id/tvMainTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/onboarding_title_margin_top"
+        android:fontFamily="sans-serif"
+        android:text="@string/onboarding_main_title"
+        android:textColor="@color/onboarding_text_primary"
+        android:textSize="@dimen/onboarding_main_title_size"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Natural -->
+    <TextView
+        android:id="@+id/tvNatural"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:lineSpacingExtra="@dimen/onboarding_title_line_spacing"
+        android:text="@string/onboarding_natural"
+        android:textColor="@color/onboarding_text_primary"
+        android:textSize="@dimen/onboarding_bold_title_size"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvMainTitle" />
+
+    <!-- Technology -->
+    <TextView
+        android:id="@+id/tvTechnology"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif"
+        android:lineSpacingExtra="@dimen/onboarding_title_line_spacing"
+        android:text="@string/onboarding_technology"
+        android:textColor="@color/onboarding_text_primary"
+        android:textSize="@dimen/onboarding_bold_title_size"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvNatural" />
+
+    <!-- Description Paragraph -->
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/onboarding_spacing_title_to_paragraph"
+        android:fontFamily="sans-serif"
+        android:lineSpacingExtra="@dimen/onboarding_paragraph_line_spacing"
+        android:maxWidth="@dimen/onboarding_paragraph_max_width"
+        android:text="@string/onboarding_description"
+        android:textColor="@color/onboarding_text_secondary"
+        android:textSize="@dimen/onboarding_paragraph_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTechnology"
+        app:layout_constraintWidth_max="@dimen/onboarding_paragraph_max_width" />
+
+    <!-- Pager Indicators Container -->
+    <LinearLayout
+        android:id="@+id/indicatorContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/onboarding_spacing_paragraph_to_indicators"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvDescription">
+
+        <!-- Indicator 1 (inactive) -->
+        <View
+            android:id="@+id/indicator1"
+            android:layout_width="@dimen/indicator_dot_size"
+            android:layout_height="@dimen/indicator_dot_size"
+            android:layout_marginEnd="@dimen/indicator_dot_spacing"
+            android:background="@drawable/indicator_dot" />
+
+        <!-- Indicator 2 (inactive) -->
+        <View
+            android:id="@+id/indicator2"
+            android:layout_width="@dimen/indicator_dot_size"
+            android:layout_height="@dimen/indicator_dot_size"
+            android:layout_marginEnd="@dimen/indicator_dot_spacing"
+            android:background="@drawable/indicator_dot" />
+
+        <!-- Indicator 3 (inactive) -->
+        <View
+            android:id="@+id/indicator3"
+            android:layout_width="@dimen/indicator_dot_size"
+            android:layout_height="@dimen/indicator_dot_size"
+            android:layout_marginEnd="@dimen/indicator_dot_spacing"
+            android:background="@drawable/indicator_dot" />
+
+        <!-- Indicator 4 (active) -->
+        <View
+            android:id="@+id/indicator4"
+            android:layout_width="@dimen/indicator_active_width"
+            android:layout_height="@dimen/indicator_active_height"
+            android:background="@drawable/indicator_active" />
+
+    </LinearLayout>
+
+    <!-- Apple Sign In Button -->
+    <Button
+        android:id="@+id/btnAppleSignIn"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/onboarding_button_height"
+        android:layout_marginBottom="@dimen/onboarding_spacing_indicators_to_button"
+        android:background="@drawable/onboarding_button_bg"
+        android:drawableStart="@drawable/ic_apple"
+        android:drawablePadding="@dimen/onboarding_button_drawable_padding"
+        android:fontFamily="sans-serif"
+        android:text="@string/onboarding_apple_button_text"
+        android:textAllCaps="false"
+        android:textColor="@color/onboarding_button_text"
+        android:textSize="@dimen/onboarding_button_text_size"
+        android:textStyle="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
