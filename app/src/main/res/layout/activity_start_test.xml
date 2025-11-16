@@ -70,17 +70,10 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnStartTest"
+        style="@style/PrimaryButton"
         android:layout_width="0dp"
-        android:layout_height="48dp"
         android:layout_marginBottom="4dp"
-        android:backgroundTint="#0F766E"
         android:text="@string/start_test_button"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textAllCaps="false"
-        android:fontFamily="@font/poppins"
-        app:cornerRadius="8dp"
         app:layout_constraintBottom_toTopOf="@id/tvTestLater"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

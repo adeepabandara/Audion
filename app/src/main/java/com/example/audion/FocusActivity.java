@@ -5,6 +5,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -33,6 +34,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.os.Build;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
@@ -42,6 +44,7 @@ import android.widget.Toast;
 
 import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import androidx.core.content.ContextCompat;
 
 import com.airbnb.lottie.LottieAnimationView;
@@ -88,10 +91,6 @@ public class FocusActivity extends AppCompatActivity
         "Prepping your focus lens…"
     };
 
-    private final Handler scanTextHandler = new Handler(Looper.getMainLooper());
-    private Runnable scanTextRunnable;
-    private int scanTextIndex = 0;
-
     private DirectDiarizationManager diarizationManager;
     private boolean isProcessing = false;
 
@@ -109,22 +108,28 @@ public class FocusActivity extends AppCompatActivity
     private int recordedSamples = 0;
 
     private List<EnrollmentActivity.EnrolledSpeaker> enrolledSpeakers = new ArrayList<>();
-    private RecyclerView enrolledSpeakersRecyclerView;
     private EnrolledSpeakersAdapter enrolledSpeakersAdapter;
 
     private GlobalSpeakersAdapter globalSpeakersAdapter;
-    private RecyclerView globalSpeakersRecyclerView;
 
     private Handler mainHandler;
     private MaterialButton enrollButton;
+    private MaterialButton scanAgainButton; // Fixed at bottom for "no speakers" case
+    private MaterialButton scanAgainButtonInScroll; // Inside ScrollView for "speakers found" case
     private BottomNavigationView bottomNav;
 
-
-    // inline UI
-    private FrameLayout defaultPanel;
-    private View defaultView, scanView, diarizationView;
-    private ProgressBar scanProgressInline, diarizationProgressInline;
-    private TextView scanTextView, diarizationStatusInline;
+    // Scanning UI elements
+    private View scanningContainer;
+    private TextView scanStatusText;
+    private ProgressBar scanProgress;
+    private Handler scanHandler = new Handler(Looper.getMainLooper());
+    private Runnable scanTextRunnable;
+    private int scanMessageIndex = 0;
+    
+    // Diarization UI elements
+    private View diarizationContainer;
+    private TextView diarizationStatusText;
+    private ProgressBar diarizationProgress;
 
     // amplification
     private SeekBar amplificationSeekBar;
@@ -134,12 +139,28 @@ public class FocusActivity extends AppCompatActivity
     private MaterialButton toggleButton;
 
     private WaveformView focusWaveform;
+    private int waveformUpdateCount = 0;
     private final BroadcastReceiver wfReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context ctx, Intent i) {
             float level = i.getFloatExtra("outputLevel", 0f);
-            focusWaveform.addLevel(level);
+            if (focusWaveform != null) {
+                focusWaveform.addLevel(level);
+                waveformUpdateCount++;
+                if (waveformUpdateCount % 100 == 0) {
+                    android.util.Log.d("FocusActivity", "Waveform received: " + level + " (count=" + waveformUpdateCount + ")");
+                }
+            }
         }
     };
+
+    // Audio control container (waveform + toggle button + seekbar)
+    private androidx.constraintlayout.widget.ConstraintLayout audioControlContainer;
+
+    // Selected speaker card (simple display)
+    private View selectedSpeakerCardView;
+    private TextView cardSpeakerName;
+    private RotatingBorderView rotatingBorder;
+    private SpeakerSelectionBottomSheet.DetectedSpeaker currentlySelectedSpeaker = null;
 
     // TabLayout for Normal/Focus
     private TabLayout tabLayout;
@@ -193,8 +214,66 @@ public class FocusActivity extends AppCompatActivity
         focusWaveform = findViewById(R.id.focusWaveform);
         lbm = LocalBroadcastManager.getInstance(this);
 
-        defaultPanel = findViewById(R.id.defaultPanel);
-        showDefaultPanel();
+        // Initialize audio control container (waveform + toggle + seekbar)
+        audioControlContainer = findViewById(R.id.audioControlContainer);
+        if (audioControlContainer != null) {
+            audioControlContainer.setVisibility(View.GONE);
+        }
+
+        // Initialize noise reduction switch
+        com.google.android.material.switchmaterial.SwitchMaterial noiseRemovalSwitch = findViewById(R.id.noiseRemovalSwitch);
+        TextView noiseStatusText = findViewById(R.id.noiseStatusText);
+        
+        if (noiseRemovalSwitch != null) {
+            // Read current setting from SharedPreferences (default true)
+            // Use same prefs name as HomeActivity and SimpleAudioStreamingService
+            SharedPreferences prefs = getSharedPreferences("com.example.audion.PREFERENCES", MODE_PRIVATE);
+            boolean isOn = prefs.getBoolean("noiseRemoval", true);
+            noiseRemovalSwitch.setChecked(isOn);
+            
+            // Set initial status text
+            if (noiseStatusText != null) {
+                noiseStatusText.setText(isOn ? "Noise Cancellation ON" : "Noise Cancellation OFF");
+            }
+            
+            // Handle switch changes
+            noiseRemovalSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                // Save to SharedPreferences
+                prefs.edit().putBoolean("noiseRemoval", isChecked).apply();
+                
+                // Update status text
+                if (noiseStatusText != null) {
+                    noiseStatusText.setText(isChecked ? "Noise Cancellation ON" : "Noise Cancellation OFF");
+                }
+                
+                // Notify audio service of preference change
+                Intent broadcast = new Intent("com.example.audion.PREFERENCES_CHANGED");
+                sendBroadcast(broadcast);
+                
+                Log.d(TAG, "Noise Reduction " + (isChecked ? "enabled" : "disabled"));
+            });
+        }
+
+        // Initialize selected speaker card (rotatingBorder is now the container)
+        rotatingBorder = findViewById(R.id.rotatingBorder);
+        if (rotatingBorder != null) {
+            rotatingBorder.setVisibility(View.GONE);
+            cardSpeakerName = rotatingBorder.findViewById(R.id.cardSpeakerName);
+            selectedSpeakerCardView = rotatingBorder.findViewById(R.id.selectedSpeakerCard);
+            
+            // Card click opens bottom sheet to change speaker - set on both views for reliability
+            rotatingBorder.setOnClickListener(v -> {
+                Log.d(TAG, "Speaker card clicked - opening bottom sheet");
+                showSpeakerSelectionBottomSheet();
+            });
+            
+            if (selectedSpeakerCardView != null) {
+                selectedSpeakerCardView.setOnClickListener(v -> {
+                    Log.d(TAG, "Inner card clicked - opening bottom sheet");
+                    showSpeakerSelectionBottomSheet();
+                });
+            }
+        }
 
         toggleButton = findViewById(R.id.toggleButton);
         if (toggleButton != null) {
@@ -204,6 +283,11 @@ public class FocusActivity extends AppCompatActivity
             Log.w(TAG, "toggleButton not found yet; skipping initial hide");
         }
 
+        // Keep the main content group visible initially (showing image and description)
+        View mainContentGroup = findViewById(R.id.mainContentGroup);
+        if (mainContentGroup != null) {
+            mainContentGroup.setVisibility(View.VISIBLE);
+        }
 
 
 
@@ -212,13 +296,32 @@ public class FocusActivity extends AppCompatActivity
         View loadingOverlay = findViewById(R.id.loadingOverlay);
         loadingOverlay.setVisibility(View.VISIBLE);
 
+        // Initialize scanning UI elements
+        scanningContainer = findViewById(R.id.scanningContainer);
+        scanStatusText = findViewById(R.id.scanStatusText);
+        scanProgress = findViewById(R.id.scanProgress);
+        
+        // Initialize diarization UI elements
+        diarizationContainer = findViewById(R.id.diarizationContainer);
+        diarizationStatusText = findViewById(R.id.diarizationStatusText);
+        diarizationProgress = findViewById(R.id.diarizationProgress);
+
         // Bind UI
-        enrollButton                 = findViewById(R.id.enrollButton);
-        enrolledSpeakersRecyclerView = findViewById(R.id.enrolledSpeakersRecyclerView);
-        bottomNav                    = findViewById(R.id.bottomNavigationView);
+        enrollButton = findViewById(R.id.enrollButton);
+        scanAgainButton = findViewById(R.id.scanAgainButton); // Fixed at bottom
+        scanAgainButtonInScroll = findViewById(R.id.scanAgainButtonInScroll); // Inside ScrollView
+        if (scanAgainButton == null) {
+            Log.e(TAG, "❌ scanAgainButton is NULL after findViewById!");
+        } else {
+            Log.d(TAG, "✅ scanAgainButton found successfully");
+        }
+        if (scanAgainButtonInScroll == null) {
+            Log.e(TAG, "❌ scanAgainButtonInScroll is NULL after findViewById!");
+        } else {
+            Log.d(TAG, "✅ scanAgainButtonInScroll found successfully");
+        }
+        bottomNav = findViewById(R.id.bottomNavigationView);
         findViewById(R.id.seekBarContainer).setVisibility(View.GONE);
-        findViewById(R.id.enrolledSpeakersRecyclerView).setVisibility(View.GONE);
-        findViewById(R.id.noSpeakersText).setVisibility(View.GONE);
 
         amplificationSeekBar = findViewById(R.id.seekBar);
         amplificationSeekBar.setMax(100);
@@ -367,12 +470,82 @@ public class FocusActivity extends AppCompatActivity
                 overridePendingTransition(0,0);
                 return true;
             } else if (id == R.id.navigation_settings) {
-                startActivity(new Intent(this, MusicPlayerActivity.class));
+                startActivity(new Intent(this, ProfileActivity.class));
                 overridePendingTransition(0,0);
                 return true;
             }
             return true;
         });
+    }
+
+    /**
+     * Reset UI to initial state (showing Focus image and description)
+     */
+    private void resetToInitialState() {
+        // Show main content (image + description)
+        View mainContentGroup = findViewById(R.id.mainContentGroup);
+        if (mainContentGroup != null) {
+            mainContentGroup.setVisibility(View.VISIBLE);
+        }
+        
+        // Reset image to default focus image
+        ImageView focusModeImage = findViewById(R.id.focusModeImage);
+        if (focusModeImage != null) {
+            focusModeImage.setImageResource(R.drawable.focus);
+        }
+        
+        // Reset description text
+        TextView focusModeDescription = findViewById(R.id.focusModeDescription);
+        if (focusModeDescription != null) {
+            focusModeDescription.setText("Isolate and amplify the voice you want to hear.\nScan your environment to detect speakers.");
+        }
+        
+        // Hide audio control container
+        if (audioControlContainer != null) {
+            audioControlContainer.setVisibility(View.GONE);
+        }
+        
+        // Hide scanning container
+        if (scanningContainer != null) {
+            scanningContainer.setVisibility(View.GONE);
+        }
+        
+        // Hide diarization container
+        if (diarizationContainer != null) {
+            diarizationContainer.setVisibility(View.GONE);
+        }
+        
+        // Stop and hide animated border container (which contains the speaker card)
+        if (rotatingBorder != null) {
+            rotatingBorder.stopAnimation();
+            rotatingBorder.setVisibility(View.GONE);
+        }
+        
+        // Hide toggle button
+        if (toggleButton != null) {
+            toggleButton.setVisibility(View.INVISIBLE);
+            toggleButton.setEnabled(false);
+        }
+        
+        // Reset button text and visibility
+        if (enrollButton != null) {
+            enrollButton.setText("Scan Environment");
+            enrollButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F766E));
+            enrollButton.setVisibility(View.VISIBLE);
+        }
+        
+        // Hide both scan again buttons
+        if (scanAgainButton != null) {
+            scanAgainButton.setVisibility(View.GONE);
+        }
+        if (scanAgainButtonInScroll != null) {
+            scanAgainButtonInScroll.setVisibility(View.GONE);
+        }
+        
+        // Clear selected speaker
+        currentlySelectedSpeaker = null;
+        selectedEnrolledSpeaker = null;
+        detectedSpeakers.clear();
     }
 
     private void applyGain(int progress, int maxProgress, float maxDb) {
@@ -405,17 +578,19 @@ public class FocusActivity extends AppCompatActivity
         globalSpeakersAdapter = new GlobalSpeakersAdapter(this, new HashMap<>());
         globalSpeakersAdapter.setSelectionListener(this);
         globalSpeakersAdapter.setDiarizationManager(diarizationManager);
-        globalSpeakersRecyclerView = findViewById(R.id.globalSpeakersRecyclerView);
-        globalSpeakersRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        globalSpeakersRecyclerView.setAdapter(globalSpeakersAdapter);
-        globalSpeakersRecyclerView.setVisibility(View.GONE);
 
         // enrolled speakers
         enrolledSpeakersAdapter = new EnrolledSpeakersAdapter(this, enrolledSpeakers);
         enrolledSpeakersAdapter.setOnSpeakerSelectListener((speaker, pos) -> {
             sendBroadcast(new Intent("com.example.audion.STOP_STREAMING"));
             selectedEnrolledSpeaker = speaker;
-            defaultPanel.removeAllViews();
+            
+            // Hide main content group
+            View mainContentGroup = findViewById(R.id.mainContentGroup);
+            if (mainContentGroup != null) {
+                mainContentGroup.setVisibility(View.GONE);
+            }
+            
             toggleButton.setVisibility(View.VISIBLE);
             toggleButton.setEnabled(true);
             updateToggleUi(false);
@@ -428,33 +603,30 @@ public class FocusActivity extends AppCompatActivity
             // Update speaker isolation state when speaker is selected
             updateSpeakerIsolationState();
         });
-        enrolledSpeakersRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        enrolledSpeakersRecyclerView.setAdapter(enrolledSpeakersAdapter);
         loadEnrolledSpeakers();
-
-        enrolledSpeakersRecyclerView.setVisibility(View.GONE);
 
         enrollButton.setOnClickListener(v -> {
             if (!isEnrolling) {
+                // Start scanning
                 startEnrollment();
             } else {
-                // Manual cancel
+                // Cancel scan during scanning
                 isEnrolling = false;
-                scanTextHandler.removeCallbacks(scanTextRunnable);
                 if (enrollmentRecorder != null) {
                     enrollmentRecorder.stop();
                     enrollmentRecorder.release();
                     enrollmentRecorder = null;
                 }
-                defaultPanel.removeAllViews();
-                showDefaultPanel();
-                toggleButton.setVisibility(View.INVISIBLE);
-
-                enrollButton.setText("Scan Environment");
-                enrollButton.setBackgroundTintList(
-                        ColorStateList.valueOf(Color.parseColor("#0F766E"))
-                );
+                resetToInitialState();
             }
+        });
+
+        // Scan Again button click listener
+        scanAgainButton.setOnClickListener(v -> {
+            // Reset to initial state
+            resetToInitialState();
+            // Then start new scan
+            startEnrollment();
         });
 
         // start/stop processing
@@ -474,74 +646,86 @@ public class FocusActivity extends AppCompatActivity
     private void abortEnrollment() {
         if (!isEnrolling) return;
         isEnrolling = false;
-        scanTextHandler.removeCallbacks(scanTextRunnable);
+        
+        // Stop scan animation
+        if (scanHandler != null && scanTextRunnable != null) {
+            scanHandler.removeCallbacks(scanTextRunnable);
+        }
+        
         if (enrollmentRecorder != null) {
             enrollmentRecorder.stop();
             enrollmentRecorder.release();
             enrollmentRecorder = null;
         }
         runOnUiThread(() -> {
+            // Hide scanning and diarization containers
+            if (scanningContainer != null) {
+                scanningContainer.setVisibility(View.GONE);
+            }
+            if (diarizationContainer != null) {
+                diarizationContainer.setVisibility(View.GONE);
+            }
+            
             showDefaultPanel();
             toggleButton.setVisibility(View.INVISIBLE);
             toggleButton.setEnabled(false);
             enrollButton.setText("Scan Environment");
-            enrollButton.setBackgroundTintList(
-                    ColorStateList.valueOf(Color.parseColor("#0F766E"))
-            );
+            enrollButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F766E)); // Reset to primary green
             findViewById(R.id.seekBarContainer).setVisibility(View.GONE);
-            findViewById(R.id.enrolledSpeakersRecyclerView).setVisibility(View.GONE);
-            findViewById(R.id.noSpeakersText).setVisibility(View.GONE);
         });
     }
 
     private void showDefaultPanel() {
-        defaultPanel.removeAllViews();
-        View v = getLayoutInflater()
-                .inflate(R.layout.default_inline, defaultPanel, false);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-        );
-        defaultPanel.addView(v, lp);
+        // Hide the static content group
+        View mainContentGroup = findViewById(R.id.mainContentGroup);
+        if (mainContentGroup != null) {
+            mainContentGroup.setVisibility(View.GONE);
+        }
     }
 
     private void showScanInline() {
-        defaultPanel.removeAllViews();
-        View scanV = getLayoutInflater()
-                .inflate(R.layout.scan_inline, defaultPanel, false);
-
-        scanTextView       = scanV.findViewById(R.id.scanText);
-        scanProgressInline = scanV.findViewById(R.id.scanProgress);
-
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-        );
-        defaultPanel.addView(scanV, lp);
-
-        scanTextIndex = 0;
-        scanTextView.setText(scanMessages[scanTextIndex]);
-        scanProgressInline.setProgress(0);
-
+        // Hide main content group during scanning
+        View mainContentGroup = findViewById(R.id.mainContentGroup);
+        if (mainContentGroup != null) {
+            mainContentGroup.setVisibility(View.GONE);
+        }
+        
+        // Show scanning container with progress animation
+        if (scanningContainer != null) {
+            scanningContainer.setVisibility(View.VISIBLE);
+        }
+        
+        // Reset progress
+        scanMessageIndex = 0;
+        if (scanStatusText != null) {
+            scanStatusText.setText(scanMessages[scanMessageIndex]);
+        }
+        if (scanProgress != null) {
+            scanProgress.setProgress(0);
+        }
+        
+        // Animate scanning messages
         long interval = ENROLLMENT_DURATION_SECONDS * 1000L / scanMessages.length;
         scanTextRunnable = new Runnable() {
             @Override public void run() {
-                scanTextIndex = (scanTextIndex + 1) % scanMessages.length;
-                scanTextView.setText(scanMessages[scanTextIndex]);
-                scanTextHandler.postDelayed(this, interval);
+                scanMessageIndex = (scanMessageIndex + 1) % scanMessages.length;
+                if (scanStatusText != null) {
+                    scanStatusText.setText(scanMessages[scanMessageIndex]);
+                }
+                scanHandler.postDelayed(this, interval);
             }
         };
-        scanTextHandler.postDelayed(scanTextRunnable, interval);
-
+        scanHandler.postDelayed(scanTextRunnable, interval);
+        
+        // Animate progress bar
         new Thread(() -> {
             while (isEnrolling) {
-                runOnUiThread(() ->
-                    scanProgressInline.setProgress(
-                        Math.min(100,
-                          (recordedSamples * 100) / ENROLLMENT_SAMPLE_COUNT))
-                );
+                int progress = Math.min(100, (recordedSamples * 100) / ENROLLMENT_SAMPLE_COUNT);
+                runOnUiThread(() -> {
+                    if (scanProgress != null) {
+                        scanProgress.setProgress(progress);
+                    }
+                });
                 try { Thread.sleep(100); }
                 catch (InterruptedException ignored) { }
             }
@@ -549,19 +733,25 @@ public class FocusActivity extends AppCompatActivity
     }
 
     private void showDiarizationInline() {
-        defaultPanel.removeAllViews();
-        View diaV = getLayoutInflater()
-                .inflate(R.layout.diarization_inline, defaultPanel, false);
-
-        diarizationStatusInline   = diaV.findViewById(R.id.diarizationStatus);
-        diarizationProgressInline = diaV.findViewById(R.id.diarizationProgress);
-
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-        );
-        defaultPanel.addView(diaV, lp);
+        // Hide main content group and scanning container
+        View mainContentGroup = findViewById(R.id.mainContentGroup);
+        if (mainContentGroup != null) {
+            mainContentGroup.setVisibility(View.GONE);
+        }
+        if (scanningContainer != null) {
+            scanningContainer.setVisibility(View.GONE);
+        }
+        
+        // Show diarization container with animation
+        if (diarizationContainer != null) {
+            diarizationContainer.setVisibility(View.VISIBLE);
+        }
+        if (diarizationStatusText != null) {
+            diarizationStatusText.setText("Starting diarization…");
+        }
+        if (diarizationProgress != null) {
+            diarizationProgress.setProgress(0);
+        }
     }
 
     private void initializeDiarizationManager() {
@@ -580,9 +770,11 @@ public class FocusActivity extends AppCompatActivity
     }
 
     private void toggleProcessing() {
-        if (isProcessing) stopProcessing();
-        else {
-            if (selectedEnrolledSpeaker == null) {
+        if (isProcessing) {
+            stopProcessing();
+        } else {
+            // Check if speaker is selected using either variable
+            if (selectedEnrolledSpeaker == null && currentlySelectedSpeaker == null) {
                 Toast.makeText(this, "Select a speaker first",
                                Toast.LENGTH_SHORT).show();
                 return;
@@ -601,10 +793,22 @@ public class FocusActivity extends AppCompatActivity
 
             // Initialize Focus Mode manager with diarization and selected speaker
             FocusModeManager.getInstance().initialize(this, diarizationManager);
+            
+            // Set speaker embedding from either selectedEnrolledSpeaker or currentlySelectedSpeaker
+            float[] embeddingToUse = null;
             if (selectedEnrolledSpeaker != null) {
-                FocusModeManager.getInstance().setSelectedSpeakerEmbedding(
-                    selectedEnrolledSpeaker.getEmbedding()
-                );
+                embeddingToUse = selectedEnrolledSpeaker.getEmbedding();
+                Log.d(TAG, "Using selectedEnrolledSpeaker embedding: " + selectedEnrolledSpeaker.getName());
+            } else if (currentlySelectedSpeaker != null) {
+                embeddingToUse = currentlySelectedSpeaker.getEmbedding();
+                Log.d(TAG, "Using currentlySelectedSpeaker embedding: " + currentlySelectedSpeaker.getName());
+            }
+            
+            if (embeddingToUse != null) {
+                FocusModeManager.getInstance().setSelectedSpeakerEmbedding(embeddingToUse);
+                Log.d(TAG, "Speaker embedding set in FocusModeManager (length=" + embeddingToUse.length + ")");
+            } else {
+                Log.e(TAG, "ERROR: No speaker embedding available!");
             }
 
             // Start SimpleAudioStreamingService with Phase 2+3 DSP
@@ -613,7 +817,7 @@ public class FocusActivity extends AppCompatActivity
             isProcessing = true;
             speakerIsolationEnabled = true;
             updateToggleUi(true);
-            focusWaveform.setVisibility(View.VISIBLE);
+            // Waveform is now always visible (static section), just clear levels
             focusWaveform.levels.clear();
             
             // Enable speaker isolation in service
@@ -657,7 +861,8 @@ public class FocusActivity extends AppCompatActivity
         // Stop SimpleAudioStreamingService
         stopAudioStreamingService();
         
-        focusWaveform.setVisibility(View.GONE);
+        // Waveform stays visible (static section), just clear levels
+        focusWaveform.levels.clear();
         updateToggleUi(false);
     }
 
@@ -679,14 +884,16 @@ public class FocusActivity extends AppCompatActivity
 
     @Override protected void onStart() {
         super.onStart();
-        lbm.registerReceiver(
+        androidx.core.content.ContextCompat.registerReceiver(
+                this,
                 wfReceiver,
-                new IntentFilter("com.example.audion.WAVEFORM_UPDATE")
+                new IntentFilter("com.example.audion.WAVEFORM_UPDATE"),
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
         );
     }
     @Override protected void onStop() {
         super.onStop();
-        lbm.unregisterReceiver(wfReceiver);
+        unregisterReceiver(wfReceiver);
     }
 
     @Override public void onSpeakerSelected(int speakerId) {
@@ -696,7 +903,6 @@ public class FocusActivity extends AppCompatActivity
 
     @Override public void onSpeakersDetected(List<DirectDiarizationManager.SpeakerInfo> list) {
         runOnUiThread(() -> {
-            globalSpeakersRecyclerView.setVisibility(View.VISIBLE);
             globalSpeakersAdapter.notifyDataSetChanged();
 
             sendBroadcast(new Intent("com.example.audion.STOP_STREAMING"));
@@ -706,7 +912,6 @@ public class FocusActivity extends AppCompatActivity
     }
     @Override public void onSpeakersHistoryUpdated(List<List<DirectDiarizationManager.SpeakerInfo>> history) {
         runOnUiThread(() -> {
-            globalSpeakersRecyclerView.setVisibility(View.VISIBLE);
             globalSpeakersAdapter.notifyDataSetChanged();
         });
         
@@ -715,9 +920,15 @@ public class FocusActivity extends AppCompatActivity
     }
     @Override public void onBufferFillProgress(float p) { }
     @Override public void onProcessingProgress(float p) {
-        if (diarizationProgressInline != null) {
+        // Update diarization progress
+        if (diarizationProgress != null) {
             int pct = Math.round(p * 100);
-            runOnUiThread(() -> diarizationProgressInline.setProgress(pct));
+            runOnUiThread(() -> {
+                diarizationProgress.setProgress(pct);
+                if (diarizationStatusText != null) {
+                    diarizationStatusText.setText("Processing audio… " + pct + "%");
+                }
+            });
         }
     }
     @Override public void onDiarizationError(String m) {
@@ -748,8 +959,21 @@ public class FocusActivity extends AppCompatActivity
      * This allows SimpleAudioStreamingService to apply speaker isolation in real-time.
      */
     private void updateSpeakerIsolationState() {
-        if (selectedEnrolledSpeaker == null || diarizationManager == null) {
+        // Check for speaker using both variables
+        EnrollmentActivity.EnrolledSpeaker speakerToCheck = selectedEnrolledSpeaker;
+        float[] embeddingToCheck = null;
+        
+        if (speakerToCheck != null) {
+            embeddingToCheck = speakerToCheck.getEmbedding();
+            Log.d(TAG, "updateSpeakerIsolationState: Using selectedEnrolledSpeaker - " + speakerToCheck.getName());
+        } else if (currentlySelectedSpeaker != null) {
+            embeddingToCheck = currentlySelectedSpeaker.getEmbedding();
+            Log.d(TAG, "updateSpeakerIsolationState: Using currentlySelectedSpeaker - " + currentlySelectedSpeaker.getName());
+        }
+        
+        if (embeddingToCheck == null || diarizationManager == null) {
             // No speaker selected or diarization not ready - disable isolation
+            Log.d(TAG, "updateSpeakerIsolationState: No speaker or diarization not ready, disabling isolation");
             sendSpeakerIsolationBroadcast(false, true, currentChunkId);
             return;
         }
@@ -760,11 +984,15 @@ public class FocusActivity extends AppCompatActivity
             for (var s : diarizationManager.getActiveSpeakers(currentChunkId)) {
                 if (diarizationManager.isSpeakerMatchingEnrollment(
                         s.getGlobalId(),
-                        selectedEnrolledSpeaker.getEmbedding()
+                        embeddingToCheck
                 )) {
                     speakerActive = true;
+                    Log.d(TAG, "updateSpeakerIsolationState: Selected speaker IS ACTIVE (globalId=" + s.getGlobalId() + ")");
                     break;
                 }
+            }
+            if (!speakerActive) {
+                Log.d(TAG, "updateSpeakerIsolationState: Selected speaker NOT active");
             }
         } catch (Exception e) {
             Log.w("FocusActivity", "Error checking active speakers", e);
@@ -802,16 +1030,19 @@ public class FocusActivity extends AppCompatActivity
         isEnrolling = true;
 
         runOnUiThread(() -> {
+            // Hide main content group when scanning starts
+            View mainContentGroup = findViewById(R.id.mainContentGroup);
+            if (mainContentGroup != null) {
+                mainContentGroup.setVisibility(View.GONE);
+            }
+            
             findViewById(R.id.seekBarContainer).setVisibility(View.GONE);
-            findViewById(R.id.enrolledSpeakersRecyclerView).setVisibility(View.GONE);
-            findViewById(R.id.noSpeakersText).setVisibility(View.GONE);
 
             showScanInline();
 
             enrollButton.setText("Stop Scan");
-            enrollButton.setBackgroundTintList(
-                    ColorStateList.valueOf(Color.RED)
-            );
+            enrollButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFDC2626)); // Change to red
+            enrollButton.setEnabled(true);
         });
 
         enrollmentRecorder = new AudioRecord(
@@ -831,8 +1062,6 @@ public class FocusActivity extends AppCompatActivity
                 }
             }
 
-            scanTextHandler.removeCallbacks(scanTextRunnable);
-
             if (recordedSamples >= ENROLLMENT_SAMPLE_COUNT) {
                 runOnUiThread(this::showDiarizationInline);
                 stopEnrollment();
@@ -843,14 +1072,26 @@ public class FocusActivity extends AppCompatActivity
     private void stopEnrollment() {
         if (!isEnrolling) return;
         isEnrolling = false;
-        scanTextHandler.removeCallbacks(scanTextRunnable);
+        
+        // Stop scan animation
+        if (scanHandler != null && scanTextRunnable != null) {
+            scanHandler.removeCallbacks(scanTextRunnable);
+        }
+        
         if (enrollmentRecorder != null) {
             enrollmentRecorder.stop();
             enrollmentRecorder.release();
             enrollmentRecorder = null;
         }
 
-        runOnUiThread(() -> enrollButton.setText("Stop Scan"));
+        runOnUiThread(() -> {
+            // Hide scanning container
+            if (scanningContainer != null) {
+                scanningContainer.setVisibility(View.GONE);
+            }
+            
+            // Don't change button text here - it will be hidden after processing completes
+        });
         new Thread(this::processEnrollmentAudio).start();
     }
 
@@ -862,13 +1103,15 @@ public class FocusActivity extends AppCompatActivity
                 SpeakerDiarizationManager.processSpeakerDiarization(
                         audio,
                         (proc, tot, unused) -> {
+                            // Update diarization progress
                             int pct = (int)(proc * 100f / tot);
                             runOnUiThread(() -> {
-                                if (diarizationProgressInline != null)
-                                    diarizationProgressInline.setProgress(pct);
-                                if (diarizationStatusInline != null)
-                                    diarizationStatusInline.setText(
-                                            "Loading Speaker Playbacks… " + pct + "%");
+                                if (diarizationProgress != null) {
+                                    diarizationProgress.setProgress(pct);
+                                }
+                                if (diarizationStatusText != null) {
+                                    diarizationStatusText.setText("Loading Speaker Playbacks… " + pct + "%");
+                                }
                             });
                             return 0;
                         });
@@ -896,59 +1139,242 @@ public class FocusActivity extends AppCompatActivity
         }
 
         runOnUiThread(() -> {
-            View seekBarContainer   = findViewById(R.id.seekBarContainer);
-            RecyclerView enrolled   = findViewById(R.id.enrolledSpeakersRecyclerView);
-            TextView noSpeakersText = findViewById(R.id.noSpeakersText);
+            View seekBarContainer = findViewById(R.id.seekBarContainer);
+            View noiseReductionCard = findViewById(R.id.noiseReductionCard);
 
             if (found.isEmpty()) {
+                // No speakers found - show message and Scan Again button
+                Log.e(TAG, "══════════════════════════════════════════");
+                Log.e(TAG, "NO SPEAKERS DETECTED - Showing error UI");
+                Log.e(TAG, "══════════════════════════════════════════");
+                
                 showPromptNoSpeakersInline();
                 toggleButton.setVisibility(View.INVISIBLE);
                 seekBarContainer.setVisibility(View.GONE);
-                enrolled.setVisibility(View.GONE);
-                noSpeakersText.setVisibility(View.VISIBLE);
+                
+                // Hide all cards
+                if (noiseReductionCard != null) {
+                    noiseReductionCard.setVisibility(View.GONE);
+                }
+                if (rotatingBorder != null) {
+                    rotatingBorder.setVisibility(View.GONE);
+                }
+                
+                // Hide main "Scan Environment" button and show "Scan Again" button
+                if (enrollButton != null) {
+                    enrollButton.setVisibility(View.GONE);
+                    Log.d(TAG, "Hidden enrollButton");
+                }
+                if (scanAgainButton != null) {
+                    scanAgainButton.setVisibility(View.VISIBLE);
+                    scanAgainButton.requestLayout();
+                    scanAgainButton.bringToFront();
+                    
+                    // Try to scroll to the button
+                    View scrollView = findViewById(R.id.contentScrollView);
+                    if (scrollView instanceof android.widget.ScrollView) {
+                        ((android.widget.ScrollView) scrollView).post(() -> {
+                            ((android.widget.ScrollView) scrollView).fullScroll(android.widget.ScrollView.FOCUS_DOWN);
+                        });
+                    }
+                    
+                    Log.e(TAG, "✅ scanAgainButton set to VISIBLE with bringToFront()");
+                    Log.d(TAG, "Button dimensions: width=" + scanAgainButton.getWidth() + ", height=" + scanAgainButton.getHeight());
+                    Log.d(TAG, "Button visibility state: " + scanAgainButton.getVisibility());
+                } else {
+                    Log.e(TAG, "❌ scanAgainButton is NULL!");
+                }
             } else {
-                toggleButton.setVisibility(View.GONE);
-                showPromptSpeakersFoundInline(found.size());
-
+                // Convert EnrolledSpeakers to DetectedSpeakers for bottom sheet
+                detectedSpeakers.clear();
+                for (int i = 0; i < found.size(); i++) {
+                    EnrollmentActivity.EnrolledSpeaker es = found.get(i);
+                    detectedSpeakers.add(new SpeakerSelectionBottomSheet.DetectedSpeaker(
+                            i,
+                            es.getName(),
+                            es.getDuration(),
+                            es.getEmbedding(),
+                            es.getAudioSamples()
+                    ));
+                }
+                
+                // Store found speakers for later use
                 enrolledSpeakers.clear();
                 enrolledSpeakers.addAll(found);
-                enrolledSpeakersAdapter.notifyDataSetChanged();
-
-                seekBarContainer.setVisibility(View.VISIBLE);
-                enrolled.setVisibility(View.VISIBLE);
-                noSpeakersText.setVisibility(View.GONE);
+                
+                // Show speaker selection card with placeholder text
+                if (rotatingBorder != null) {
+                    rotatingBorder.setVisibility(View.VISIBLE);
+                    if (cardSpeakerName != null) {
+                        cardSpeakerName.setText("Please select a speaker");
+                    }
+                    // No animation yet - only start after speaker is selected
+                    rotatingBorder.stopAnimation();
+                }
+                
+                // Hide diarization container
+                if (diarizationContainer != null) {
+                    diarizationContainer.setVisibility(View.GONE);
+                }
+                
+                // Show audio controls (waveform, toggle, seekbar) like normal mode
+                if (audioControlContainer != null) {
+                    audioControlContainer.setVisibility(View.VISIBLE);
+                }
+                
+                // Show toggle button (but keep disabled until speaker is selected)
+                if (toggleButton != null) {
+                    toggleButton.setVisibility(View.VISIBLE);
+                    toggleButton.setEnabled(false);
+                    updateToggleUi(false); // Set proper icon and background
+                }
+                
+                if (seekBarContainer != null) {
+                    seekBarContainer.setVisibility(View.VISIBLE);
+                }
+                
+                // Show bottom sheet for speaker selection (will appear on top of main content)
+                showPromptSpeakersFoundInline(found.size());
+                
+                // Hide main "Scan Environment" button and show "Scan Again" button in ScrollView
+                if (enrollButton != null) {
+                    enrollButton.setVisibility(View.GONE);
+                    // Reset button state for future use
+                    enrollButton.setText("Scan Environment");
+                    enrollButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF0F766E));
+                }
+                // Use the button INSIDE ScrollView for when speakers are found
+                if (scanAgainButtonInScroll != null) {
+                    scanAgainButtonInScroll.setVisibility(View.VISIBLE);
+                }
+                // Hide the fixed bottom button
+                if (scanAgainButton != null) {
+                    scanAgainButton.setVisibility(View.GONE);
+                }
             }
-
-            enrollButton.setText("Scan Again");
-            enrollButton.setBackgroundTintList(
-                    ColorStateList.valueOf(Color.parseColor("#0F766E"))
-            );
-            enrollButton.setVisibility(View.VISIBLE);
         });
     }
 
     private void showPromptNoSpeakersInline() {
-        defaultPanel.removeAllViews();
-        View noneV = getLayoutInflater()
-                .inflate(R.layout.inline_no_speakers_found, defaultPanel, false);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-        );
-        defaultPanel.addView(noneV, lp);
+        Log.d(TAG, "showPromptNoSpeakersInline: Showing no speakers found UI");
+        
+        // Hide loading overlay (in case it's still visible)
+        View loadingOverlay = findViewById(R.id.loadingOverlay);
+        if (loadingOverlay != null) {
+            loadingOverlay.setVisibility(View.GONE);
+            Log.d(TAG, "Loading overlay hidden");
+        }
+        
+        // Hide diarization container (animation and progress)
+        if (diarizationContainer != null) {
+            diarizationContainer.setVisibility(View.GONE);
+        }
+        
+        // Hide audio control container (waveform, toggle, etc.)
+        if (audioControlContainer != null) {
+            audioControlContainer.setVisibility(View.GONE);
+        }
+        
+        // Show main content group with "no speakers" message
+        View mainContentGroup = findViewById(R.id.mainContentGroup);
+        ImageView focusModeImage = findViewById(R.id.focusModeImage);
+        TextView focusModeDescription = findViewById(R.id.focusModeDescription);
+        
+        if (mainContentGroup != null) {
+            mainContentGroup.setVisibility(View.VISIBLE);
+            Log.d(TAG, "mainContentGroup set to VISIBLE");
+        }
+        
+        if (focusModeImage != null) {
+            focusModeImage.setImageResource(R.drawable.ic_not_found);
+        }
+        
+        if (focusModeDescription != null) {
+            focusModeDescription.setText("No speakers detected.\nTry scanning again.");
+        }
+        
+        // Ensure ScrollView is visible
+        View scrollView = findViewById(R.id.contentScrollView);
+        if (scrollView != null) {
+            scrollView.setVisibility(View.VISIBLE);
+            Log.d(TAG, "ScrollView set to VISIBLE");
+        }
     }
-    private void showPromptSpeakersFoundInline(int count) {
-        defaultPanel.removeAllViews();
-        View v = getLayoutInflater()
-            .inflate(R.layout.inline_speakers_found,
-                     defaultPanel, false);
-        TextView tv = v.findViewById(R.id.speakersFoundTextInline);
+    
+    private List<SpeakerSelectionBottomSheet.DetectedSpeaker> detectedSpeakers = new ArrayList<>();
 
-        String message = "Found " + count + " speaker" + (count == 1 ? "" : "s")
-                   + "\nPlease select one to focus";
-        tv.setText(message);
-        defaultPanel.addView(v);
+    private void showSpeakerSelectionBottomSheet() {
+        SpeakerSelectionBottomSheet bottomSheet = SpeakerSelectionBottomSheet.newInstance(detectedSpeakers);
+        bottomSheet.setOnSpeakerSelectedListener(speaker -> {
+            currentlySelectedSpeaker = speaker;
+            onSpeakerSelectedFromBottomSheet(speaker);
+        });
+        bottomSheet.show(getSupportFragmentManager(), "SpeakerSelectionBottomSheet");
+    }
+
+    private void onSpeakerSelectedFromBottomSheet(SpeakerSelectionBottomSheet.DetectedSpeaker speaker) {
+        // Find the corresponding EnrolledSpeaker
+        EnrollmentActivity.EnrolledSpeaker selectedEnrolled = null;
+        for (EnrollmentActivity.EnrolledSpeaker es : enrolledSpeakers) {
+            if (es.getName().equals(speaker.getName())) {
+                selectedEnrolled = es;
+                break;
+            }
+        }
+        
+        if (selectedEnrolled == null) return;
+        
+        selectedEnrolledSpeaker = selectedEnrolled;
+        currentlySelectedSpeaker = speaker;
+        
+        // Hide main content group now that a speaker is selected
+        View mainContentGroup = findViewById(R.id.mainContentGroup);
+        if (mainContentGroup != null) {
+            mainContentGroup.setVisibility(View.GONE);
+        }
+        
+        // Show speaker card with animation
+        if (rotatingBorder != null) {
+            rotatingBorder.setVisibility(View.VISIBLE);
+            
+            // Update card info
+            if (cardSpeakerName != null) {
+                cardSpeakerName.setText(speaker.getName());
+            }
+            
+            // Start animated border
+            rotatingBorder.startAnimation();
+        }
+        
+        // Show audio control container (waveform + toggle + seekbar)
+        if (audioControlContainer != null) {
+            audioControlContainer.setVisibility(View.VISIBLE);
+        }
+        
+        // Show and enable toggle button
+        toggleButton.setVisibility(View.VISIBLE);
+        toggleButton.setEnabled(true);
+        updateToggleUi(false);
+        
+        // Update Focus Mode manager
+        if (selectedEnrolled != null) {
+            FocusModeManager.getInstance().setSelectedSpeakerEmbedding(selectedEnrolled.getEmbedding());
+        }
+        
+        // Update speaker isolation state
+        updateSpeakerIsolationState();
+    }
+
+    private void showPromptSpeakersFoundInline(int count) {
+        // Hide main content group (image and description) since we're showing speaker UI now
+        View mainContentGroup = findViewById(R.id.mainContentGroup);
+        if (mainContentGroup != null) {
+            mainContentGroup.setVisibility(View.GONE);
+        }
+        
+        // The speaker selection card and audio controls are already visible from the previous code
+        // Show bottom sheet with detected speakers (will appear on top of the speaker selection UI)
+        showSpeakerSelectionBottomSheet();
     }
 
     private void loadEnrolledSpeakers() {
@@ -1034,6 +1460,7 @@ public class FocusActivity extends AppCompatActivity
 
     @Override protected void onDestroy() {
         if (isProcessing) stopProcessing();
+        
         if (diarizationManager != null) {
             diarizationManager.release();
             diarizationManager = null;

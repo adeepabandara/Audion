@@ -53,14 +53,10 @@ public class GraphActivity extends AppCompatActivity {
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.navigation_settings) {
-                // Already on Home
+                // Already on Settings/Profile
                 return true;
             } else if (id == R.id.navigation_frequencies) {
                 startActivity(new Intent(this, FrequencyActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            } else if (id == R.id.navigation_music) {
-                startActivity(new Intent(this, MusicPlayerActivity.class));
                 overridePendingTransition(0, 0);
                 return true;
             } else if (id == R.id.navigation_home) {

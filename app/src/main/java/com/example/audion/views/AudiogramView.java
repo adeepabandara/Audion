@@ -7,6 +7,7 @@ import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import androidx.annotation.Nullable;
 import com.example.audion.data.HearingTestResult;
@@ -55,8 +56,11 @@ public class AudiogramView extends View {
     
     // Data
     private List<HearingTestResult> testResults;
+    private List<HearingTestResult> leftEarResults;
+    private List<HearingTestResult> rightEarResults;
     private String earSide = "LEFT";
     private int earColor = LEFT_EAR_COLOR;
+    private boolean showBothEars = false;
     
     // Margins and dimensions
     private float leftMargin = 80f;
@@ -121,10 +125,27 @@ public class AudiogramView extends View {
         linePaint.setStrokeWidth(2.5f);
         
         testResults = new ArrayList<>();
+        leftEarResults = new ArrayList<>();
+        rightEarResults = new ArrayList<>();
     }
 
     public void setTestResults(List<HearingTestResult> results) {
         this.testResults = results != null ? results : new ArrayList<>();
+        this.showBothEars = false;
+        invalidate();
+    }
+
+    public void setLeftEarResults(List<HearingTestResult> results) {
+        this.leftEarResults = results != null ? results : new ArrayList<>();
+        this.showBothEars = true;
+        Log.d(TAG, "setLeftEarResults: " + this.leftEarResults.size() + " results");
+        invalidate();
+    }
+
+    public void setRightEarResults(List<HearingTestResult> results) {
+        this.rightEarResults = results != null ? results : new ArrayList<>();
+        this.showBothEars = true;
+        Log.d(TAG, "setRightEarResults: " + this.rightEarResults.size() + " results");
         invalidate();
     }
 
@@ -151,10 +172,12 @@ public class AudiogramView extends View {
         
         if (chartWidth <= 0 || chartHeight <= 0) return;
         
-        // Draw title
-        labelPaint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("Audiogram - " + earSide + " Ear", 
-            getWidth() / 2f, topMargin - 20, labelPaint);
+        // Draw title only if single ear mode
+        if (!showBothEars) {
+            labelPaint.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText("Audiogram - " + earSide + " Ear", 
+                getWidth() / 2f, topMargin - 20, labelPaint);
+        }
         
         // Draw grid
         drawGrid(canvas);
@@ -163,10 +186,16 @@ public class AudiogramView extends View {
         drawAxes(canvas);
         
         // Draw data points and lines
-        drawData(canvas);
+        if (showBothEars) {
+            drawBothEarsData(canvas);
+        } else {
+            drawData(canvas);
+        }
         
         // Draw legend
-        drawLegend(canvas);
+        if (!showBothEars) {
+            drawLegend(canvas);
+        }
     }
 
     private void drawGrid(Canvas canvas) {
@@ -268,7 +297,7 @@ public class AudiogramView extends View {
                 float x = freqToX(freqIndex);
                 float y = dbToY(result.getThresholdDbHL());
                 
-                drawSymbol(canvas, x, y);
+                drawSymbol(canvas, x, y, earSide, earColor);
                 
                 // Draw threshold value below symbol
                 textPaint.setTextSize(24f);
@@ -282,10 +311,84 @@ public class AudiogramView extends View {
         }
     }
 
-    private void drawSymbol(Canvas canvas, float cx, float cy) {
+    private void drawBothEarsData(Canvas canvas) {
+        Log.d(TAG, "drawBothEarsData: left=" + leftEarResults.size() + ", right=" + rightEarResults.size());
+        
+        if (leftEarResults.isEmpty() && rightEarResults.isEmpty()) {
+            // No data message
+            textPaint.setTextAlign(Paint.Align.CENTER);
+            textPaint.setTextSize(32f);
+            canvas.drawText("No test data available", 
+                getWidth() / 2f, getHeight() / 2f, textPaint);
+            textPaint.setTextSize(28f);
+            return;
+        }
+        
+        // Draw left ear (X, blue)
+        if (!leftEarResults.isEmpty()) {
+            Log.d(TAG, "Drawing left ear data");
+            drawEarData(canvas, leftEarResults, "LEFT", LEFT_EAR_COLOR);
+        }
+        
+        // Draw right ear (O, red)
+        if (!rightEarResults.isEmpty()) {
+            Log.d(TAG, "Drawing right ear data");
+            drawEarData(canvas, rightEarResults, "RIGHT", RIGHT_EAR_COLOR);
+        }
+    }
+
+    private void drawEarData(Canvas canvas, List<HearingTestResult> results, String ear, int color) {
+        // Sort results by frequency
+        List<HearingTestResult> sortedResults = new ArrayList<>(results);
+        Collections.sort(sortedResults, new Comparator<HearingTestResult>() {
+            @Override
+            public int compare(HearingTestResult o1, HearingTestResult o2) {
+                return Integer.compare(o1.getFrequency(), o2.getFrequency());
+            }
+        });
+        
+        // Set colors
+        symbolPaint.setColor(color);
+        linePaint.setColor(color);
+        
+        // Draw connecting lines first
+        Path linePath = new Path();
+        boolean firstPoint = true;
+        
+        for (HearingTestResult result : sortedResults) {
+            int freqIndex = getFrequencyIndex(result.getFrequency());
+            if (freqIndex >= 0) {
+                float x = freqToX(freqIndex);
+                float y = dbToY(result.getThresholdDbHL());
+                
+                if (firstPoint) {
+                    linePath.moveTo(x, y);
+                    firstPoint = false;
+                } else {
+                    linePath.lineTo(x, y);
+                }
+            }
+        }
+        canvas.drawPath(linePath, linePaint);
+        
+        // Draw symbols
+        for (HearingTestResult result : sortedResults) {
+            int freqIndex = getFrequencyIndex(result.getFrequency());
+            if (freqIndex >= 0) {
+                float x = freqToX(freqIndex);
+                float y = dbToY(result.getThresholdDbHL());
+                
+                drawSymbol(canvas, x, y, ear, color);
+            }
+        }
+    }
+
+    private void drawSymbol(Canvas canvas, float cx, float cy, String ear, int color) {
         float radius = 12f;
         
-        if ("LEFT".equals(earSide)) {
+        symbolPaint.setColor(color);
+        
+        if ("LEFT".equals(ear)) {
             // Draw X for left ear
             canvas.drawLine(cx - radius, cy - radius, cx + radius, cy + radius, symbolPaint);
             canvas.drawLine(cx - radius, cy + radius, cx + radius, cy - radius, symbolPaint);
@@ -301,7 +404,7 @@ public class AudiogramView extends View {
         
         // Draw symbol
         symbolPaint.setColor(earColor);
-        drawSymbol(canvas, legendX, legendY);
+        drawSymbol(canvas, legendX, legendY, earSide, earColor);
         
         // Draw label
         textPaint.setTextAlign(Paint.Align.LEFT);

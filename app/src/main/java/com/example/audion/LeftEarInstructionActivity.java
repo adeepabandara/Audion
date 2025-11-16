@@ -19,6 +19,7 @@ public class LeftEarInstructionActivity extends AppCompatActivity {
     private Button buttonStartLeftTest;
     private int userId;
     private int hearingProfileId;
+    private boolean fromNewProfile; // Flag to track new profile creation flow
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +29,7 @@ public class LeftEarInstructionActivity extends AppCompatActivity {
         buttonStartLeftTest = findViewById(R.id.buttonStartLeftEarTest);
         userId = getIntent().getIntExtra("USER_ID", -1);
         hearingProfileId = getIntent().getIntExtra("HEARING_PROFILE_ID", -1);
+        fromNewProfile = getIntent().getBooleanExtra("FROM_NEW_PROFILE", false);
         
         // NEW CLINICAL WORKFLOW: Pure Tone Test runs first (no calibration prerequisite)
         
@@ -93,6 +95,7 @@ public class LeftEarInstructionActivity extends AppCompatActivity {
         intent.putExtra("EAR", "LEFT");
         intent.putExtra("USER_ID", userId);
         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+        intent.putExtra("FROM_NEW_PROFILE", fromNewProfile); // Pass flag to next activity
         startActivity(intent);
         overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
         finish();

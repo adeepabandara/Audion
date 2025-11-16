@@ -1,5 +1,6 @@
 package com.example.audion;
 
+import android.graphics.drawable.GradientDrawable;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioTrack;
@@ -32,6 +33,7 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
     private AudioTrack currentAudioTrack;
     private FocusActivity focusActivity;
     private Map<Integer, Integer> globalSpeakerColorMap;
+    private int playingSpeakerId = -1; // Track which speaker is playing
     private int[] speakerColors = {
         0xFF4285F4,0xFFEA4335,0xFFFFBF00,0xFF34A853,
         0xFF9C27B0,0xFFFF9800,0xFF00BCD4,0xFFF44336,
@@ -138,6 +140,8 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
             } catch (Exception e) { Log.e(TAG,"Error stopping",e);}
             currentAudioTrack = null;
         }
+        playingSpeakerId = -1; // Reset playing speaker
+        notifyDataSetChanged(); // Update UI
     }
 
     public void release() {
@@ -171,20 +175,41 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
         public void bind(GlobalSpeakerInfo s) {
             int id = s.getGlobalId();
             speakerIdText.setText("Speaker " + id);
-            speakerStatsText.setText(String.format("%.1fs • %d chunks",
-                s.getTotalDuration(), s.getChunkCount()));
-            colorIndicator.setBackgroundColor(getSpeakerColor(id));
-            boolean isSel = selectedSpeakerId != null && selectedSpeakerId == id;
-            itemContainer.setBackgroundResource(isSel ?
-                R.drawable.selected_speaker_background : R.drawable.unselected_speaker_background);
+            
+            // Set color indicator with circular shape
+            GradientDrawable circle = new GradientDrawable();
+            circle.setShape(GradientDrawable.OVAL);
+            circle.setColor(getSpeakerColor(id));
+            colorIndicator.setBackground(circle);
+            
+            // Update play button icon and background based on playing state
+            boolean isPlaying = (playingSpeakerId == id);
+            if (isPlaying) {
+                playButton.setImageResource(R.drawable.ic_stop);
+                playButton.setBackgroundResource(R.drawable.circle_button_background_playing);
+            } else {
+                playButton.setImageResource(R.drawable.ic_play);
+                playButton.setBackgroundResource(R.drawable.circle_button_background);
+            }
+            
             if (diarizationManager != null && s.getLastChunkId()>0) {
                 playButton.setVisibility(View.VISIBLE);
-                playButton.setOnClickListener(v -> playSpeakerAudio(s));
+                playButton.setOnClickListener(v -> {
+                    if (isPlaying) {
+                        stopPlayback();
+                        playingSpeakerId = -1;
+                        notifyDataSetChanged();
+                    } else {
+                        playSpeakerAudio(s);
+                    }
+                });
             } else {
                 playButton.setVisibility(View.GONE);
             }
+            
             itemView.setOnClickListener(v -> {
                 if (selectionListener != null) {
+                    boolean isSel = selectedSpeakerId != null && selectedSpeakerId == id;
                     if (isSel) {
                         selectedSpeakerId = null;
                         selectionListener.onSpeakerDeselected();
@@ -205,6 +230,9 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
                 return;
             }
             stopPlayback();
+            playingSpeakerId = speaker.getGlobalId(); // Set playing speaker
+            notifyDataSetChanged(); // Update UI
+            
             focusActivity.updateStatus("Trying to play Speaker " + speaker.getGlobalId() + "…");
 
             float[] speakerAudio = null;
@@ -263,7 +291,11 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
                     new AudioTrack.OnPlaybackPositionUpdateListener() {
                         @Override public void onMarkerReached(AudioTrack track) {
                             track.release();
-                            if (track == currentAudioTrack) currentAudioTrack = null;
+                            if (track == currentAudioTrack) {
+                                currentAudioTrack = null;
+                                playingSpeakerId = -1; // Reset playing speaker
+                                notifyDataSetChanged(); // Update UI
+                            }
                         }
                         @Override public void onPeriodicNotification(AudioTrack track) {}
                     });
@@ -286,6 +318,8 @@ public class GlobalSpeakersAdapter extends RecyclerView.Adapter<GlobalSpeakersAd
                     currentAudioTrack.release();
                     currentAudioTrack = null;
                 }
+                playingSpeakerId = -1; // Reset playing speaker on error
+                notifyDataSetChanged(); // Update UI
             }
         }
 

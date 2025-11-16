@@ -85,6 +85,7 @@ public class PureToneTestActivity extends AppCompatActivity {
 
     private HearingTestResultDao hearingTestResultDao;
     private int userId, hearingProfileId;
+    private boolean fromNewProfile; // Flag to track new profile creation flow
     private TextView tvStatus; // Real-time status feedback for user
 
     @Override
@@ -107,6 +108,7 @@ public class PureToneTestActivity extends AppCompatActivity {
         // Get Intent extras
         userId = getIntent().getIntExtra("USER_ID", -1);
         hearingProfileId = getIntent().getIntExtra("HEARING_PROFILE_ID", -1);
+        fromNewProfile = getIntent().getBooleanExtra("FROM_NEW_PROFILE", false);
         if (userId < 0 || hearingProfileId < 0) {
             Toast.makeText(this, "Missing USER_ID or HEARING_PROFILE_ID", Toast.LENGTH_LONG).show();
             finish();
@@ -283,7 +285,7 @@ public class PureToneTestActivity extends AppCompatActivity {
         
         // Reset UI - hide "Didn't Hear" button, show progress, reset button text
         runOnUiThread(() -> {
-            circleButton.setText("Tap when\nyou hear");
+            circleButton.setText("Tap here");
             circleButton.setEnabled(true);
             buttonNotHeard.setVisibility(View.GONE);
             progressBar.setProgress(0);
@@ -396,9 +398,9 @@ public class PureToneTestActivity extends AppCompatActivity {
         
         // Show initial status
         runOnUiThread(() -> {
-            tvStatus.setText("🎵 Listen carefully and tap when you hear the tone...");
-            tvStatus.setTextColor(getResources().getColor(android.R.color.holo_orange_light));
-            tvStatus.setVisibility(View.VISIBLE);
+            // tvStatus.setText("🎵 Listen carefully and tap when you hear the tone...");
+            // tvStatus.setTextColor(getResources().getColor(android.R.color.holo_orange_light));
+            // tvStatus.setVisibility(View.VISIBLE);
             circleButton.setEnabled(true);
             circleButton.setAlpha(1.0f);
         });
@@ -418,8 +420,8 @@ public class PureToneTestActivity extends AppCompatActivity {
                     Log.d(TAG, "✓ Tap at " + elapsedMs + "ms = " + thresholdDbHL + " dB HL (calibrated range: " + startDb + "-" + endDb + ")");
                     
                     // Visual feedback
-                    tvStatus.setText("✓ Threshold Recorded: " + Math.round(thresholdDbHL) + " dB");
-                    tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+                    // tvStatus.setText("✓ Threshold Recorded: " + Math.round(thresholdDbHL) + " dB");
+                    // tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
                     
                     // Scale animation
                     v.animate().scaleX(0.9f).scaleY(0.9f).setDuration(100)
@@ -521,8 +523,8 @@ public class PureToneTestActivity extends AppCompatActivity {
             // Show UI for max level reached
             runOnUiThread(() -> {
                 progressBar.setProgress(100);
-                tvStatus.setText("⚠️ Reached maximum level (120 dB)");
-                tvStatus.setTextColor(getResources().getColor(android.R.color.holo_red_light));
+                // tvStatus.setText("⚠️ Reached maximum level (120 dB)");
+                // tvStatus.setTextColor(getResources().getColor(android.R.color.holo_red_light));
                 
                 // Show "Didn't Hear" button
                 buttonNotHeard.setVisibility(View.VISIBLE);
@@ -598,8 +600,8 @@ public class PureToneTestActivity extends AppCompatActivity {
         
         runOnUiThread(() -> {
             // Show status: Listening phase
-            tvStatus.setText("🎵 Listening...");
-            tvStatus.setTextColor(getResources().getColor(android.R.color.holo_orange_light));
+            // tvStatus.setText("🎵 Listening...");
+            // tvStatus.setTextColor(getResources().getColor(android.R.color.holo_orange_light));
             tvStatus.setVisibility(View.VISIBLE);
             
             circleButton.setEnabled(true);
@@ -611,8 +613,8 @@ public class PureToneTestActivity extends AppCompatActivity {
                         responseLock.notify();
                         
                         // Visual feedback: Tap registered!
-                        tvStatus.setText("✓ Tap Registered!");
-                        tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+                        // tvStatus.setText("✓ Tap Registered!");
+                        // tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
                         circleButton.setEnabled(false);
                         circleButton.setAlpha(0.6f); // Dim when disabled
                         
@@ -648,8 +650,8 @@ public class PureToneTestActivity extends AppCompatActivity {
             
             // Show "Processing..." status
             if (!userResponded[0]) {
-                tvStatus.setText("⏳ Processing...");
-                tvStatus.setTextColor(getResources().getColor(android.R.color.darker_gray));
+                // tvStatus.setText("⏳ Processing...");
+                // tvStatus.setTextColor(getResources().getColor(android.R.color.darker_gray));
             }
         });
         
@@ -771,8 +773,8 @@ public class PureToneTestActivity extends AppCompatActivity {
         tvStartAgain.setVisibility(View.VISIBLE);
         
         // Update status message
-        tvStatus.setText("Maximum volume reached");
-        tvStatus.setTextColor(getResources().getColor(android.R.color.holo_orange_dark));
+        // tvStatus.setText("Maximum volume reached");
+        // tvStatus.setTextColor(getResources().getColor(android.R.color.holo_orange_dark));
         tvStatus.setVisibility(View.VISIBLE);
         
         // Stop current playback
@@ -805,8 +807,8 @@ public class PureToneTestActivity extends AppCompatActivity {
         
         // Show success feedback
         runOnUiThread(() -> {
-            tvStatus.setText("✓ Threshold Found!");
-            tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+            // tvStatus.setText("✓ Threshold Found!");
+            // tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
             tvStatus.setVisibility(View.VISIBLE);
         });
         
@@ -907,6 +909,7 @@ public class PureToneTestActivity extends AppCompatActivity {
             
             next.putExtra("USER_ID", userId);
             next.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+            next.putExtra("FROM_NEW_PROFILE", fromNewProfile); // Pass flag to next activity
             
             Log.d(TAG, "Starting next activity: " + next.getComponent().getClassName());
             startActivity(next);
@@ -924,8 +927,8 @@ public class PureToneTestActivity extends AppCompatActivity {
         progressBar.setProgress(0);
         progressBar.setVisibility(View.VISIBLE);
         
-        // Change circle button text to "Start Again"
-        circleButton.setText("Start Again");
+        // Change circle button text to "Start again"
+        circleButton.setText("Start again");
         
         // Show "Didn't Hear" button at max level
         buttonNotHeard.setVisibility(View.VISIBLE);

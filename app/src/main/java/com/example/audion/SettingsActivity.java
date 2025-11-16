@@ -45,11 +45,8 @@ public class SettingsActivity extends AppCompatActivity {
             startActivity(new Intent(this, FrequencyActivity.class));
             overridePendingTransition(0,0);
             return true;
-        } else if (id == R.id.navigation_music) {
-            startActivity(new Intent(this, MusicPlayerActivity.class));
-            overridePendingTransition(0,0);
-            return true;
         } else if (id == R.id.navigation_settings) {
+            // Already on Settings
             return true;
         }
         return false;

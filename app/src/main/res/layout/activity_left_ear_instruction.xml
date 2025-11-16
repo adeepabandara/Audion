@@ -64,19 +64,12 @@
     <!-- Start Test Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonStartLeftEarTest"
+        style="@style/PrimaryButton"
         android:layout_width="0dp"
-        android:layout_height="56dp"
         android:layout_marginStart="@dimen/onboarding_horizontal_padding"
         android:layout_marginEnd="@dimen/onboarding_horizontal_padding"
         android:layout_marginBottom="32dp"
-        android:backgroundTint="#0F766E"
         android:text="Start Test"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textAllCaps="false"
-        android:fontFamily="@font/poppins"
-        app:cornerRadius="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

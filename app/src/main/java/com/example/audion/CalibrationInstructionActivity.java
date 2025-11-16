@@ -8,6 +8,8 @@ import android.widget.TextView;
 import com.google.android.material.button.MaterialButton;
 
 public class CalibrationInstructionActivity extends AppCompatActivity {
+    private boolean fromNewProfile; // Flag to track new profile creation flow
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -23,6 +25,9 @@ public class CalibrationInstructionActivity extends AppCompatActivity {
         // Figure out which ear we're on (default to RIGHT)
         String ear = getIntent().getStringExtra("EAR");
         if (ear == null) ear = "RIGHT";
+        
+        // Retrieve FROM_NEW_PROFILE flag
+        fromNewProfile = getIntent().getBooleanExtra("FROM_NEW_PROFILE", false);
 
         // TEMPORARY: Skip pure tone prerequisite check to allow LEFT ear → Calibration flow
         // verifyPureToneCompleted(); // Commented out to fix navigation issue
@@ -40,6 +45,7 @@ public class CalibrationInstructionActivity extends AppCompatActivity {
             i.putExtra("EAR", finalEar);
             i.putExtra("USER_ID", getIntent().getIntExtra("USER_ID", 1));
             i.putExtra("HEARING_PROFILE_ID", getIntent().getIntExtra("HEARING_PROFILE_ID", 1));
+            i.putExtra("FROM_NEW_PROFILE", fromNewProfile); // Pass flag to next activity
             startActivity(i);
             try {
                 overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);

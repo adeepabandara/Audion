@@ -116,7 +116,7 @@ public class NewProfileBottomSheet extends BottomSheetDialogFragment {
                 ? raw.substring(3)
                 : raw;
 
-            // Insert & continue
+            // Insert profile and start the test flow
             new Thread(() -> {
                 HearingProfile p = new HearingProfile(profileName, iconKey);
                 long id = AppDatabase
@@ -127,11 +127,14 @@ public class NewProfileBottomSheet extends BottomSheetDialogFragment {
                 FragmentActivity act = getActivity();
                 if (act != null) {
                     act.runOnUiThread(() -> {
-                        Intent i = new Intent(act, GeneralInstructionActivity.class);
+                        // Navigate directly to Right Ear Pure Tone Instruction
+                        // This will start the flow: Right Ear PT -> Left Ear PT -> Right Ear Cal -> Left Ear Cal -> Results -> Home
+                        Intent i = new Intent(act, RightEarInstructionActivity.class);
                         i.putExtra("USER_ID", userId);
                         i.putExtra("HEARING_PROFILE_ID", (int)id);
+                        i.putExtra("FROM_NEW_PROFILE", true); // Flag to indicate this is a new profile creation
                         startActivity(i);
-                        act.finish();
+                        dismiss(); // Close the bottom sheet
                     });
                 }
             }).start();

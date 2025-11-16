@@ -1,22 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="12dp"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:background="@android:color/white"
+    android:paddingStart="32dp"
+    android:paddingEnd="32dp">
 
+    <!-- Image centered (consistent 200x200 size) -->
     <ImageView
-        android:layout_width="125dp"
-        android:layout_height="118dp"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
         android:contentDescription="Select a speaker"
+        android:scaleType="fitCenter"
         android:src="@drawable/ic_scan" />
 
+    <!-- Description text with proper spacing -->
     <TextView
-        android:layout_marginTop="12dp"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
         android:text="Let's Look Who is out there Speaking"
         android:textSize="16sp"
-        android:textColor="#000000" />
+        android:textColor="@color/text_secondary" />
 </LinearLayout>

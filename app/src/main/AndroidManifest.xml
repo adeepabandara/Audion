@@ -12,8 +12,8 @@
      <uses-permission android:name="android.permission.VIBRATE"/>
      <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@drawable/app_icon"
+        android:roundIcon="@drawable/app_icon"
         
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -41,26 +41,26 @@
         <!-- New Onboarding Flow Activities -->
         <activity
             android:name=".OnboardingCarouselActivity"
-            android:theme="@style/Theme.MaterialComponents.NoActionBar"
+            android:theme="@style/Theme.Audion.NoActionBar"
             android:exported="false">
         </activity>
 
         <activity
             android:name=".WhatsYourNameActivity"
-            android:theme="@style/Theme.MaterialComponents.NoActionBar"
+            android:theme="@style/Theme.Audion.NoActionBar"
             android:windowSoftInputMode="adjustResize"
             android:exported="false">
         </activity>
 
         <activity
             android:name=".StartTestActivity"
-            android:theme="@style/Theme.MaterialComponents.NoActionBar"
+            android:theme="@style/Theme.Audion.NoActionBar"
             android:exported="false">
         </activity>
 
         <activity
             android:name=".PureToneIntroActivity"
-            android:theme="@style/Theme.MaterialComponents.NoActionBar"
+            android:theme="@style/Theme.Audion.NoActionBar"
             android:exported="false">
         </activity>
 
@@ -79,23 +79,24 @@
           android:windowSoftInputMode="adjustResize"/>
 
           <activity android:name=".HomeActivity" />
+          
+          <activity 
+              android:name=".MainNavActivity"
+              android:theme="@style/Theme.Audion.NoActionBar" />
+          
+          <activity 
+              android:name=".ProfileActivity"
+              android:theme="@style/Theme.Audion.NoActionBar" />
 
           <activity
               android:name=".PureToneTestActivity"
-              android:theme="@style/Theme.MaterialComponents.NoActionBar"
+              android:theme="@style/Theme.Audion.NoActionBar"
               android:windowSoftInputMode="adjustResize" />
 
 
 
                 <activity android:name=".FrequencyActivity" 
            android:windowSoftInputMode="adjustResize"/>
-
-           
-
-                <activity android:name=".AudiogramFragment" 
-           android:windowSoftInputMode="adjustResize"/>
-
-
 
            
                 <activity android:name=".GraphActivity" 
@@ -129,6 +130,11 @@
     android:name=".CalibrationInstructionActivity"
     android:theme="@style/Theme.Audion.NoActionBar" />
 <activity android:name=".CalibrationTestActivity" />
+<!-- Test Completion Animation Screen -->
+<activity 
+    android:name=".TestCompletionActivity"
+    android:screenOrientation="portrait"
+    android:theme="@style/Theme.Audion.NoActionBar" />
 <!-- Refactored SeekBar-based calibration with stereo separation and MCL/UCL workflow -->
 <activity 
     android:name=".CalibrationTestActivityRefactored"
@@ -140,9 +146,6 @@
            android:theme="@style/Theme.Audion" />
 
 
-                           <activity android:name=".NewProfileBottomSheet" 
-           android:windowSoftInputMode="adjustResize"/>
-
            <activity android:name=".GeneralInstructionActivity" 
            android:windowSoftInputMode="adjustResize"/>
            
@@ -150,10 +153,10 @@
            android:windowSoftInputMode="adjustResize"/>
            
            <activity android:name=".LeftEarInstructionActivity" 
-           android:theme="@style/Theme.MaterialComponents.NoActionBar"
+           android:theme="@style/Theme.Audion.NoActionBar"
            android:windowSoftInputMode="adjustResize"/>
            <activity android:name=".RightEarInstructionActivity" 
-           android:theme="@style/Theme.MaterialComponents.NoActionBar"
+           android:theme="@style/Theme.Audion.NoActionBar"
            android:windowSoftInputMode="adjustResize"/>
 
 

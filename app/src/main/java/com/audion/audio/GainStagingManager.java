@@ -18,7 +18,7 @@ public class GainStagingManager {
     private static final String TAG = "GainStagingManager";
     
     // Safety limits
-    private static final float ABSOLUTE_MAX_GAIN_DB = 40.0f;   // Maximum safe gain for consumer hearing assistance
+    private float ABSOLUTE_MAX_GAIN_DB = 40.0f;   // Maximum safe gain (40 dB for MIC, 30 dB for MEDIA)
     private static final float SAFE_OUTPUT_HEADROOM_DB = 5.0f; // UCL - 5 dB safety margin
     private static final float REFERENCE_INPUT_SPL = 65.0f;    // Conversational speech level
     
@@ -79,6 +79,19 @@ public class GainStagingManager {
             leftUCL, rightUCL));
         
         // Recalculate effective gains with new UCL
+        recalculateEffectiveGains();
+    }
+    
+    /**
+     * Set maximum gain limit (mode-dependent).
+     * 
+     * @param maxGainDb Maximum gain in dB (40 for MIC mode, 30 for MEDIA mode)
+     */
+    public void setMaxGainDb(float maxGainDb) {
+        this.ABSOLUTE_MAX_GAIN_DB = maxGainDb;
+        Log.i(TAG, "Max gain updated to: " + maxGainDb + " dB");
+        
+        // Recalculate effective gains to apply new limit
         recalculateEffectiveGains();
     }
     

@@ -1,5 +1,6 @@
 package com.example.audion;
 
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -59,6 +60,9 @@ public class SimpleAudioStreamingService extends Service {
     private SharedPreferences prefs;
     private PreferenceChangeReceiver prefReceiver;
     private SpeakerIsolationReceiver speakerIsolationReceiver;
+    private AudioModeReceiver audioModeReceiver;
+    private MediaProjectionReceiver mediaProjectionReceiver;
+    private ProfileReloadReceiver profileReloadReceiver;
     
     // Speaker isolation state (for Focus Mode)
     private boolean speakerIsolationEnabled = false;
@@ -99,8 +103,36 @@ public class SimpleAudioStreamingService extends Service {
             registerReceiver(speakerIsolationReceiver, isolationFilter);
         }
         
+        // Register broadcast receiver for audio mode switching (MIC/MEDIA)
+        audioModeReceiver = new AudioModeReceiver();
+        IntentFilter modeFilter = new IntentFilter("com.example.audion.SET_AUDIO_MODE");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(audioModeReceiver, modeFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(audioModeReceiver, modeFilter);
+        }
+        
+        // Register broadcast receiver for MediaProjection setup
+        mediaProjectionReceiver = new MediaProjectionReceiver();
+        IntentFilter projectionFilter = new IntentFilter("com.example.audion.SET_MEDIA_PROJECTION");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mediaProjectionReceiver, projectionFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(mediaProjectionReceiver, projectionFilter);
+        }
+        
+        // Register broadcast receiver for profile reload
+        profileReloadReceiver = new ProfileReloadReceiver();
+        IntentFilter profileReloadFilter = new IntentFilter("com.example.audion.RELOAD_PROFILE");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(profileReloadReceiver, profileReloadFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(profileReloadReceiver, profileReloadFilter);
+        }
+        
         Log.e(TAG, "★★★ Broadcast receiver registered for PREFERENCES_CHANGED");
         Log.i(TAG, "★★★ Broadcast receiver registered for SPEAKER_ISOLATION");
+        Log.i(TAG, "★★★ Broadcast receiver registered for RELOAD_PROFILE");
         Log.i(TAG, "SimpleAudioStreamingService created");
     }
 
@@ -114,6 +146,20 @@ public class SimpleAudioStreamingService extends Service {
         // Initialize and start audio engine
         if (audioEngine == null) {
             audioEngine = new SimpleAudioEngine();
+            
+            // Set waveform callback for UI updates
+            audioEngine.setWaveformCallback((inputLevel, outputLevel) -> {
+                Intent wave = new Intent("com.example.audion.WAVEFORM_UPDATE")
+                        .setPackage(getPackageName())
+                        .putExtra("inputLevel", inputLevel)
+                        .putExtra("outputLevel", outputLevel);
+                sendBroadcast(wave);
+                
+                // Log occasionally to verify broadcast is sent
+                if (System.currentTimeMillis() % 1000 < 50) {  // Roughly once per second
+                    Log.d(TAG, "Broadcast waveform: in=" + inputLevel + " out=" + outputLevel);
+                }
+            });
             
             // Phase 2: Enable per-ear 4-band processing
             audioEngine.setPhase2Enabled(true);
@@ -157,6 +203,21 @@ public class SimpleAudioStreamingService extends Service {
         if (speakerIsolationReceiver != null) {
             unregisterReceiver(speakerIsolationReceiver);
             speakerIsolationReceiver = null;
+        }
+        
+        if (audioModeReceiver != null) {
+            unregisterReceiver(audioModeReceiver);
+            audioModeReceiver = null;
+        }
+        
+        if (mediaProjectionReceiver != null) {
+            unregisterReceiver(mediaProjectionReceiver);
+            mediaProjectionReceiver = null;
+        }
+        
+        if (profileReloadReceiver != null) {
+            unregisterReceiver(profileReloadReceiver);
+            profileReloadReceiver = null;
         }
         
         if (audioEngine != null) {
@@ -365,11 +426,168 @@ public class SimpleAudioStreamingService extends Service {
                 enabled, speakerActive, chunkId));
         }
     }
+    
+    /**
+     * BroadcastReceiver to listen for audio mode changes (MIC/MEDIA)
+     */
+    private class AudioModeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String modeStr = intent.getStringExtra("audio_mode");
+            if (modeStr == null || audioEngine == null) {
+                return;
+            }
+            
+            Log.i(TAG, "[Audio Mode] Switching to: " + modeStr);
+            
+            com.audion.audio.SimpleAudioEngine.AudioMode mode;
+            if ("MEDIA".equals(modeStr)) {
+                mode = com.audion.audio.SimpleAudioEngine.AudioMode.MEDIA;
+            } else {
+                mode = com.audion.audio.SimpleAudioEngine.AudioMode.MIC;
+            }
+            
+            boolean success = audioEngine.setAudioMode(mode);
+            if (success) {
+                Log.i(TAG, "[Audio Mode] Successfully switched to: " + modeStr);
+            } else {
+                Log.e(TAG, "[Audio Mode] Failed to switch to: " + modeStr);
+            }
+        }
+    }
+    
+    /**
+     * BroadcastReceiver to handle MediaProjection for phone audio capture
+     */
+    private class MediaProjectionReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int resultCode = intent.getIntExtra("result_code", -999);
+            Intent data = intent.getParcelableExtra("result_data");
+            
+            Log.d(TAG, "[MediaProjection] Received broadcast: resultCode=" + resultCode + ", data=" + (data != null ? "present" : "null"));
+            
+            if (resultCode == Activity.RESULT_OK && data != null && audioEngine != null) {
+                try {
+                    android.media.projection.MediaProjectionManager projectionManager = 
+                        (android.media.projection.MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                    
+                    if (projectionManager != null) {
+                        android.media.projection.MediaProjection projection = 
+                            projectionManager.getMediaProjection(resultCode, data);
+                        
+                        if (projection != null) {
+                            audioEngine.setMediaProjection(projection);
+                            Log.i(TAG, "[MediaProjection] Successfully set for audio capture");
+                        } else {
+                            Log.e(TAG, "[MediaProjection] Failed to create projection object");
+                        }
+                    } else {
+                        Log.e(TAG, "[MediaProjection] MediaProjectionManager is null");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "[MediaProjection] Error setting up: " + e.getMessage(), e);
+                }
+            } else {
+                Log.w(TAG, "[MediaProjection] Invalid result or data - resultCode=" + resultCode + ", audioEngine=" + (audioEngine != null ? "present" : "null"));
+            }
+        }
+    }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+    
+    /**
+     * BroadcastReceiver to handle profile reload requests
+     */
+    private class ProfileReloadReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int profileId = intent.getIntExtra("PROFILE_ID", -1);
+            Log.i(TAG, "★★★ PROFILE CHANGED - Reloading personalization for profile ID: " + profileId);
+            
+            if (profileId > 0) {
+                // Run database query on background thread to avoid blocking main thread
+                new Thread(() -> reloadPersonalizationForProfile(profileId)).start();
+            } else {
+                Log.e(TAG, "Invalid profile ID received: " + profileId);
+            }
+        }
+    }
+    
+    /**
+     * Reload personalization data for a specific profile ID
+     */
+    private void reloadPersonalizationForProfile(int profileId) {
+        if (audioEngine == null) {
+            Log.e(TAG, "[Reload] Audio engine not initialized");
+            return;
+        }
+        
+        try {
+            AppDatabase db = AppDatabase.getInstance(this);
+            HearingTestResultDao audiogramDao = db.hearingTestResultDao();
+            
+            // Load audiogram data for the new profile
+            List<HearingTestResult> allResults = audiogramDao.getResultsForUserAndProfile(USER_ID, profileId);
+            List<HearingTestResult> leftResults = new ArrayList<>();
+            List<HearingTestResult> rightResults = new ArrayList<>();
+            
+            for (HearingTestResult r : allResults) {
+                if ("LEFT".equals(r.getEarSide())) {
+                    leftResults.add(r);
+                } else if ("RIGHT".equals(r.getEarSide())) {
+                    rightResults.add(r);
+                }
+            }
+            
+            Log.i(TAG, String.format("[Reload] Audiogram loaded: Left=%d results, Right=%d results",
+                leftResults.size(), rightResults.size()));
+            
+            // Load calibration data for the new profile
+            CalibrationProfileDao calibrationDao = db.calibrationProfileDao();
+            List<CalibrationProfileEntity> leftProfiles = calibrationDao.getForEar(USER_ID, "LEFT", profileId);
+            List<CalibrationProfileEntity> rightProfiles = calibrationDao.getForEar(USER_ID, "RIGHT", profileId);
+            
+            CalibrationProfileEntity leftCalib = leftProfiles.isEmpty() ? null : leftProfiles.get(0);
+            CalibrationProfileEntity rightCalib = rightProfiles.isEmpty() ? null : rightProfiles.get(0);
+            
+            Log.i(TAG, String.format("[Reload] Calibration: Left=%s, Right=%s",
+                leftCalib != null ? "✓" : "✗",
+                rightCalib != null ? "✓" : "✗"));
+            
+            // Update cached data
+            leftEarAudiogram = leftResults;
+            rightEarAudiogram = rightResults;
+            leftCalibration = leftCalib;
+            rightCalibration = rightCalib;
+            
+            // Recalculate safe max gain
+            safeMaxGainDb = GainPrescriptionHelper.calculateSafeMaxGain(leftCalib, rightCalib);
+            Log.i(TAG, String.format("[Reload] UCL Limit: Safe max gain = %.1f dB", safeMaxGainDb));
+            
+            // Update audio engine with new audiogram data
+            boolean hasAudiogram = !leftResults.isEmpty() || !rightResults.isEmpty();
+            boolean hasCalibration = leftCalib != null || rightCalib != null;
+            
+            audioEngine.setPersonalizationAvailable(hasAudiogram, hasCalibration);
+            
+            if (hasAudiogram) {
+                audioEngine.setAudiogramData(leftResults, rightResults);
+                Log.i(TAG, "★★★ Audio engine updated with new profile personalization");
+            } else {
+                Log.w(TAG, "[Reload] No audiogram data available for this profile");
+            }
+            
+            // Re-apply current settings with new safe max gain
+            applySettings();
+            
+        } catch (Exception e) {
+            Log.e(TAG, "[Reload] Failed to reload personalization: " + e.getMessage(), e);
+        }
     }
 
     private void createNotificationChannelIfNeeded() {

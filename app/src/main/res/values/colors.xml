@@ -21,6 +21,7 @@
     
     <color name="success_green">#10B981</color>
     <color name="gray">#BBBBBB</color>
+    <color name="light_grey">#BBBBBB</color>
     <color name="background">#E7FAF5</color>
     <color name="outline">#DADADA</color>
 

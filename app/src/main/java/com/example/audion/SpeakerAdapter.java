@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -257,54 +258,46 @@ public class SpeakerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
      */
     class SpeakerViewHolder extends RecyclerView.ViewHolder {
         private final TextView speakerIdText;
-        private final TextView speakerDurationText;
         private final ImageButton playButton;
-        private final View speakerColorIndicator;
+        private final RadioButton speakerRadioButton;
         
         public SpeakerViewHolder(@NonNull View itemView) {
             super(itemView);
             speakerIdText = itemView.findViewById(R.id.speakerIdText);
-            speakerDurationText = itemView.findViewById(R.id.speakerDurationText);
             playButton = itemView.findViewById(R.id.speakerPlayButton);
-            speakerColorIndicator = itemView.findViewById(R.id.speakerColorIndicator);
+            speakerRadioButton = itemView.findViewById(R.id.speakerRadioButton);
         }
         
         public void bind(SpeakerInfo speaker) {
             // Use global ID for display
             int globalId = speaker.getGlobalId();
             speakerIdText.setText("Speaker " + globalId);
-            speakerDurationText.setText(String.format("(%.1fs)", speaker.getDuration()));
-            
-            // Set color indicator based on global speaker ID
-            int speakerColor = getSpeakerColor(globalId);
-            if (speakerColorIndicator != null) {
-                speakerColorIndicator.setBackgroundColor(speakerColor);
-            }
             
             // Set up play button
             playButton.setOnClickListener(v -> playSpeakerAudio(speaker));
             
             // Handle speaker isolation selection
             boolean isSelected = selectedSpeakerId != null && selectedSpeakerId == globalId;
-            itemView.setBackgroundResource(isSelected ? R.drawable.selected_speaker_background : 0);
+            if (speakerRadioButton != null) {
+                speakerRadioButton.setChecked(isSelected);
+            }
             
             // Handle speaker selection for isolation
             itemView.setOnClickListener(v -> {
                 if (isSelected) {
                     // Deselect
                     selectedSpeakerId = null;
-                    itemView.setBackgroundResource(0);
                     if (selectionListener != null) {
                         selectionListener.onSpeakerDeselected();
                     }
                 } else {
                     // Select new speaker and deselect any previously selected
                     selectedSpeakerId = globalId;
-                    notifyDataSetChanged(); // Refresh all views to update selection state
                     if (selectionListener != null) {
                         selectionListener.onSpeakerSelected(globalId);
                     }
                 }
+                notifyDataSetChanged(); // Refresh all views to update selection state
             });
         }
         

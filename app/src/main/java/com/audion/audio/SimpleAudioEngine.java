@@ -5,6 +5,8 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
+import android.media.projection.MediaProjection;
+import android.os.Build;
 import android.os.Process;
 import android.util.Log;
 
@@ -20,13 +22,17 @@ import java.util.concurrent.atomic.AtomicReference;
  * Phase 2 Audio Engine: Per-ear 4-band stereo processing.
  * 
  * Architecture:
- * 1. AudioRecord captures 480 samples (10ms @ 48kHz) MONO as short[]
+ * 1. AudioRecord captures 480 samples (10ms @ 48kHz) MONO/STEREO
  * 2. Convert to float[] (normalize to ±1.0)
- * 3. Optional: RNNoise processing
- * 4. Duplicate mono → left/right processing chains
+ * 3. Optional: RNNoise processing (MIC mode only)
+ * 4. Duplicate mono → left/right processing chains OR use stereo capture
  * 5. Each ear: 4-band filterbank → per-band gains → sum → soft clip
  * 6. Interleave left/right → stereo float[]
  * 7. Write to AudioTrack (STEREO, PCM_FLOAT)
+ * 
+ * Audio Modes:
+ * - MIC: Microphone input (environmental amplification) - max 40 dB
+ * - MEDIA: Phone media input (music/video/calls amplification) - max 30 dB
  * 
  * Processing mode:
  * - PHASE1_MODE: Global gain (legacy Phase 1 behavior)
@@ -34,6 +40,41 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class SimpleAudioEngine {
     private static final String TAG = "SimpleAudioEngine";
+    
+    /**
+     * Callback interface for waveform updates
+     */
+    public interface WaveformCallback {
+        void onWaveformUpdate(float inputLevel, float outputLevel);
+    }
+    
+    // Waveform callback
+    private WaveformCallback waveformCallback;
+    private int waveformFrameCounter = 0;  // For throttling logs;
+    
+    /**
+     * Audio input mode
+     */
+    public enum AudioMode {
+        MIC,    // Microphone input (environmental amplification)
+        MEDIA   // Phone media input (system playback amplification)
+    }
+    
+    // Current audio mode
+    private AudioMode currentMode = AudioMode.MIC;
+    private final AtomicReference<AudioMode> audioMode = new AtomicReference<>(AudioMode.MIC);
+    
+    // MediaProjection for audio capture (API 29+)
+    private MediaProjection mediaProjection;
+    
+    // Maximum gain per mode
+    private static final float MAX_GAIN_MIC_DB = 40.0f;     // Environmental amplification
+    private static final float MAX_GAIN_MEDIA_DB = 30.0f;   // Media amplification
+    
+    // AGC for media mode
+    private static final float TARGET_RMS_DBFS = -12.0f;    // Target loudness for media
+    private float currentAgcGain_dB = 0.0f;                 // AGC adjustment
+    private static final float AGC_ADJUST_RATE = 1.0f;      // dB per second
     
     // Audio I/O
     private AudioRecord audioRecord;
@@ -128,6 +169,166 @@ public final class SimpleAudioEngine {
     private AudioQualityMetrics qualityMetrics = null;
     
     /**
+     * Initialize AudioRecord based on audio mode
+     * 
+     * @param mode AudioMode.MIC for microphone input, AudioMode.MEDIA for system playback capture
+     * @return true if successful, false otherwise
+     */
+    private boolean initializeAudioRecordForMode(AudioMode mode) {
+        try {
+            // Release existing AudioRecord if any
+            if (audioRecord != null) {
+                if (audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+                    audioRecord.stop();
+                }
+                audioRecord.release();
+                audioRecord = null;
+            }
+            
+            int captureBufferSize = Math.max(
+                AudioRecord.getMinBufferSize(
+                    AudioConfig.SAMPLE_RATE,
+                    AudioConfig.CHANNEL_IN_CONFIG,
+                    AudioConfig.ENCODING_FORMAT
+                ),
+                AudioConfig.FRAME_SIZE_SAMPLES * AudioConfig.BYTES_PER_SAMPLE * 4 // 40ms buffer
+            );
+            
+            if (mode == AudioMode.MIC) {
+                // Standard microphone input
+                audioRecord = new AudioRecord(
+                    MediaRecorder.AudioSource.MIC,
+                    AudioConfig.SAMPLE_RATE,
+                    AudioConfig.CHANNEL_IN_CONFIG,
+                    AudioConfig.ENCODING_FORMAT,
+                    captureBufferSize
+                );
+                Log.i(TAG, "AudioRecord initialized: MIC mode, MONO, PCM_16BIT, 48kHz");
+                
+            } else if (mode == AudioMode.MEDIA) {
+                // Media playback capture (requires API 29+ and MediaProjection)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                    Log.e(TAG, "Media mode requires Android 10 (API 29) or higher");
+                    return false;
+                }
+                
+                if (mediaProjection == null) {
+                    Log.e(TAG, "Media mode requires MediaProjection - call setMediaProjection() first");
+                    return false;
+                }
+                
+                // Build AudioPlaybackCaptureConfiguration
+                android.media.AudioPlaybackCaptureConfiguration captureConfig = 
+                    new android.media.AudioPlaybackCaptureConfiguration.Builder(mediaProjection)
+                        .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                        .addMatchingUsage(AudioAttributes.USAGE_GAME)
+                        .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+                        .build();
+                
+                // Create AudioRecord with playback capture
+                audioRecord = new AudioRecord.Builder()
+                    .setAudioPlaybackCaptureConfig(captureConfig)
+                    .setAudioFormat(new AudioFormat.Builder()
+                        .setSampleRate(AudioConfig.SAMPLE_RATE)
+                        .setChannelMask(AudioConfig.CHANNEL_IN_CONFIG)
+                        .setEncoding(AudioConfig.ENCODING_FORMAT)
+                        .build())
+                    .setBufferSizeInBytes(captureBufferSize)
+                    .build();
+                
+                Log.i(TAG, "AudioRecord initialized: MEDIA mode (AudioPlaybackCapture), MONO, PCM_16BIT, 48kHz");
+            }
+            
+            if (audioRecord == null || audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+                Log.e(TAG, "Failed to initialize AudioRecord for mode: " + mode);
+                return false;
+            }
+            
+            return true;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error initializing AudioRecord for mode " + mode, e);
+            return false;
+        }
+    }
+    
+    /**
+     * Set MediaProjection for media capture mode
+     * Must be called before switching to MEDIA mode
+     * 
+     * @param projection MediaProjection obtained from MediaProjectionManager
+     */
+    public synchronized void setMediaProjection(MediaProjection projection) {
+        this.mediaProjection = projection;
+        Log.i(TAG, "MediaProjection set for media capture");
+    }
+    
+    /**
+     * Switch audio input mode
+     * 
+     * @param mode AudioMode.MIC or AudioMode.MEDIA
+     * @return true if mode switched successfully
+     */
+    public synchronized boolean setAudioMode(AudioMode mode) {
+        if (currentMode == mode) {
+            Log.d(TAG, "Already in mode: " + mode);
+            return true;
+        }
+        
+        Log.i(TAG, "Switching audio mode: " + currentMode + " → " + mode);
+        
+        boolean wasRunning = isRunning.get();
+        
+        // Stop processing if running
+        if (wasRunning) {
+            stop();
+        }
+        
+        // Reinitialize AudioRecord for new mode
+        if (!initializeAudioRecordForMode(mode)) {
+            Log.e(TAG, "Failed to initialize AudioRecord for mode: " + mode);
+            // Try to revert to previous mode
+            if (!initializeAudioRecordForMode(currentMode)) {
+                Log.e(TAG, "CRITICAL: Failed to revert to previous mode!");
+                return false;
+            }
+            return false;
+        }
+        
+        // Update mode and gain limits
+        currentMode = mode;
+        audioMode.set(mode);
+        
+        // Update GainStagingManager max gain
+        float maxGainDb = (mode == AudioMode.MEDIA) ? MAX_GAIN_MEDIA_DB : MAX_GAIN_MIC_DB;
+        if (leftGainStaging != null) {
+            leftGainStaging.setMaxGainDb(maxGainDb);
+        }
+        if (rightGainStaging != null) {
+            rightGainStaging.setMaxGainDb(maxGainDb);
+        }
+        
+        Log.i(TAG, "Mode switched to " + mode + " (max gain: " + maxGainDb + " dB)");
+        
+        // Restart if was running
+        if (wasRunning) {
+            if (!start()) {
+                Log.e(TAG, "Failed to restart after mode switch");
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Get current audio mode
+     */
+    public AudioMode getAudioMode() {
+        return audioMode.get();
+    }
+    
+    /**
      * Initialize the audio engine
      */
     public synchronized boolean initialize() {
@@ -142,28 +343,10 @@ public final class SimpleAudioEngine {
             rnnoise.initialize();
             Log.i(TAG, "RNNoise initialized (480-sample frames @ 48kHz)");
             
-            // Initialize AudioRecord for capture
-            int captureBufferSize = Math.max(
-                AudioRecord.getMinBufferSize(
-                    AudioConfig.SAMPLE_RATE,
-                    AudioConfig.CHANNEL_IN_CONFIG,
-                    AudioConfig.ENCODING_FORMAT
-                ),
-                AudioConfig.FRAME_SIZE_SAMPLES * AudioConfig.BYTES_PER_SAMPLE * 4 // 40ms buffer
-            );
-            
-            audioRecord = new AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                AudioConfig.SAMPLE_RATE,
-                AudioConfig.CHANNEL_IN_CONFIG,
-                AudioConfig.ENCODING_FORMAT,
-                captureBufferSize
-            );
-            
-            if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
-                throw new RuntimeException("Failed to initialize AudioRecord");
+            // Initialize AudioRecord based on current mode
+            if (!initializeAudioRecordForMode(currentMode)) {
+                throw new RuntimeException("Failed to initialize AudioRecord for mode: " + currentMode);
             }
-            Log.i(TAG, "AudioRecord initialized: MONO, PCM_16BIT, 48kHz, buffer=" + captureBufferSize);
             
             // Initialize AudioTrack for playback
             // Phase 2: Use ENCODING_PCM_FLOAT for better precision with per-ear processing
@@ -285,7 +468,13 @@ public final class SimpleAudioEngine {
             return false;
         }
         
-        Log.i(TAG, "Starting SimpleAudioEngine");
+        AudioMode currentMode = audioMode.get();
+        Log.i(TAG, "Starting SimpleAudioEngine in mode: " + currentMode);
+        
+        // Verify MediaProjection for MEDIA mode
+        if (currentMode == AudioMode.MEDIA && mediaProjection == null) {
+            Log.e(TAG, "CRITICAL: Starting in MEDIA mode but MediaProjection is NULL!");
+        }
         
         isRunning.set(true);
         framesProcessed = 0;
@@ -295,6 +484,8 @@ public final class SimpleAudioEngine {
         audioRecord.startRecording();
         audioTrack.play();
         
+        Log.i(TAG, "AudioRecord state: " + audioRecord.getState() + ", Recording state: " + audioRecord.getRecordingState());
+        
         // Start processing thread
         processingThread = new Thread(this::processingLoop, "SimpleAudioProcessing");
         processingThread.setPriority(Thread.MAX_PRIORITY);
@@ -302,6 +493,7 @@ public final class SimpleAudioEngine {
         
         Log.i(TAG, "════════════════════════════════════════════════════════");
         Log.i(TAG, "★★★ SimpleAudioEngine STARTED ★★★");
+        Log.i(TAG, "MODE: " + currentMode);
         Log.i(TAG, "INPUT: MONO, PCM_16BIT, 48kHz");
         Log.i(TAG, "PROCESSING: RNNoise (480 samples/frame, 10ms)");
         Log.i(TAG, "OUTPUT: STEREO, PCM_16BIT, 48kHz, LOW_LATENCY");
@@ -390,6 +582,16 @@ public final class SimpleAudioEngine {
                     floatInput[i] = captureBuffer[i] / 32768.0f;
                 }
                 
+                // Debug: Log audio levels periodically to verify capture
+                if (framesProcessed % 200 == 0) {
+                    float maxLevel = 0;
+                    for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
+                        maxLevel = Math.max(maxLevel, Math.abs(floatInput[i]));
+                    }
+                    Log.d(TAG, String.format("Mode=%s, Frame=%d, MaxLevel=%.3f", 
+                        audioMode.get().name(), framesProcessed, maxLevel));
+                }
+                
                 // Focus Mode: Process audio frame for diarization
                 try {
                     com.example.audion.FocusModeManager.getInstance().processAudioFrame(floatInput);
@@ -398,15 +600,18 @@ public final class SimpleAudioEngine {
                     Log.w(TAG, "Diarization processing error: " + e.getMessage());
                 }
                 
-                // Phase 3 Step 2a: Adaptive feedback cancellation (before all processing)
-                if (feedbackCancellerEnabled && feedbackCanceller != null) {
+                // Check current audio mode
+                AudioMode mode = audioMode.get();
+                
+                // Phase 3 Step 2a: Adaptive feedback cancellation (MIC mode only)
+                if (mode == AudioMode.MIC && feedbackCancellerEnabled && feedbackCanceller != null) {
                     feedbackCanceller.process(floatInput, feedbackCorrected, AudioConfig.FRAME_SIZE_SAMPLES);
                     // Use feedback-corrected signal for rest of pipeline
                     System.arraycopy(feedbackCorrected, 0, floatInput, 0, AudioConfig.FRAME_SIZE_SAMPLES);
                 }
                 
-                // Phase 3 Step 2b: Scene analysis (every 500ms)
-                if (sceneAnalysisEnabled && sceneAnalyzer != null) {
+                // Phase 3 Step 2b: Scene analysis (MIC mode only)
+                if (mode == AudioMode.MIC && sceneAnalysisEnabled && sceneAnalyzer != null) {
                     SceneAnalyzer.Scene detectedScene = sceneAnalyzer.process(floatInput, AudioConfig.FRAME_SIZE_SAMPLES);
                     if (detectedScene != currentScene) {
                         currentScene = detectedScene;
@@ -415,8 +620,8 @@ public final class SimpleAudioEngine {
                     }
                 }
                 
-                // Step 3: Optional RNNoise processing
-                if (noiseReductionEnabled.get()) {
+                // Step 3: RNNoise processing (MIC mode only)
+                if (mode == AudioMode.MIC && noiseReductionEnabled.get()) {
                     // RNNoise expects non-normalized float (raw short values as float)
                     for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
                         floatInput[i] = captureBuffer[i];
@@ -446,6 +651,36 @@ public final class SimpleAudioEngine {
                     processPhase2();
                 } else {
                     processPhase1();
+                }
+                
+                // Calculate waveform levels and send callback
+                if (waveformCallback != null) {
+                    // Input RMS (normalized float)
+                    float inRms = calculateRMS(floatInput, AudioConfig.FRAME_SIZE_SAMPLES);
+                    
+                    // Output RMS (normalized float from left/right output or mono output)
+                    float outRms;
+                    if (phase2Enabled && leftOutput != null && rightOutput != null) {
+                        // Average left and right channel RMS
+                        float leftRms = calculateRMS(leftOutput, AudioConfig.FRAME_SIZE_SAMPLES);
+                        float rightRms = calculateRMS(rightOutput, AudioConfig.FRAME_SIZE_SAMPLES);
+                        outRms = (leftRms + rightRms) / 2.0f;
+                    } else {
+                        // Use mono output
+                        outRms = calculateRMS(floatProcessed, AudioConfig.FRAME_SIZE_SAMPLES);
+                    }
+                    
+                    // Clamp to 0-1 range for UI display
+                    float normIn = Math.max(0f, Math.min(1f, inRms));
+                    float normOut = Math.max(0f, Math.min(1f, outRms));
+                    
+                    waveformCallback.onWaveformUpdate(normIn, normOut);
+                    
+                    // Log every 100 frames (~1 second) to verify callback is working
+                    waveformFrameCounter++;
+                    if (waveformFrameCounter % 100 == 0) {
+                        android.util.Log.d(TAG, "Waveform callback: in=" + normIn + " out=" + normOut);
+                    }
                 }
                 
                 // Update statistics
@@ -538,13 +773,18 @@ public final class SimpleAudioEngine {
      * Phase 2 processing: Per-ear processing with advanced DSP chain
      * 
      * Pipeline (Phase 6):
-     * 1. RNNoise (already done)
+     * 1. RNNoise (already done - MIC mode only)
      * 2. Phase 6: Per-band gains from GainStagingManager (UCL-aware)
      * 3. Phase 5: Multiband WDRC (adaptive compression)
      * 4. Phase 6: Dual-Stage Limiter (look-ahead + soft-clipping)
      * 5. Speaker isolation (Focus Mode)
+     * 
+     * NOTE: Media mode AGC removed - user gain control takes priority
      */
     private void processPhase2() {
+        // Media mode: AGC DISABLED - user gain slider should control output level
+        // The GainStagingManager below will handle amplification
+        
         if (advancedDspEnabled && leftMultibandWDRC != null && leftLimiter != null) {
             // Phase 6: Intelligent gain staging → Adaptive WDRC → Dual-Stage Limiter
             
@@ -720,6 +960,46 @@ public final class SimpleAudioEngine {
     }
     
     /**
+     * Apply automatic gain control for media mode.
+     * Targets -12 dBFS RMS with ±1 dB/s adjustment rate.
+     */
+    private void applyMediaModeAGC() {
+        // Calculate RMS of current frame
+        float sumSquares = 0.0f;
+        for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
+            float sample = floatProcessed[i];
+            sumSquares += sample * sample;
+        }
+        float rms = (float) Math.sqrt(sumSquares / AudioConfig.FRAME_SIZE_SAMPLES);
+        float rms_dBFS = 20.0f * (float) Math.log10(Math.max(rms, 1e-10f));
+        
+        // Calculate gain adjustment needed
+        float error_dB = TARGET_RMS_DBFS - rms_dBFS;
+        
+        // Apply gradual adjustment (±1 dB/s max)
+        float frameDuration_s = AudioConfig.FRAME_SIZE_SAMPLES / (float) AudioConfig.SAMPLE_RATE;
+        float maxAdjustment_dB = AGC_ADJUST_RATE * frameDuration_s;
+        float adjustment_dB = Math.max(-maxAdjustment_dB, Math.min(maxAdjustment_dB, error_dB));
+        
+        currentAgcGain_dB += adjustment_dB;
+        
+        // Clamp AGC gain to reasonable range (-20 to +20 dB)
+        currentAgcGain_dB = Math.max(-20.0f, Math.min(20.0f, currentAgcGain_dB));
+        
+        // Apply AGC gain to processed audio
+        float agcLinearGain = (float) Math.pow(10.0f, currentAgcGain_dB / 20.0f);
+        for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
+            floatProcessed[i] *= agcLinearGain;
+        }
+        
+        // Log occasionally
+        if (framesProcessed % 100 == 0) {
+            Log.d(TAG, String.format("[Media AGC] RMS=%.1f dBFS, AGC gain=%.1f dB, target=%.1f dBFS", 
+                rms_dBFS, currentAgcGain_dB, TARGET_RMS_DBFS));
+        }
+    }
+    
+    /**
      * Clean up resources
      */
     private void cleanup() {
@@ -756,6 +1036,13 @@ public final class SimpleAudioEngine {
      */
     public boolean isRunning() {
         return isRunning.get();
+    }
+    
+    /**
+     * Set waveform callback for UI updates
+     */
+    public void setWaveformCallback(WaveformCallback callback) {
+        this.waveformCallback = callback;
     }
     
     /**
@@ -1475,5 +1762,19 @@ public final class SimpleAudioEngine {
             qualityMetrics.reset();
             Log.i(TAG, "[Phase 4] Quality metrics reset");
         }
+    }
+    
+    /**
+     * Calculate RMS of float audio buffer (normalized ±1.0)
+     * @param buffer Audio samples
+     * @param length Number of samples
+     * @return RMS value (0.0 to ~1.0)
+     */
+    private float calculateRMS(float[] buffer, int length) {
+        float sum = 0;
+        for (int i = 0; i < length; i++) {
+            sum += buffer[i] * buffer[i];
+        }
+        return (float) Math.sqrt(sum / length);
     }
 }

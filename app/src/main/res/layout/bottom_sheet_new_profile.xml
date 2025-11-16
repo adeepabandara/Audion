@@ -24,13 +24,14 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
         <!-- Profile name input -->
         <EditText
             android:id="@+id/editTextProfileName"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:background="@drawable/edittext_border_green"
@@ -44,8 +45,8 @@
         <!-- Icon dropdown -->
         <Spinner
             android:id="@+id/spinnerIcon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:background="@drawable/edittext_border_green"
             android:padding="8dp"
             android:spinnerMode="dropdown" />
@@ -54,15 +55,9 @@
     <!-- Next button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonNext"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        style="@style/PrimaryButton"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
         android:layout_marginTop="16dp"
         android:text="Continue"
-        android:textAllCaps="false"
-        android:backgroundTint="@color/primary"
-        android:textColor="@color/white"
-        app:strokeColor="?attr/colorPrimary"
-        app:strokeWidth="1dp"
-        app:cornerRadius="30dp"/>
+        android:textAllCaps="false" />
 </LinearLayout>

@@ -11,13 +11,15 @@
         <item name="colorSecondaryVariant">@color/primary</item>
         <item name="colorOnSecondary">@color/black</item>
 
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
+        <!-- Status bar color - white background with dark icons -->
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
 
+        <!-- Navigation bar color - white with dark icons -->
         <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o">true</item>
 
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item><!-- optional -->
-        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
 
         <!-- Disable Action Bar -->
         <item name="windowActionBar">false</item>
@@ -32,8 +34,10 @@
         <item name="colorSecondary">@color/primary</item>
         <item name="colorSecondaryVariant">@color/primary</item>
         <item name="colorOnSecondary">@color/black</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
         <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
@@ -45,11 +49,12 @@
         <item name="colorPrimary">@color/primary</item>
         <item name="colorAccent">@color/primary</item>
         
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
+        <!-- Status bar color - white background with dark icons -->
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
         <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:windowFullscreen">true</item>
     </style>
 
     <!-- Dedicated Splash Screen Theme - Always Light Mode -->

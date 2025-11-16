@@ -62,6 +62,7 @@ public class CalibrationTestActivityRefactored extends AppCompatActivity {
     private String earSide;
     private int userId;
     private int hearingProfileId;
+    private boolean fromNewProfile; // Flag to track new profile creation flow
     
     // Data storage: [{freq: 500, MCL: 68.0}, ...]
     private List<FrequencyCalibrationData> calibrationData = new ArrayList<>();
@@ -90,6 +91,7 @@ public class CalibrationTestActivityRefactored extends AppCompatActivity {
         earSide = getIntent().getStringExtra("EAR");
         userId = getIntent().getIntExtra("USER_ID", -1);
         hearingProfileId = getIntent().getIntExtra("HEARING_PROFILE_ID", -1);
+        fromNewProfile = getIntent().getBooleanExtra("FROM_NEW_PROFILE", false);
         
         if (earSide == null || userId < 0 || hearingProfileId < 0) {
             Log.e(TAG, "Missing required parameters: EAR=" + earSide + ", USER_ID=" + userId + ", PROFILE_ID=" + hearingProfileId);
@@ -248,6 +250,12 @@ public class CalibrationTestActivityRefactored extends AppCompatActivity {
     }
     
     private void onSaveButtonClicked() {
+        // Bounds check to prevent ArrayIndexOutOfBoundsException
+        if (currentFreqIndex >= frequencies.length) {
+            Log.w("CalibrationDebug", "Save button clicked after all frequencies completed. Ignoring.");
+            return;
+        }
+        
         float currentDb = progressToDbSpl(seekBarVolume.getProgress());
         int freq = frequencies[currentFreqIndex];
         
@@ -312,6 +320,10 @@ public class CalibrationTestActivityRefactored extends AppCompatActivity {
     
     private void showCalibrationSummary() {
         stopTone();
+        
+        // Disable save button and seekbar to prevent further input
+        btnSave.setEnabled(false);
+        seekBarVolume.setEnabled(false);
         
         // Build summary dialog
         StringBuilder summary = new StringBuilder();
@@ -442,6 +454,7 @@ public class CalibrationTestActivityRefactored extends AppCompatActivity {
                         intent.putExtra("EAR", "LEFT");
                         intent.putExtra("USER_ID", userId);
                         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                        intent.putExtra("FROM_NEW_PROFILE", fromNewProfile); // Pass flag
                     } else if (!hasRight && "LEFT".equals(earSide)) {
                         // Just finished LEFT, need RIGHT
                         Log.d("FlowDebug", "Navigating to RIGHT ear calibration");
@@ -449,12 +462,14 @@ public class CalibrationTestActivityRefactored extends AppCompatActivity {
                         intent.putExtra("EAR", "RIGHT");
                         intent.putExtra("USER_ID", userId);
                         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                        intent.putExtra("FROM_NEW_PROFILE", fromNewProfile); // Pass flag
                     } else {
-                        // Both ears calibrated - navigate to Test Results
-                        Log.d("FlowDebug", "Both ears calibrated - navigating to Test Results");
-                        intent = new Intent(this, TestResultsActivity.class);
+                        // Both ears calibrated - navigate to Test Completion animation
+                        Log.d("FlowDebug", "Both ears calibrated - navigating to Test Completion");
+                        intent = new Intent(this, TestCompletionActivity.class);
                         intent.putExtra("USER_ID", userId);
                         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+                        intent.putExtra("FROM_NEW_PROFILE", fromNewProfile); // Pass flag
                     }
                     
                     startActivity(intent);

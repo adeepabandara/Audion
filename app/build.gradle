@@ -76,6 +76,9 @@ dependencies {
     
     implementation 'com.github.KihonRyuu:TourGuide:v1.0.18-SNAPSHOT'
     
+    // GIF support
+    implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.28'
+    
     // ViewPager2 for tabs
     implementation 'androidx.viewpager2:viewpager2:1.0.0'
     

@@ -57,16 +57,10 @@
     <!-- Start Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonStartLeftCalibration"
+        style="@style/PrimaryButton"
         android:layout_width="0dp"
-        android:layout_height="@dimen/onboarding_button_height"
         android:layout_marginBottom="@dimen/onboarding_spacing_indicators_to_button"
-        android:background="@drawable/onboarding_button_bg"
-        android:fontFamily="sans-serif"
         android:text="I'm Ready"
-        android:textAllCaps="false"
-        android:textColor="@color/onboarding_button_text"
-        android:textSize="@dimen/onboarding_button_text_size"
-        android:textStyle="normal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

@@ -1,13 +1,14 @@
 package com.example.audion.fragments;
 
-import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,132 +18,326 @@ import com.example.audion.R;
 import com.example.audion.data.AppDatabase;
 import com.example.audion.data.HearingTestResult;
 import com.example.audion.data.HearingTestResultDao;
+import com.example.audion.utils.CustomToast;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Clean implementation of Left Ear frequency adjustment
+ * Requirements:
+ * - Load threshold data for selected profile
+ * - Allow adjustment of dB HL values (0-120)
+ * - Save changes to database
+ * - Trigger audio personalization reload
+ */
 public class RightEarFragment extends Fragment {
-    private static final int[] FREQUENCIES = {
-      125,250,500,1000,2000,3000,4000,8000
-    };
-
-    private int userId, profileId;
-    private boolean saveShown=false;
+    private static final String TAG = "RightEarFragment";
+    private static final int[] FREQUENCIES = {125, 250, 500, 1000, 2000, 3000, 4000, 8000};
+    
+    private int userId;
+    private int profileId;
     private HearingTestResultDao dao;
-    private Button btnSave;
-    private final Map<Integer,View> rowMap=new HashMap<>();
+    // Removed btnSave and btnDiscard - buttons removed from UI
+    // private Button btnSave;
+    // private Button btnDiscard;
+    // private View buttonContainer;
+    private Map<Integer, View> rowViews = new HashMap<>();
+    private Map<Integer, Float> currentThresholds = new HashMap<>();
+    private Map<Integer, Float> originalThresholds = new HashMap<>();
+    private boolean hasChanges = false;
 
-    public static RightEarFragment newInstance(int u,int p){
-        RightEarFragment f=new RightEarFragment();
-        Bundle b=new Bundle();
-        b.putInt("USER_ID",u);
-        b.putInt("PROFILE_ID",p);
-        f.setArguments(b);
-        return f;
+    public static RightEarFragment newInstance(int userId, int profileId) {
+        RightEarFragment fragment = new RightEarFragment();
+        Bundle args = new Bundle();
+        args.putInt("USER_ID", userId);
+        args.putInt("PROFILE_ID", profileId);
+        fragment.setArguments(args);
+        return fragment;
     }
 
-    @Nullable @Override
-    public View onCreateView(
-      @NonNull LayoutInflater inf,
-      @Nullable ViewGroup  ct,
-      @Nullable Bundle     bs
-    ){
-        return inf.inflate(R.layout.fragment_right_ear,ct,false);
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_right_ear, container, false);
     }
 
     @Override
-    public void onViewCreated(
-      @NonNull View v,
-      @Nullable Bundle bs
-    ){
-        super.onViewCreated(v,bs);
-        if(getArguments()!=null){
-            userId=v.getContext().getSharedPreferences(
-              "com.example.audion.PREFERENCES",0
-            ).getInt("selectedProfileId",1);
-            profileId=getArguments().getInt("PROFILE_ID");
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        
+        // Get arguments
+        if (getArguments() != null) {
+            userId = getArguments().getInt("USER_ID", 1);
+            profileId = getArguments().getInt("PROFILE_ID", -1);
+            Log.d(TAG, "Initialized: userId=" + userId + ", profileId=" + profileId);
         }
-        dao=AppDatabase.getInstance(requireContext()).hearingTestResultDao();
-        btnSave=v.findViewById(R.id.btnSaveRightEar);
-        btnSave.setOnClickListener(x->onSave());
-        for(int f:FREQUENCIES){
-            int resId = getResources().getIdentifier(
-              "row"+f+"HzRight","id",requireContext().getPackageName()
-            );
-            View row=v.findViewById(resId);
-            rowMap.put(f,row);
-        }
-        new Thread(() -> {
-            Map<Integer,Integer> map=new HashMap<>();
-            for(HearingTestResult r:dao.getResultsForUserAndProfile(userId,profileId)){
-                if("right".equalsIgnoreCase(r.getEarSide())){
-                    map.put(r.getFrequency(),r.getAmplitudeStep());
-                }
+        
+        // Initialize DAO
+        dao = AppDatabase.getInstance(requireContext()).hearingTestResultDao();
+        
+        // Removed button initialization - buttons removed from UI
+        // buttonContainer = view.findViewById(R.id.buttonContainer);
+        // btnSave = view.findViewById(R.id.btnSaveRightEar);
+        // btnDiscard = view.findViewById(R.id.btnDiscardRightEar);
+        // buttonContainer.setVisibility(View.GONE);
+        // btnSave.setOnClickListener(v -> saveThresholds());
+        // btnDiscard.setOnClickListener(v -> discardChanges());
+        
+        // Find all frequency row views
+        for (int freq : FREQUENCIES) {
+            int resId = getResources().getIdentifier("row" + freq + "HzRight", "id", requireContext().getPackageName());
+            View row = view.findViewById(resId);
+            if (row != null) {
+                rowViews.put(freq, row);
+            } else {
+                Log.e(TAG, "Could not find row for frequency: " + freq + "Hz");
             }
-            requireActivity().runOnUiThread(() -> {
-                for(int freq:FREQUENCIES){
-                    View row=rowMap.get(freq);
-                    TextView tv=row.findViewById(R.id.freqLabel);
-                    tv.setText(freq+" Hz");
-                    SeekBar sb=row.findViewById(R.id.frequencySeekBar);
-                    int p=map.getOrDefault(freq,50);
-                    sb.setProgress(p);
-                    attachListener(sb,freq);
+        }
+        
+        // Load data from database
+        loadThresholds();
+    }
+
+    /**
+     * Load threshold data from database for current user and profile
+     */
+    private void loadThresholds() {
+        new Thread(() -> {
+            try {
+                Log.d(TAG, "Loading thresholds for userId=" + userId + ", profileId=" + profileId);
+                
+                // Query database
+                List<HearingTestResult> results = dao.getResultsForUserAndProfile(userId, profileId);
+                Log.d(TAG, "Found " + results.size() + " results");
+                
+                // Extract left ear thresholds
+                Map<Integer, Float> thresholds = new HashMap<>();
+                for (HearingTestResult result : results) {
+                    if ("right".equalsIgnoreCase(result.getEarSide())) {
+                        float threshold = result.getThresholdDbHL();
+                        thresholds.put(result.getFrequency(), threshold);
+                        Log.d(TAG, "Loaded: " + result.getFrequency() + "Hz = " + threshold + " dB HL");
+                    }
                 }
-            });
+                
+                // Update UI on main thread
+                requireActivity().runOnUiThread(() -> updateUI(thresholds));
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Error loading thresholds", e);
+                requireActivity().runOnUiThread(() -> 
+                    CustomToast.showError(requireContext(), "Error loading data")
+                );
+            }
         }).start();
     }
 
-    private void attachListener(SeekBar sb,int freq){
-        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-            @Override public void onProgressChanged(
-              SeekBar s,int prog,boolean u
-            ){
-                if(!saveShown){
-                    btnSave.setVisibility(View.VISIBLE);
-                    saveShown=true;
-                }
-                // Real-time gain adjustment removed - now using simple amplification control
-            }
-            @Override public void onStartTrackingTouch(SeekBar s){}
-            @Override public void onStopTrackingTouch(SeekBar s){}
-        });
-    }
-
-    private void onSave(){
-        new Thread(() -> {
-            // Ensure HearingProfile exists before inserting HearingTestResult
-            AppDatabase db = AppDatabase.getInstance(requireActivity());
-            com.example.audion.data.HearingProfileDao profileDao = db.hearingProfileDao();
-            com.example.audion.data.HearingProfile profile = profileDao.getHearingProfileById(profileId);
-            if (profile == null) {
-                // Create a default profile if it doesn't exist
-                android.util.Log.d("RightEarFragment", "Creating default HearingProfile with ID: " + profileId);
-                com.example.audion.data.HearingProfile newProfile = new com.example.audion.data.HearingProfile("Standard Mode", "default_icon");
-                long newId = profileDao.insert(newProfile);
-                profileId = (int) newId;
-                android.util.Log.d("RightEarFragment", "Created HearingProfile with new ID: " + profileId);
-            }
+    /**
+     * Update UI with loaded threshold values
+     */
+    private void updateUI(Map<Integer, Float> thresholds) {
+        for (int freq : FREQUENCIES) {
+            View row = rowViews.get(freq);
+            if (row == null) continue;
             
-            for(int freq:FREQUENCIES){
-                View row=rowMap.get(freq);
-                int prog=((SeekBar)row.findViewById(
-                  R.id.frequencySeekBar)).getProgress();
-                HearingTestResult existing =
-                  dao.findUserEarFrequency(userId,"right",freq);
-                if(existing!=null){
-                    existing.setAmplitudeStep(prog);
-                    dao.update(existing);
-                } else {
-                    dao.insert(new HearingTestResult(
-                      userId,"right",freq,prog,profileId
-                    ));
+            // Find views
+            TextView dbLabel = row.findViewById(R.id.dbValueLabel);
+            SeekBar seekBar = row.findViewById(R.id.frequencySeekBar);
+            
+            // Set frequency value in the label
+            dbLabel.setText(freq + " Hz");
+            
+            // Get threshold value (default to 0 if not found)
+            float threshold = thresholds.getOrDefault(freq, 0.0f);
+            int dbValue = Math.round(threshold);
+            
+            // Store current value and original value
+            currentThresholds.put(freq, (float) dbValue);
+            originalThresholds.put(freq, (float) dbValue);
+            
+            // Configure SeekBar
+            seekBar.setMax(120);  // 0-120 dB HL range
+            seekBar.setProgress(dbValue);
+            
+            // Set up change listener
+            seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    if (fromUser) {
+                        // Frequency label stays the same, only threshold value changes internally
+                        currentThresholds.put(freq, (float) progress);
+                        showSaveButton();
+                    }
                 }
-            }
-            requireActivity().runOnUiThread(() -> {
-                btnSave.setVisibility(View.GONE);
-                saveShown=false;
+                
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {}
+                
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    // Apply to audio when user finishes adjusting
+                    applyRealtimeAudioUpdate();
+                }
             });
+            
+            Log.d(TAG, "UI updated for " + freq + "Hz: " + dbValue + " dB HL");
+        }
+    }
+
+    /**
+     * Apply real-time audio updates as user adjusts sliders
+     */
+    private void applyRealtimeAudioUpdate() {
+        // Send broadcast to update audio engine immediately
+        android.content.Intent reloadIntent = new android.content.Intent("com.example.audion.RELOAD_PROFILE");
+        reloadIntent.putExtra("PROFILE_ID", profileId);
+        reloadIntent.putExtra("realtime", true);
+        requireActivity().sendBroadcast(reloadIntent);
+        Log.d(TAG, "Sent real-time RELOAD_PROFILE broadcast for profileId=" + profileId);
+    }
+
+    /**
+     * Show save button when changes are made
+     */
+    private void showSaveButton() {
+        if (!hasChanges) {
+            hasChanges = true;
+//            buttonContainer.setVisibility(View.VISIBLE);
+            Log.d(TAG, "Changes detected - showing save/discard buttons");
+        }
+    }
+
+    /**
+     * Discard all changes and restore original values
+     */
+    private void discardChanges() {
+        Log.d(TAG, "Discarding changes...");
+        
+        // Restore original values
+        for (int freq : FREQUENCIES) {
+            View row = rowViews.get(freq);
+            if (row == null) continue;
+            
+            TextView dbLabel = row.findViewById(R.id.dbValueLabel);
+            SeekBar seekBar = row.findViewById(R.id.frequencySeekBar);
+            
+            float originalValue = originalThresholds.getOrDefault(freq, 0.0f);
+            int dbValue = Math.round(originalValue);
+            
+            seekBar.setProgress(dbValue);
+            dbLabel.setText(dbValue + " dB");
+            currentThresholds.put(freq, originalValue);
+        }
+        
+        // Hide button container
+        hasChanges = false;
+//        buttonContainer.setVisibility(View.GONE);
+        
+        // Apply real-time audio update to restore original audio settings
+        applyRealtimeAudioUpdate();
+        
+        CustomToast.showSuccess(requireContext(), "Changes discarded");
+    }
+
+    /**
+     * Save all threshold changes to database
+     */
+    private void saveThresholds() {
+        Log.d(TAG, "Saving thresholds...");
+        // btnSave.setEnabled(false);  // Prevent double-clicks - button removed
+        
+        new Thread(() -> {
+            try {
+                int savedCount = 0;
+                
+                for (Map.Entry<Integer, Float> entry : currentThresholds.entrySet()) {
+                    int freq = entry.getKey();
+                    float threshold = entry.getValue();
+                    
+                    // Check if record exists
+                    HearingTestResult existing = dao.findUserEarFrequencyForProfile(
+                        userId, "right", freq, profileId
+                    );
+                    
+                    if (existing != null) {
+                        // Update existing
+                        existing.setThresholdDbHL(threshold);
+                        existing.setThresholdDbSPL(threshold);
+                        existing.setTestTimestamp(System.currentTimeMillis());
+                        dao.update(existing);
+                        Log.d(TAG, "Updated: " + freq + "Hz = " + threshold + " dB HL (ID: " + existing.getId() + ")");
+                    } else {
+                        // Insert new
+                        HearingTestResult newResult = new HearingTestResult(
+                            userId,
+                            "right",
+                            freq,
+                            threshold,  // thresholdDbHL
+                            threshold,  // thresholdDbSPL
+                            true,       // isReliable
+                            0,          // reversalCount
+                            1.0f,       // reliabilityScore
+                            profileId
+                        );
+                        dao.insert(newResult);
+                        Log.d(TAG, "Inserted: " + freq + "Hz = " + threshold + " dB HL");
+                    }
+                    savedCount++;
+                }
+                
+                Log.d(TAG, "Saved " + savedCount + " thresholds successfully");
+                
+                // Send broadcast to reload audio personalization
+                android.content.Intent reloadIntent = new android.content.Intent("com.example.audion.RELOAD_PROFILE");
+                reloadIntent.putExtra("PROFILE_ID", profileId);
+                requireActivity().sendBroadcast(reloadIntent);
+                Log.d(TAG, "Sent RELOAD_PROFILE broadcast");
+                
+                // Update UI on main thread
+                requireActivity().runOnUiThread(() -> {
+                    // buttonContainer.setVisibility(View.GONE); // Button removed
+                    // btnSave.setEnabled(true); // Button removed
+                    hasChanges = false;
+                    
+                    // Update original thresholds to match current values
+                    originalThresholds.clear();
+                    originalThresholds.putAll(currentThresholds);
+                    
+                    CustomToast.showSuccess(requireContext(), "Saved successfully");
+                });
+                
+            } catch (Exception e) {
+                Log.e(TAG, "Error saving thresholds", e);
+                requireActivity().runOnUiThread(() -> {
+                    // btnSave.setEnabled(true); // Button removed
+                    CustomToast.showError(requireContext(), "Error saving: " + e.getMessage(), CustomToast.LENGTH_LONG);
+                });
+            }
         }).start();
+    }
+    
+    /**
+     * Check if there are unsaved changes
+     */
+    public boolean hasUnsavedChanges() {
+        Log.d(TAG, "hasUnsavedChanges called: " + hasChanges);
+        return hasChanges;
+    }
+    
+    /**
+     * Save changes (public method for external calls)
+     */
+    public void saveChanges() {
+        saveThresholds();
+    }
+    
+    /**
+     * Discard changes (public method for external calls)
+     */
+    public void discardChangesExternal() {
+        discardChanges();
     }
 }

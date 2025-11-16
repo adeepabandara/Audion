@@ -40,6 +40,10 @@ public interface HearingTestResultDao {
     @Query("SELECT * FROM hearing_test_results WHERE userId = :userId AND earSide = :earSide AND frequency = :frequency LIMIT 1")
     HearingTestResult findUserEarFrequency(int userId, String earSide, int frequency);
 
+    // Look up exactly one record by user, ear, frequency, AND profile
+    @Query("SELECT * FROM hearing_test_results WHERE userId = :userId AND earSide = :earSide AND frequency = :frequency AND hearingProfileId = :profileId LIMIT 1")
+    HearingTestResult findUserEarFrequencyForProfile(int userId, String earSide, int frequency, int profileId);
+
     @Query("DELETE FROM hearing_test_results WHERE userId = :userId")
     void deleteResultsForUser(int userId);
 

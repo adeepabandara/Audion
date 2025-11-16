@@ -10,7 +10,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class WaveformView extends View {
-    private static final int MAX_LEVELS = 100;
+    private static final int MAX_LEVELS = 50;  // Reduced from 100 for more spacing
     final Queue<Float> levels = new LinkedList<>();
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -28,8 +28,9 @@ public class WaveformView extends View {
     }
 
     private void init() {
-        // thicker stroke and centered color
-        paint.setStrokeWidth(8f);
+        // Thinner stroke for more defined bars
+        paint.setStrokeWidth(8f);  // Reduced from 16f
+        paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setColor(getResources().getColor(R.color.primary, null));
     }
 
@@ -37,11 +38,26 @@ public class WaveformView extends View {
     public void addLevel(float level) {
         // clamp to 0–1
         level = Math.max(0f, Math.min(1f, level));
+        
+        // Apply slight amplification to make variations more visible (square root for more dynamic range)
+        // This enhances quiet sounds while preserving loud peaks
+        level = (float) Math.sqrt(level);
+        
         if (levels.size() >= MAX_LEVELS) {
             levels.poll();
         }
         levels.offer(level);
+        
         // redraw on UI thread
+        postInvalidate();
+    }
+    
+    /** Initialize with zero levels for smooth animation start */
+    public void reset() {
+        levels.clear();
+        for (int i = 0; i < MAX_LEVELS; i++) {
+            levels.offer(0f);
+        }
         postInvalidate();
     }
 
@@ -57,16 +73,36 @@ public class WaveformView extends View {
         float step = w / (MAX_LEVELS - 1f);
         float midY = h / 2f;
 
-        // snapshot levels into array and pad with zeros at start
+        // snapshot levels into array
         Float[] arr = levels.toArray(new Float[0]);
         int len = arr.length;
 
+        // If we have fewer than MAX_LEVELS, start from the right side
+        int startIndex = Math.max(0, MAX_LEVELS - len);
+        
         for (int i = 0; i < MAX_LEVELS; i++) {
-            float lvl = (i < len) ? arr[i] : 0f;
-            float barHeight = lvl * (h / 2f);
+            float lvl;
+            if (i < startIndex) {
+                lvl = 0f;  // No data yet, draw zero
+            } else {
+                int dataIndex = i - startIndex;
+                lvl = (dataIndex < len && arr[dataIndex] != null) ? arr[dataIndex] : 0f;
+            }
+            
+            float barHeight = lvl * (h / 2f) * 1.5f;  // Use 150% for dynamic, tall bars
             float x = i * step;
-            // draw line centered vertically
-            canvas.drawLine(x, midY - barHeight, x, midY + barHeight, paint);
+            
+            // Draw bars based on actual level
+            if (barHeight > 3f) {
+                // Draw waveform bars when there's signal
+                canvas.drawLine(x, midY - barHeight, x, midY + barHeight, paint);
+            } else if (barHeight > 0.5f) {
+                // Draw small bars for quiet sounds
+                canvas.drawLine(x, midY - barHeight, x, midY + barHeight, paint);
+            } else {
+                // Draw a minimal center line when no signal
+                canvas.drawLine(x, midY - 3f, x, midY + 3f, paint);
+            }
         }
     }
 }

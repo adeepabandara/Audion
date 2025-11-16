@@ -490,9 +490,7 @@ public class CalibrationTestActivity extends AppCompatActivity {
                     
                     Log.i("CalibrationFlow", "Clinical calibration saved - " + earSide + " ear: Avg MCL=" + avgMCL + ", Avg UCL=" + avgUCL);
                     
-                    runOnUiThread(() -> {
-                        Toast.makeText(this, "✅ " + earSide + " ear calibration completed!", Toast.LENGTH_SHORT).show();
-                    });
+                    // Calibration completed - removed toast notification
                 }
                 
             } catch (Exception e) {
@@ -540,13 +538,12 @@ public class CalibrationTestActivity extends AppCompatActivity {
                         startActivity(intent);
                         finish();
                     } else {
-                        // Both ears calibrated - NEW WORKFLOW: Navigate to Results/Home
-                        Log.d("FlowDebug", "Both ears calibrated for user " + userId + " → navigating to results/home");
-                        Intent intent = new Intent(this, HomeActivity.class);
+                        // Both ears calibrated - NEW WORKFLOW: Navigate to Test Completion Animation
+                        Log.d("FlowDebug", "Both ears calibrated for user " + userId + " → navigating to test completion");
+                        Intent intent = new Intent(this, TestCompletionActivity.class);
                         intent.putExtra("USER_ID", userId);
                         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                        Log.d("FlowDebug", "NEW WORKFLOW: Calibration complete → returning to HomeActivity");
+                        Log.d("FlowDebug", "NEW WORKFLOW: Calibration complete → showing completion animation");
                         startActivity(intent);
                         finish();
                     }

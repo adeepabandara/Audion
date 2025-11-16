@@ -26,6 +26,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.audion.utils.CustomToast;
+
 
 
 import android.content.res.ColorStateList;
@@ -70,6 +72,7 @@ public class HomeActivity extends AppCompatActivity {
 
     // UI & streaming fields
     private WaveformView      waveformView;
+    private int waveformUpdateCount = 0;
     private MaterialButton    toggleButton;
     private TextView          tvSelectedProfile;
     private TextView          noiseStatusText;
@@ -89,6 +92,7 @@ public class HomeActivity extends AppCompatActivity {
     // Permissions & receivers
     private static final int  REQUEST_RECORD_AUDIO   = 101;
     private static final int  PERMISSION_REQUEST_CODE = 1;
+    private static final int  REQUEST_MEDIA_PROJECTION = 102;  // For phone audio capture
     private static final String PREFS_NAME          = "com.example.audion.PREFERENCES";
     private static final String KEY_SELECTED_PROFILE_ID = "selectedProfileId";
     private static final String KEY_IS_STREAMING    = "isStreaming";
@@ -98,7 +102,13 @@ public class HomeActivity extends AppCompatActivity {
     private final BroadcastReceiver wfReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context ctx, Intent intent) {
             float out = intent.getFloatExtra("outputLevel", 0f);
-            waveformView.addLevel(out);
+            if (waveformView != null) {
+                waveformView.addLevel(out);
+                waveformUpdateCount++;
+                if (waveformUpdateCount % 100 == 0) {
+                    android.util.Log.d("HomeActivity", "Waveform received: " + out + " (count=" + waveformUpdateCount + ")");
+                }
+            }
         }
     };
 
@@ -126,8 +136,6 @@ public class HomeActivity extends AppCompatActivity {
     private LinearLayout phoneToggleOption;
     private ImageView micIcon;
     private ImageView phoneIcon;
-    private TextView micLabel;
-    private TextView phoneLabel;
     private boolean isMicrophoneSource = true;  // true = Mic, false = Phone
 
     // Tour/overlay fields
@@ -144,7 +152,7 @@ public class HomeActivity extends AppCompatActivity {
 
 
 
-        setContentView(R.layout.activity_home_standard);
+        setContentView(R.layout.activity_variation_one);
 
         // Bind views
 
@@ -161,8 +169,6 @@ public class HomeActivity extends AppCompatActivity {
         phoneToggleOption    = findViewById(R.id.phoneToggleOption);
         micIcon              = findViewById(R.id.micIcon);
         phoneIcon            = findViewById(R.id.phoneIcon);
-        micLabel             = findViewById(R.id.micLabel);
-        phoneLabel           = findViewById(R.id.phoneLabel);
         
         // Optional views (may not exist in all layouts)
         tvSelectedProfile    = findViewById(R.id.tvSelectedProfile);
@@ -170,6 +176,11 @@ public class HomeActivity extends AppCompatActivity {
         volumeCard           = findViewById(R.id.volumeCard);
 
         hearingTestResultDao = AppDatabase.getInstance(this).hearingTestResultDao();
+
+        // Initialize waveform with flat line (always visible now)
+        if (waveformView != null) {
+            waveformView.reset();
+        }
 
         // Check and update personalization status banner
         updatePersonalizationStatusBanner();
@@ -230,29 +241,28 @@ public class HomeActivity extends AppCompatActivity {
 
 
 
-        // Bottom navigation
-// Bottom navigation
-        bottomNav.setSelectedItemId(R.id.navigation_home);
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.navigation_home) {
-                // Already on Home
-                return true;
-            } else if (id == R.id.navigation_frequencies) {
-                startActivity(new Intent(this, FrequencyActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            } else if (id == R.id.navigation_music) {
-                startActivity(new Intent(this, MusicPlayerActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            } else if (id == R.id.navigation_settings) {
-                startActivity(new Intent(this, GraphActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            }
-            return false;
-        });
+        // Bottom navigation (only if it exists in layout)
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.navigation_home);
+            bottomNav.setOnItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.navigation_home) {
+                    // Already on Home
+                    return true;
+                } else if (id == R.id.navigation_frequencies) {
+                    startActivity(new Intent(this, FrequencyActivity.class));
+                    overridePendingTransition(0, 0);
+                    finish();  // Close current activity so back button works properly
+                    return true;
+                } else if (id == R.id.navigation_settings) {
+                    startActivity(new Intent(this, ProfileActivity.class));
+                    overridePendingTransition(0, 0);
+                    finish();  // Close current activity so back button works properly
+                    return true;
+                }
+                return false;
+            });
+        }
 
         // ─── Amplification SeekBar with confirmation dialogs ─────────────────────────
         final float maxDb = 40f;  // SeekBar spans 0–40 dB (safe consumer hearing assistance limit)
@@ -283,30 +293,39 @@ public class HomeActivity extends AppCompatActivity {
                 int threshold40 = Math.round((20f / maxDb) * maxProgress);  // 20 dB warning threshold
                 int threshold70 = Math.round((30f / maxDb) * maxProgress);  // 30 dB warning threshold
 
-                // grab the three layers of the track
-                LayerDrawable ld = (LayerDrawable) sb.getProgressDrawable().mutate();
-                Drawable prLayer  = ld.findDrawableByLayerId(android.R.id.progress);
-                Drawable secLayer = ld.findDrawableByLayerId(android.R.id.secondaryProgress);
-                Drawable bgLayer  = ld.findDrawableByLayerId(android.R.id.background);
+                // Try to update colors if using old drawable structure (backward compatibility)
+                try {
+                    // grab the three layers of the track
+                    LayerDrawable ld = (LayerDrawable) sb.getProgressDrawable().mutate();
+                    Drawable prLayer  = ld.findDrawableByLayerId(android.R.id.progress);
+                    Drawable secLayer = ld.findDrawableByLayerId(android.R.id.secondaryProgress);
+                    Drawable bgLayer  = ld.findDrawableByLayerId(android.R.id.background);
 
-                // fetch our colors
-                int primaryColor = ContextCompat.getColor(HomeActivity.this, R.color.primary);
-                int bgColor      = ContextCompat.getColor(HomeActivity.this, R.color.background);
-                int redAlert     = ContextCompat.getColor(HomeActivity.this, R.color.red_alert);
-                int lightRedAlert   = ContextCompat.getColor(HomeActivity.this, R.color.red_alert_light);
+                    // fetch our colors
+                    int primaryColor = ContextCompat.getColor(HomeActivity.this, R.color.primary);
+                    int bgColor      = ContextCompat.getColor(HomeActivity.this, R.color.background);
+                    int redAlert     = ContextCompat.getColor(HomeActivity.this, R.color.red_alert);
+                    int lightRedAlert   = ContextCompat.getColor(HomeActivity.this, R.color.red_alert_light);
 
-                // tint the filled portion: red if ≥20 dB, otherwise primary
-                prLayer.setTint(curDb >= 20f ? redAlert : primaryColor);
-                // the 0→20dB zone (secondaryProgress) stays background
-                secLayer.setTint(bgColor);
-                // the rest of the bar is always red
-                bgLayer.setTint(lightRedAlert);
-                sb.setSecondaryProgress(threshold40);
+                    // tint the filled portion: red if ≥20 dB, otherwise primary
+                    if (prLayer != null) prLayer.setTint(curDb >= 20f ? redAlert : primaryColor);
+                    // the 0→20dB zone (secondaryProgress) stays background
+                    if (secLayer != null) secLayer.setTint(bgColor);
+                    // the rest of the bar is always red
+                    if (bgLayer != null) bgLayer.setTint(lightRedAlert);
+                    sb.setSecondaryProgress(threshold40);
 
-                // also tint the thumb the same way
-                Drawable thumb = sb.getThumb().mutate();
-                thumb.setTint(curDb >= 20f ? redAlert : primaryColor);
-                sb.setThumb(thumb);
+                    // also tint the thumb the same way
+                    Drawable thumb = sb.getThumb();
+                    if (thumb != null) {
+                        thumb = thumb.mutate();
+                        thumb.setTint(curDb >= 20f ? redAlert : primaryColor);
+                        sb.setThumb(thumb);
+                    }
+                } catch (Exception e) {
+                    // New modern seekbar - skip color changes
+                    Log.d(TAG, "Modern seekbar in use, skipping legacy color updates");
+                }
 
                 if (fromUser) {
                     // Extreme warning (30 dB)
@@ -469,6 +488,14 @@ public class HomeActivity extends AppCompatActivity {
                     if (ivProfileIcon != null) {
                         ivProfileIcon.setImageResource(iconResForKey(profile.getIcon()));
                     }
+                    
+                    // Broadcast profile change to audio service for real-time personalization update
+                    Intent reloadIntent = new Intent("com.example.audion.RELOAD_PROFILE");
+                    reloadIntent.putExtra("PROFILE_ID", currentProfileId);
+                    sendBroadcast(reloadIntent);
+                    
+                    Log.i(TAG, "Profile switched to: " + profile.getName() + " (ID: " + currentProfileId + ")");
+                    
                     updateGainsForProfile(currentProfileId);
                 });
                 bs.show(getSupportFragmentManager(), "ProfileSelectionBS");
@@ -485,32 +512,22 @@ public class HomeActivity extends AppCompatActivity {
         // Microphone toggle click
         micToggleOption.setOnClickListener(v -> {
             if (!isMicrophoneSource) {
-                isMicrophoneSource = true;
-                updateToggleUI(true);
-                // Save preference
-                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("audio_source_mic", true)
-                    .apply();
-                // Notify service
-                sendBroadcast(new Intent("com.example.audion.PREFERENCES_CHANGED"));
-                Log.i("HomeActivity", "Audio source: Microphone");
+                // Switch to microphone mode
+                switchToMicrophoneMode();
             }
         });
         
         // Phone audio toggle click
         phoneToggleOption.setOnClickListener(v -> {
             if (isMicrophoneSource) {
-                isMicrophoneSource = false;
-                updateToggleUI(false);
-                // Save preference
-                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                    .edit()
-                    .putBoolean("audio_source_mic", false)
-                    .apply();
-                // Notify service
-                sendBroadcast(new Intent("com.example.audion.PREFERENCES_CHANGED"));
-                Log.i("HomeActivity", "Audio source: Phone Audio");
+                // Check Android version
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+                    CustomToast.showError(this, "Phone audio mode requires Android 10 or higher", CustomToast.LENGTH_LONG);
+                    return;
+                }
+                
+                // Request MediaProjection permission for audio capture
+                requestMediaProjectionPermission();
             }
         });
         
@@ -520,6 +537,67 @@ public class HomeActivity extends AppCompatActivity {
         updateToggleUI(isMicrophoneSource);
     }
     
+    private void switchToMicrophoneMode() {
+        isMicrophoneSource = true;
+        updateToggleUI(true);
+        
+        // Save preference
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .edit()
+            .putBoolean("audio_source_mic", true)
+            .apply();
+        
+        // Switch audio engine mode
+        Intent intent = new Intent("com.example.audion.SET_AUDIO_MODE");
+        intent.putExtra("audio_mode", "MIC");
+        sendBroadcast(intent);
+        
+        CustomToast.showSuccess(this, "Listening to environment");
+        Log.i(TAG, "Audio mode: Microphone (environment)");
+    }
+    
+    private void switchToPhoneMode() {
+        isMicrophoneSource = false;
+        updateToggleUI(false);
+        
+        // Save preference
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .edit()
+            .putBoolean("audio_source_mic", false)
+            .apply();
+        
+        // Switch audio engine mode
+        Intent intent = new Intent("com.example.audion.SET_AUDIO_MODE");
+        intent.putExtra("audio_mode", "MEDIA");
+        sendBroadcast(intent);
+        
+        CustomToast.showSuccess(this, "Amplifying phone media");
+        Log.i(TAG, "Audio mode: Phone media");
+    }
+    
+    private void requestMediaProjectionPermission() {
+        // Show explanation dialog
+        new AlertDialog.Builder(this)
+            .setTitle("Phone Audio Access Required")
+            .setMessage("To amplify phone media (music, videos, calls), Audion needs to capture your device's audio output.\n\n" +
+                    "⚠️ Android will show a 'Screen Recording' permission - this is normal!\n\n" +
+                    "Audion ONLY captures audio, never your screen. This is Android's security requirement for any app accessing system audio.\n\n" +
+                    "Your privacy is protected - no screen recording occurs.")
+            .setPositiveButton("I Understand - Allow", (dialog, which) -> {
+                // Request MediaProjection permission
+                android.media.projection.MediaProjectionManager projectionManager = 
+                    (android.media.projection.MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                if (projectionManager != null) {
+                    startActivityForResult(projectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
+                }
+            })
+            .setNegativeButton("Cancel", (dialog, which) -> {
+                dialog.dismiss();
+                CustomToast.showError(this, "Phone audio mode requires permission");
+            })
+            .show();
+    }
+    
     private void updateToggleUI(boolean isMic) {
         if (isMic) {
             // Microphone selected
@@ -527,20 +605,12 @@ public class HomeActivity extends AppCompatActivity {
             phoneToggleOption.setBackgroundResource(R.drawable.toggle_option_unselected);
             micIcon.setColorFilter(getResources().getColor(R.color.primary));
             phoneIcon.setColorFilter(getResources().getColor(R.color.onboarding_text_secondary));
-            micLabel.setTextColor(getResources().getColor(R.color.primary));
-            micLabel.setTypeface(null, android.graphics.Typeface.BOLD);
-            phoneLabel.setTextColor(getResources().getColor(R.color.onboarding_text_secondary));
-            phoneLabel.setTypeface(null, android.graphics.Typeface.NORMAL);
         } else {
             // Phone audio selected
             micToggleOption.setBackgroundResource(R.drawable.toggle_option_unselected);
             phoneToggleOption.setBackgroundResource(R.drawable.toggle_option_selected);
             micIcon.setColorFilter(getResources().getColor(R.color.onboarding_text_secondary));
             phoneIcon.setColorFilter(getResources().getColor(R.color.primary));
-            micLabel.setTextColor(getResources().getColor(R.color.onboarding_text_secondary));
-            micLabel.setTypeface(null, android.graphics.Typeface.NORMAL);
-            phoneLabel.setTextColor(getResources().getColor(R.color.primary));
-            phoneLabel.setTypeface(null, android.graphics.Typeface.BOLD);
         }
     }
 
@@ -601,6 +671,36 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (requestCode == REQUEST_MEDIA_PROJECTION) {
+            if (resultCode == RESULT_OK && data != null) {
+                // MediaProjection permission granted
+                Log.i(TAG, "MediaProjection permission granted");
+                
+                // Send MediaProjection result to service
+                Intent intent = new Intent("com.example.audion.SET_MEDIA_PROJECTION");
+                intent.putExtra("result_code", resultCode);
+                intent.putExtra("result_data", data);
+                sendBroadcast(intent);
+                
+                // Wait a bit for MediaProjection to be set in service, then switch mode
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    switchToPhoneMode();
+                }, 500); // 500ms delay to ensure MediaProjection is ready
+            } else {
+                // Permission denied
+                Log.w(TAG, "MediaProjection permission denied");
+                CustomToast.showError(this, "Permission required for phone audio mode");
+                // Keep toggle on microphone
+                isMicrophoneSource = true;
+                updateToggleUI(true);
+            }
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
@@ -626,8 +726,12 @@ public class HomeActivity extends AppCompatActivity {
                         .hearingProfileDao()
                         .getHearingProfileById(saved);
                 runOnUiThread(() -> {
-                    tvSelectedProfile.setText(hp.getName());
-                    ivProfileIcon.setImageResource(iconResForKey(hp.getIcon()));
+                    if (tvSelectedProfile != null) {
+                        tvSelectedProfile.setText(hp.getName());
+                    }
+                    if (ivProfileIcon != null) {
+                        ivProfileIcon.setImageResource(iconResForKey(hp.getIcon()));
+                    }
                 });
             }).start();
         }
@@ -638,18 +742,26 @@ public class HomeActivity extends AppCompatActivity {
                                            String[] permissions,
                                            int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQUEST_CODE
-                && grantResults.length > 0
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startAudioStreamingService();
-            isStreaming = true;
-            getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                    .edit()
-                    .putBoolean(KEY_IS_STREAMING, true)
-                    .apply();
-            updateToggleUi(true);
-        } else {
-            Toast.makeText(this, "Microphone permission required", Toast.LENGTH_SHORT).show();
+        if (requestCode == REQUEST_RECORD_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, but don't auto-start streaming
+                Log.d(TAG, "Microphone permission granted");
+            } else {
+                // Permission denied
+                CustomToast.showError(this, "Microphone permission required");
+            }
+        } else if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startAudioStreamingService();
+                isStreaming = true;
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                        .edit()
+                        .putBoolean(KEY_IS_STREAMING, true)
+                        .apply();
+                updateToggleUi(true);
+            } else {
+                CustomToast.showError(this, "Microphone permission required");
+            }
         }
     }
 
@@ -900,8 +1012,13 @@ public class HomeActivity extends AppCompatActivity {
             final String name = sel.getName();
             final String iconKey = sel.getIcon();
             runOnUiThread(() -> {
-                tvSelectedProfile.setText(name);
-                ivProfileIcon.setImageResource(iconResForKey(iconKey));
+                // Only update UI elements if they exist in the layout
+                if (tvSelectedProfile != null) {
+                    tvSelectedProfile.setText(name);
+                }
+                if (ivProfileIcon != null) {
+                    ivProfileIcon.setImageResource(iconResForKey(iconKey));
+                }
                 updateGainsForProfile(currentProfileId);
             });
         }).start();
@@ -935,12 +1052,20 @@ public class HomeActivity extends AppCompatActivity {
             toggleButton.setBackgroundTintList(
                     getResources().getColorStateList(R.color.red_circle)
             );
+            // Waveform is always visible - just reset it for streaming
+            if (waveformView != null) {
+                waveformView.reset(); // Initialize with zeros for smooth animation
+            }
         } else {
             toggleButton.setText("Start");
             toggleButton.setIconResource(R.drawable.ic_play);
             toggleButton.setBackgroundTintList(
                     getResources().getColorStateList(R.color.green_circle)
             );
+            // Waveform stays visible - just reset it to flat line
+            if (waveformView != null) {
+                waveformView.reset();
+            }
         }
     }
 

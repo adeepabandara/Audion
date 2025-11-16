@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Lucide Home Icon -->
+    <path
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M3 9 L12 2 L21 9 L21 20 C21 20.5304 20.7893 21.0391 20.4142 21.4142 C20.0391 21.7893 19.5304 22 19 22 L5 22 C4.46957 22 3.96086 21.7893 3.58579 21.4142 C3.21071 21.0391 3 20.5304 3 20 Z"/>
+    <path
+        android:strokeWidth="2"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M9 22 L9 12 L15 12 L15 22"/>
+</vector>

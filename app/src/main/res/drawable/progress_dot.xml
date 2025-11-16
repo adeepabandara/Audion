@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Single white dot/mark that rotates around the circle -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape
+            android:innerRadiusRatio="3.0"
+            android:shape="ring"
+            android:thickness="3dp"
+            android:useLevel="false">
+            <!-- Small arc segment - just 5 degrees of the circle -->
+            <solid android:color="#FFFFFF" />
+            <size android:width="40dp" android:height="40dp" />
+        </shape>
+    </item>
+</layer-list>

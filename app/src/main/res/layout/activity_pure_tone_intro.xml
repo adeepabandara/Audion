@@ -24,12 +24,9 @@
         android:text="Personalize Your Hearing"
         android:textColor="@android:color/black"
         android:textSize="@dimen/start_test_title_text_size"
-        app:layout_constraintBottom_toTopOf="@id/ivIllustration"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:layout_constraintVertical_bias="0.5" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/ivIllustration"
@@ -51,6 +48,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/start_test_description_top_margin"
+        android:layout_marginBottom="24dp"
         android:fontFamily="@font/poppins"
         android:gravity="center"
         android:lineSpacingExtra="4dp"
@@ -70,17 +68,10 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnStartTest"
+        style="@style/PrimaryButton"
         android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_marginBottom="12dp"
-        android:backgroundTint="#0F766E"
+        android:layout_marginBottom="8dp"
         android:text="Get Started"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textAllCaps="false"
-        android:fontFamily="@font/poppins"
-        app:cornerRadius="8dp"
         app:layout_constraintBottom_toTopOf="@id/btnContinueLater"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -88,8 +79,8 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnContinueLater"
         android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_marginBottom="32dp"
+        android:layout_height="56dp"
+        android:layout_marginBottom="16dp"
         android:backgroundTint="@android:color/white"
         android:text="Continue Later"
         android:textColor="#0F766E"

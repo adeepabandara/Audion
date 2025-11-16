@@ -18,6 +18,7 @@ public class RightEarInstructionActivity extends AppCompatActivity {
     private Button buttonStartRightTest;
     private int userId;
     private int hearingProfileId;
+    private boolean fromNewProfile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +27,7 @@ public class RightEarInstructionActivity extends AppCompatActivity {
         buttonStartRightTest = findViewById(R.id.buttonStartRightEarTest);
         userId = getIntent().getIntExtra("USER_ID", -1);
         hearingProfileId = getIntent().getIntExtra("HEARING_PROFILE_ID", -1);
+        fromNewProfile = getIntent().getBooleanExtra("FROM_NEW_PROFILE", false);
 
         // CLINICAL WORKFLOW: Pure Tone Test runs first (no calibration prerequisite)
 
@@ -91,6 +93,7 @@ public class RightEarInstructionActivity extends AppCompatActivity {
         intent.putExtra("EAR", "RIGHT"); // Explicitly set RIGHT ear for pure tone test
         intent.putExtra("USER_ID", userId);
         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
+        intent.putExtra("FROM_NEW_PROFILE", fromNewProfile); // Pass the flag along
         startActivity(intent);
         overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
         finish();

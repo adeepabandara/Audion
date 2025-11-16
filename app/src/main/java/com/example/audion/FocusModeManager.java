@@ -67,6 +67,9 @@ public class FocusModeManager {
      */
     public synchronized boolean isSelectedSpeakerActive() {
         if (!focusModeActive || diarizationManager == null || selectedSpeakerEmbedding == null) {
+            Log.d(TAG, "isSelectedSpeakerActive: returning true (default) - focusModeActive=" + focusModeActive + 
+                ", diarizationManager=" + (diarizationManager != null) + 
+                ", selectedSpeakerEmbedding=" + (selectedSpeakerEmbedding != null));
             return true; // Default to true (don't mute) if not in focus mode
         }
         
@@ -74,19 +77,28 @@ public class FocusModeManager {
             int currentChunkId = diarizationManager.getCurrentChunkId();
             var activeSpeakers = diarizationManager.getActiveSpeakers(currentChunkId);
             
+            Log.d(TAG, "isSelectedSpeakerActive: chunkId=" + currentChunkId + 
+                ", activeSpeakers count=" + activeSpeakers.size());
+            
             if (activeSpeakers.isEmpty()) {
+                Log.d(TAG, "isSelectedSpeakerActive: No active speakers - returning false (mute)");
                 return false; // No active speakers - mute
             }
             
             // Check if any active speaker matches the selected embedding
             for (var speaker : activeSpeakers) {
-                if (diarizationManager.isSpeakerMatchingEnrollment(
+                boolean matches = diarizationManager.isSpeakerMatchingEnrollment(
                         speaker.getGlobalId(), 
-                        selectedSpeakerEmbedding)) {
+                        selectedSpeakerEmbedding);
+                Log.d(TAG, "isSelectedSpeakerActive: checking speaker globalId=" + speaker.getGlobalId() + 
+                    ", matches=" + matches);
+                if (matches) {
+                    Log.d(TAG, "isSelectedSpeakerActive: Selected speaker IS active - returning true (amplify)");
                     return true; // Selected speaker is active
                 }
             }
             
+            Log.d(TAG, "isSelectedSpeakerActive: Selected speaker NOT active - returning false (mute)");
             return false; // Selected speaker not among active speakers - mute
             
         } catch (Exception e) {

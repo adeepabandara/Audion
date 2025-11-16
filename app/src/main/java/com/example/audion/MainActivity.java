@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
                 Intent intent;
                 if (recordCount >= 16) {  // Now checks if eight or more records exist.
-                    // Navigate to HomeActivity.
+                    // Navigate to HomeActivity (with new bottom navigation).
                     intent = new Intent(MainActivity.this, HomeActivity.class);
                 } else {
                     // If fewer than 16 records exist, delete all records for user 1

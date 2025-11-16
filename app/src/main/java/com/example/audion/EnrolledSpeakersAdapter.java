@@ -56,7 +56,6 @@ public class EnrolledSpeakersAdapter
         EnrollmentActivity.EnrolledSpeaker sp = speakers.get(pos);
 
         holder.nameTextView.setText(sp.getName());
-        holder.durationTextView.setText(String.format("%.1f sec", sp.getDuration()));
 
         holder.speakerRadio.setChecked(pos == selectedPosition);
         View.OnClickListener select = v -> {
@@ -69,15 +68,24 @@ public class EnrolledSpeakersAdapter
 
         boolean hasAudio = sp.getAudioSamples()!=null && sp.getAudioSamples().length>0;
         holder.playButton.setEnabled(hasAudio);
-        holder.playButton.setText(isPlaying && pos==selectedPosition ? "Stop" : "Play");
+        
+        // Update icon and background based on playing state
+        if (isPlaying && pos==selectedPosition) {
+            holder.playButton.setImageResource(R.drawable.ic_stop);
+            holder.playButton.setBackgroundResource(R.drawable.circle_button_background_playing);
+        } else {
+            holder.playButton.setImageResource(R.drawable.ic_play);
+            holder.playButton.setBackgroundResource(R.drawable.circle_button_background);
+        }
+        
         holder.playButton.setOnClickListener(v -> {
             v.getContext().sendBroadcast(new Intent("com.example.audion.STOP_STREAMING"));
             if (isPlaying) {
                 stopPlayback();
-                holder.playButton.setText("Play");
+                notifyDataSetChanged();
             } else if (hasAudio) {
                 playSpeakerAudio(sp.getAudioSamples());
-                holder.playButton.setText("Stop");
+                notifyDataSetChanged();
             } else {
                 Toast.makeText(context,"No audio sample",Toast.LENGTH_SHORT).show();
             }
@@ -183,7 +191,7 @@ public class EnrolledSpeakersAdapter
     static class ViewHolder extends RecyclerView.ViewHolder {
         RadioButton speakerRadio;
         TextView    nameTextView, durationTextView;
-        Button      playButton;
+        ImageButton playButton;
         ImageButton renameButton;
 
         ViewHolder(View iv) {
