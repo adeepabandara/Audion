@@ -65,7 +65,7 @@ public class CalibrationInstructionActivity extends AppCompatActivity {
         if (ear.equalsIgnoreCase("LEFT")) {
             title.setText("Left Ear Calibration");
             description.setText("We'll play 3 standard levels for your left ear calibration");
-            // Set left ear image if available
+            // Set left ear GIF image
             try {
                 earImage.setImageResource(R.drawable.left_ear);
             } catch (Exception e) {
@@ -79,7 +79,7 @@ public class CalibrationInstructionActivity extends AppCompatActivity {
         } else {
             title.setText("Right Ear Calibration");
             description.setText("We'll play 3 standard levels for your right ear calibration");
-            // Set right ear image if available
+            // Set right ear GIF image
             try {
                 earImage.setImageResource(R.drawable.right_ear);
             } catch (Exception e) {

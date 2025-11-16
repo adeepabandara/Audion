@@ -126,12 +126,8 @@ public class CalibrationTestActivity extends AppCompatActivity {
         btnComfortable.setText("Comfortable");
         btnTooLoud.setText("Too Loud");
         
-        // Set ear image
-        if ("LEFT".equals(earSide)) {
-            earImage.setImageResource(R.drawable.left_ear);
-        } else {
-            earImage.setImageResource(R.drawable.right_ear);
-        }
+        // Set ear image - use calibration_test GIF for both ears
+        earImage.setImageResource(R.drawable.calibration_test);
         
         // Initial button state
         setButtonsEnabled(false);

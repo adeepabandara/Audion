@@ -27,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.audion.utils.CustomToast;
+import com.example.audion.utils.EarbudsChecker;
 
 
 
@@ -802,6 +803,12 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         if (!isStreaming) {
+            // Check for earbuds before starting
+            if (!EarbudsChecker.areEarbudsConnected(this)) {
+                showEarbudsRequiredSheet();
+                return;
+            }
+            
             if (hasMicPermission()) {
                 startAudioStreamingService();
                 isStreaming = true;
@@ -1067,6 +1074,29 @@ public class HomeActivity extends AppCompatActivity {
                 waveformView.reset();
             }
         }
+    }
+
+    private void showEarbudsRequiredSheet() {
+        EarbudsRequiredBottomSheet bottomSheet = new EarbudsRequiredBottomSheet();
+        bottomSheet.setOnEarbudsConnectedListener(() -> {
+            // Automatically start streaming when earbuds are connected
+            if (hasMicPermission()) {
+                startAudioStreamingService();
+                isStreaming = true;
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                        .edit()
+                        .putBoolean(KEY_IS_STREAMING, true)
+                        .apply();
+                updateToggleUi(isStreaming);
+            } else {
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{ Manifest.permission.RECORD_AUDIO },
+                        PERMISSION_REQUEST_CODE
+                );
+            }
+        });
+        bottomSheet.show(getSupportFragmentManager(), "earbuds_required");
     }
 
 

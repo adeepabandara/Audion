@@ -72,6 +72,13 @@ public class SpeakerSelectionBottomSheet extends BottomSheetDialogFragment {
     public void setOnSpeakerSelectedListener(OnSpeakerSelectedListener listener) {
         this.listener = listener;
     }
+    
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Apply rounded corner theme
+        setStyle(STYLE_NORMAL, R.style.BottomSheetDialogTheme);
+    }
 
     @Nullable
     @Override

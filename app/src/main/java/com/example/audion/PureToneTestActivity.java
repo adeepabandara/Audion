@@ -528,10 +528,10 @@ public class PureToneTestActivity extends AppCompatActivity {
                 
                 // Show "Didn't Hear" button
                 buttonNotHeard.setVisibility(View.VISIBLE);
-                buttonNotHeard.setText("Didn't Hear");
+                buttonNotHeard.setText("Didn't hear");
                 
                 // Change main button to "Start Again"
-                circleButton.setText("Start\nAgain");
+                circleButton.setText("Start\nagain");
                 circleButton.setEnabled(true);
                 circleButton.setAlpha(1.0f);
                 

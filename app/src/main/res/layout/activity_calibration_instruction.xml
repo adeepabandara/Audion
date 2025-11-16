@@ -28,9 +28,9 @@
                 android:id="@+id/tvTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Calibration Test"
+                android:text="Lets Start with your Right Ear"
                 android:textColor="#1A6958"
-                android:textSize="28sp"
+                android:textSize="22sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif"
                 android:gravity="center"
@@ -44,7 +44,7 @@
                 android:id="@+id/tvDescription"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="We'll play 3 standard levels for your hearing calibration"
+                android:text="Find a quite place and play 3 standard levels for your hearing calibration. Place your right earbud in your right ear."
                 android:textColor="#4A4A4A"
                 android:textSize="16sp"
                 android:fontFamily="sans-serif"
@@ -56,7 +56,7 @@
                 app:layout_constraintEnd_toEndOf="parent" />
 
             <!-- Ear illustration -->
-            <ImageView
+            <pl.droidsonroids.gif.GifImageView
                 android:id="@+id/imageViewEar"
                 android:layout_width="0dp"
                 android:layout_height="280dp"

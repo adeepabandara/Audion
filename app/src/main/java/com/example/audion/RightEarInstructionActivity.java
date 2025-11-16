@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import com.example.audion.utils.EarbudsChecker;
 
 public class RightEarInstructionActivity extends AppCompatActivity {
 
@@ -35,6 +36,12 @@ public class RightEarInstructionActivity extends AppCompatActivity {
             // Add button press animation
             Animation buttonPress = AnimationUtils.loadAnimation(this, R.anim.button_press);
             v.startAnimation(buttonPress);
+            
+            // Check for earbuds first
+            if (!EarbudsChecker.areEarbudsConnected(this)) {
+                showEarbudsRequiredSheet();
+                return;
+            }
             
             // Check permissions before starting test
             if (checkAudioPermissions()) {
@@ -97,6 +104,19 @@ public class RightEarInstructionActivity extends AppCompatActivity {
         startActivity(intent);
         overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
         finish();
+    }
+
+    private void showEarbudsRequiredSheet() {
+        EarbudsRequiredBottomSheet bottomSheet = new EarbudsRequiredBottomSheet();
+        bottomSheet.setOnEarbudsConnectedListener(() -> {
+            // Automatically proceed to test when earbuds are connected
+            if (checkAudioPermissions()) {
+                startPureToneTest();
+            } else {
+                requestAudioPermissions();
+            }
+        });
+        bottomSheet.show(getSupportFragmentManager(), "earbuds_required");
     }
 
     @Override

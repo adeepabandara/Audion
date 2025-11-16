@@ -128,13 +128,10 @@ public class CalibrationTestActivityRefactored extends AppCompatActivity {
         tvProgress = findViewById(R.id.tvProgress);
         // Removed: tvFrequencyLabel = findViewById(R.id.tvFrequencyLabel);
         
-        // Ear image
+        // Ear image - use calibration_test GIF for both ears
         earImage = findViewById(R.id.imageEar);
-        if ("LEFT".equals(earSide)) {
-            earImage.setImageResource(R.drawable.left_ear);
-        } else {
-            earImage.setImageResource(R.drawable.right_ear);
-        }
+        // Always show calibration_test GIF during the test
+        earImage.setImageResource(R.drawable.calibration_test);
         
         // Center section: instruction and SeekBar
         tvInstruction = findViewById(R.id.tvInstruction);

@@ -39,6 +39,13 @@ public class ProfileSelectionBottomSheet extends BottomSheetDialogFragment {
     public void setOnProfileSelectedListener(OnProfileSelectedListener l) {
         listener = l;
     }
+    
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Apply rounded corner theme
+        setStyle(STYLE_NORMAL, R.style.BottomSheetDialogTheme);
+    }
 
     @Nullable @Override
     public View onCreateView(

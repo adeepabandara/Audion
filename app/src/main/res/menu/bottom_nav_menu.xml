@@ -2,7 +2,7 @@
     <item
         android:id="@+id/navigation_frequencies"
         android:icon="@drawable/lucide_sliders"
-        android:title="Frequencies" />
+        android:title="Adjust" />
     <item
         android:id="@+id/navigation_home"
         android:icon="@drawable/lucide_home"

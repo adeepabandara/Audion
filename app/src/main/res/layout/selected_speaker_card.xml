@@ -33,21 +33,13 @@
         android:minHeight="28dp">
 
         <!-- Left side: Speaker icon -->
-        <FrameLayout
+        <ImageView
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_marginEnd="12dp"
-            android:background="@drawable/circle_button_background">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_person"
-                android:tint="@color/white"
-                android:contentDescription="Speaker icon"/>
-
-        </FrameLayout>
+            android:src="@drawable/focus_icon"
+            android:scaleType="fitCenter"
+            android:contentDescription="Speaker icon"/>
 
         <!-- Speaker info -->
         <LinearLayout

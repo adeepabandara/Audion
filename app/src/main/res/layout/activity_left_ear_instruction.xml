@@ -18,15 +18,17 @@
         android:fontFamily="@font/poppins"
         android:textStyle="bold"
         android:gravity="center"
-        android:text="Left Ear – Pure Tone Test"
+        android:text="lets move to left ear"
         android:textColor="@android:color/black"
-        android:textSize="28sp"
+        android:textSize="22sp"
+        android:maxLines="1"
+        android:ellipsize="end"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Ear Image -->
-    <ImageView
+    <pl.droidsonroids.gif.GifImageView
         android:id="@+id/imageViewEar"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -53,7 +55,7 @@
         android:layout_marginTop="48dp"
         android:fontFamily="@font/poppins"
         android:gravity="center"
-        android:text="Place your headphones on and tap 'Start Test' when you're ready.\n\nYou'll hear tones at different volumes – tap when you can hear them."
+        android:text="Wear your left earbud properly, then tap the Start button to begin."
         android:textColor="@android:color/black"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"

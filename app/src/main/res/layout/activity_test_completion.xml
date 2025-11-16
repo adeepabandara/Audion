@@ -9,24 +9,25 @@
     <!-- GIF Animation -->
     <pl.droidsonroids.gif.GifImageView
         android:id="@+id/gifAnimation"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
         android:src="@drawable/completed"
         android:contentDescription="Test Completed"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/tvCompletionMessage"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <!-- Completion Message -->
     <TextView
         android:id="@+id/tvCompletionMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="24dp"
         android:text="All tests are completed!"
         android:fontFamily="@font/poppins"
-        android:textSize="24sp"
+        android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="@color/primary"
         android:gravity="center"

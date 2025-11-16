@@ -48,6 +48,7 @@ import android.media.AudioManager;
 import androidx.core.content.ContextCompat;
 
 import com.airbnb.lottie.LottieAnimationView;
+import com.example.audion.utils.EarbudsChecker;
 import com.example.audion.diarization.DirectDiarizationManager;
 import com.example.audion.diarization.SpeakerDiarizationManager;
 import com.google.android.material.button.MaterialButton;
@@ -607,6 +608,11 @@ public class FocusActivity extends AppCompatActivity
 
         enrollButton.setOnClickListener(v -> {
             if (!isEnrolling) {
+                // Check for earbuds before starting scan
+                if (!EarbudsChecker.areEarbudsConnected(this)) {
+                    showEarbudsRequiredSheet();
+                    return;
+                }
                 // Start scanning
                 startEnrollment();
             } else {
@@ -623,6 +629,11 @@ public class FocusActivity extends AppCompatActivity
 
         // Scan Again button click listener
         scanAgainButton.setOnClickListener(v -> {
+            // Check for earbuds before starting scan
+            if (!EarbudsChecker.areEarbudsConnected(this)) {
+                showEarbudsRequiredSheet();
+                return;
+            }
             // Reset to initial state
             resetToInitialState();
             // Then start new scan
@@ -779,6 +790,13 @@ public class FocusActivity extends AppCompatActivity
                                Toast.LENGTH_SHORT).show();
                 return;
             }
+            
+            // Check for earbuds before starting processing
+            if (!EarbudsChecker.areEarbudsConnected(this)) {
+                showEarbudsRequiredSheet();
+                return;
+            }
+            
             startProcessing();
         }
     }
@@ -930,6 +948,17 @@ public class FocusActivity extends AppCompatActivity
                 }
             });
         }
+    }
+
+    private void showEarbudsRequiredSheet() {
+        EarbudsRequiredBottomSheet bottomSheet = new EarbudsRequiredBottomSheet();
+        bottomSheet.setOnEarbudsConnectedListener(() -> {
+            // This callback can be empty since user will manually click button again after connecting
+            // Or we can automatically trigger the action:
+            // For scanning: startEnrollment();
+            // For processing: startProcessing();
+        });
+        bottomSheet.show(getSupportFragmentManager(), "earbuds_required");
     }
     @Override public void onDiarizationError(String m) {
         mainHandler.post(() ->

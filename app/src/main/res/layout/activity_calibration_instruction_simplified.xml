@@ -35,7 +35,7 @@
         app:layout_constraintVertical_chainStyle="packed" />
 
     <!-- Placeholder Image - Replace with appropriate calibration illustration -->
-    <ImageView
+    <pl.droidsonroids.gif.GifImageView
         android:id="@+id/imageViewEar"
         android:layout_width="0dp"
         android:layout_height="0dp"

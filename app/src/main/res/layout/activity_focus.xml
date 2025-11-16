@@ -80,7 +80,7 @@
                     android:layout_marginTop="@dimen/slide_description_top_margin"
                     android:gravity="center"
                     android:lineSpacingExtra="4dp"
-                    android:text="Isolate and amplify the voice you want to hear.\nScan your environment to detect speakers."
+                    android:text="Scan your environment to detect speakers."
                     android:textColor="@android:color/black"
                     android:textSize="16sp"
                     android:fontFamily="@font/poppins"
