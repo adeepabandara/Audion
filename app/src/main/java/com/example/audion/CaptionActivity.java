@@ -1,6 +1,8 @@
 // File: app/src/main/java/com/example/audion/CaptionActivity.java
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;

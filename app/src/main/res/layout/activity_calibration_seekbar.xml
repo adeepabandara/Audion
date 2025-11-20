@@ -83,13 +83,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvCalibrationTitle" />
 
-    <!-- Ear Image -->
-    <ImageView
+    <!-- Ear Image - GIF animation -->
+    <pl.droidsonroids.gif.GifImageView
         android:id="@+id/imageEar"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
         android:layout_marginTop="24dp"
-        android:src="@drawable/right_ear"
+        android:src="@drawable/calibration_test"
         android:contentDescription="Ear icon"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

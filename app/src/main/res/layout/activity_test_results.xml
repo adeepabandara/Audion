@@ -192,6 +192,21 @@
 
     </androidx.cardview.widget.CardView>
 
+    <!-- Medical Disclaimer -->
+    <TextView
+        android:id="@+id/tvResultsDisclaimer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:text="@string/medical_disclaimer_results"
+        android:textSize="11sp"
+        android:textColor="@color/onboarding_text_secondary"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp"
+        app:layout_constraintBottom_toTopOf="@id/btnProceedToHome"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <!-- Proceed to Home Button (Primary) -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnProceedToHome"

@@ -20,7 +20,7 @@ public final class AudioConfig {
     
     // Android audio format constants
     // INPUT: MONO (most devices have single mic, STEREO causes distortion/noise)
-    // OUTPUT: STEREO (for binaural hearing aid output - we'll duplicate mono input)
+    // OUTPUT: STEREO (for binaural personal sound amplification - we'll duplicate mono input)
     public static final int CHANNEL_IN_CONFIG = android.media.AudioFormat.CHANNEL_IN_MONO;
     public static final int CHANNEL_OUT_CONFIG = android.media.AudioFormat.CHANNEL_OUT_STEREO;
     public static final int ENCODING_FORMAT = android.media.AudioFormat.ENCODING_PCM_16BIT;

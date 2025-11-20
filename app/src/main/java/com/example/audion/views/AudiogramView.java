@@ -19,7 +19,10 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Custom view that displays a clinical audiogram following ANSI S3.6 standards.
+ * Audion is a Personal Sound Amplification Product (PSAP) for consumer use.
+ * It is not a medical device and is not intended to diagnose, treat, or cure hearing conditions.
+ * 
+ * Custom view that displays a consumer audiogram following ANSI S3.6 standards.
  * Features:
  * - Inverted Y-axis (0 dB at top, 120 dB at bottom)
  * - Standard audiometric frequencies on X-axis

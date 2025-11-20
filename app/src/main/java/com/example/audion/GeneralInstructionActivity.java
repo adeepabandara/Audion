@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.audion.data.AppDatabase;
 import com.example.audion.data.HearingProfile;
 import com.example.audion.data.HearingProfileDao;
-import com.example.audion.R;
+import com.audion.psap.R;
 import android.view.Window;
 import android.view.WindowManager;
 

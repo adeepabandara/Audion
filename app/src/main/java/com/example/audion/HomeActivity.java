@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 
 
 
@@ -577,14 +579,11 @@ public class HomeActivity extends AppCompatActivity {
     }
     
     private void requestMediaProjectionPermission() {
-        // Show explanation dialog
+        // Show explanation dialog with improved wording
         new AlertDialog.Builder(this)
-            .setTitle("Phone Audio Access Required")
-            .setMessage("To amplify phone media (music, videos, calls), Audion needs to capture your device's audio output.\n\n" +
-                    "⚠️ Android will show a 'Screen Recording' permission - this is normal!\n\n" +
-                    "Audion ONLY captures audio, never your screen. This is Android's security requirement for any app accessing system audio.\n\n" +
-                    "Your privacy is protected - no screen recording occurs.")
-            .setPositiveButton("I Understand - Allow", (dialog, which) -> {
+            .setTitle(R.string.audio_capture_permission_title)
+            .setMessage(R.string.audio_capture_permission_message)
+            .setPositiveButton(R.string.i_understand_allow, (dialog, which) -> {
                 // Request MediaProjection permission
                 android.media.projection.MediaProjectionManager projectionManager = 
                     (android.media.projection.MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
@@ -592,9 +591,9 @@ public class HomeActivity extends AppCompatActivity {
                     startActivityForResult(projectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
                 }
             })
-            .setNegativeButton("Cancel", (dialog, which) -> {
+            .setNegativeButton(R.string.cancel, (dialog, which) -> {
                 dialog.dismiss();
-                CustomToast.showError(this, "Phone audio mode requires permission");
+                CustomToast.showError(this, getString(R.string.phone_audio_permission_required));
             })
             .show();
     }
@@ -787,7 +786,7 @@ public class HomeActivity extends AppCompatActivity {
         stopAudioStreamingService();
         Intent intent = new Intent(this, FocusActivity.class);
         startActivity(intent);
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
     }
 
     private void handleToggleNormalClick(View v) {
@@ -1032,13 +1031,18 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void reorderProfiles(List<HearingProfile> list, int selId) {
+        // Only reorder if there's more than one profile
+        if (list.size() <= 1) {
+            return;
+        }
+        
         int idx = -1;
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getId() == selId) { idx = i; break; }
         }
         if (idx > 0) {
             HearingProfile hp = list.remove(idx);
-            list.add(hp);
+            list.add(0, hp); // Move to top, not end
         }
     }
 
@@ -1273,6 +1277,7 @@ private void startNoiseTour() {
                             actionButton.setOnClickListener(v -> {
                                 Intent intent = new Intent(this, GeneralInstructionActivity.class);
                                 startActivity(intent);
+                                overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                             });
                             
                             // Set SeekBar max based on UCL (Phase 1)
@@ -1300,6 +1305,7 @@ private void startNoiseTour() {
                             actionButton.setOnClickListener(v -> {
                                 Intent intent = new Intent(this, GeneralInstructionActivity.class);
                                 startActivity(intent);
+                                overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                             });
                             
                             // Use default max for SeekBar

@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.graphics.drawable.GradientDrawable;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;

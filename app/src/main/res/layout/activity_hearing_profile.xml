@@ -243,6 +243,17 @@
 
             </LinearLayout>
 
+            <!-- Medical Disclaimer -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="@string/medical_disclaimer_results"
+                android:textSize="11sp"
+                android:textColor="@color/onboarding_text_secondary"
+                android:gravity="center"
+                android:lineSpacingExtra="2dp" />
+
         </LinearLayout>
 
     </LinearLayout>

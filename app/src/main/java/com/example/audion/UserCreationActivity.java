@@ -12,7 +12,7 @@ import com.example.audion.data.User;
 import com.example.audion.data.UserDao;
 import com.example.audion.data.HearingProfile;
 import com.example.audion.data.HearingProfileDao;
-import com.example.audion.R;
+import com.audion.psap.R;
 import android.view.Window;
 import android.view.WindowManager;
 

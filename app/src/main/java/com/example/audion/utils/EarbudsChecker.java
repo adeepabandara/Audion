@@ -14,11 +14,22 @@ public class EarbudsChecker {
     private static final String TAG = "EarbudsChecker";
     
     /**
+     * Set this to false during testing to bypass earbuds requirement
+     * WARNING: For testing purposes only! Set back to true for production.
+     */
+    public static boolean REQUIRE_EARBUDS = true;
+    
+    /**
      * Check if any audio output device (wired or Bluetooth) is connected
      * @param context Application context
      * @return true if earbuds/headphones are connected
      */
     public static boolean areEarbudsConnected(Context context) {
+        // Allow bypass during testing
+        if (!REQUIRE_EARBUDS) {
+            Log.d(TAG, "Earbuds check bypassed (REQUIRE_EARBUDS = false)");
+            return true;
+        }
         AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         
         if (audioManager == null) {

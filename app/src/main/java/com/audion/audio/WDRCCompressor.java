@@ -1,7 +1,10 @@
 package com.audion.audio;
 
 /**
- * Wide Dynamic Range Compressor (WDRC) for clinical hearing aid DSP.
+ * Audion is a Personal Sound Amplification Product (PSAP) for consumer use.
+ * It is not a medical device and is not intended to diagnose, treat, or cure hearing conditions.
+ * 
+ * Wide Dynamic Range Compressor (WDRC) for consumer-grade hearing support DSP.
  * 
  * Features:
  * - Configurable compression ratio (2:1 - 3:1)
@@ -32,7 +35,7 @@ public class WDRCCompressor {
     private float maxGainReduction = 1.0f;
     
     /**
-     * Create WDRC compressor with clinical parameters.
+     * Create WDRC compressor with consumer-grade parameters.
      * 
      * @param thresholdDb Compression threshold in dBFS (e.g., -25 dBFS)
      * @param ratio Compression ratio (e.g., 3.0 for 3:1)

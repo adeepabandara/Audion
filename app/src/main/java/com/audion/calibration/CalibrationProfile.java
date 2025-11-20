@@ -4,8 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Calibration profile for storing personalized hearing aid settings
- * Includes Most Comfortable Level (MCL) and Real Ear Gain settings
+ * Audion is a Personal Sound Amplification Product (PSAP) for consumer use.
+ * It is not a medical device and is not intended to diagnose, treat, or cure hearing conditions.
+ * 
+ * Calibration profile for storing personalized hearing support settings.
+ * Includes Most Comfortable Level (MCL) and Real Ear Gain settings.
  */
 public class CalibrationProfile {
     

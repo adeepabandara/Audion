@@ -108,6 +108,21 @@ public final class SimpleAudioEngine {
     private GainStagingManager leftGainStaging;
     private GainStagingManager rightGainStaging;
     
+    // NEW DSP PIPELINE COMPONENTS
+    private PreGainStage preGainStage;            // Pre-amplification before RNNoise
+    private PostRNNoiseDeRinger deRinger;         // Frame edge smoothing after RNNoise
+    private SimpleWdrc wdrcCompressor;            // Single-band WDRC
+    private GainSmoother gainSmoother;            // Smooth user amplification changes
+    private LookaheadLimiter limiter;             // Final safety limiter
+    private TpdfDither dither;                    // Dither for float→short conversion
+    
+    // DSP configuration
+    private float maxAmplificationDb = MAX_GAIN_MIC_DB;  // Configurable max (default 40 dB)
+    
+    // DSP telemetry (DSP_METRICS logging)
+    private long dspMetricsFrameCounter = 0;
+    private static final int DSP_METRICS_LOG_INTERVAL = 100;  // Log every 100 frames (~1 sec)
+    
     // Processing thread
     private Thread processingThread;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
@@ -134,6 +149,14 @@ public final class SimpleAudioEngine {
     private final short[] captureBuffer = new short[AudioConfig.FRAME_SIZE_SAMPLES];
     private final float[] floatInput = new float[AudioConfig.FRAME_SIZE_SAMPLES];
     private final float[] floatProcessed = new float[AudioConfig.FRAME_SIZE_SAMPLES];
+    
+    // NEW DSP PIPELINE BUFFERS
+    private final float[] preGainOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES];   // After pre-gain
+    private final float[] rnnoiseOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES];   // After RNNoise
+    private final float[] deRingedOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES];  // After de-ringing
+    private final float[] wdrcOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES];      // After WDRC
+    private final float[] postGainOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES];  // After user gain
+    private final float[] limiterOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES];   // After limiter
     
     // Phase 3: Feedback canceller buffers
     private final float[] feedbackCorrected = new float[AudioConfig.FRAME_SIZE_SAMPLES];
@@ -407,6 +430,29 @@ public final class SimpleAudioEngine {
             // Phase 4: Initialize audio quality metrics
             qualityMetrics = new AudioQualityMetrics();
             Log.i(TAG, "Phase 4: Audio quality metrics initialized");
+            
+            // NEW DSP PIPELINE: Initialize clean processing components
+            preGainStage = new PreGainStage(6.0f);  // Default 6 dB pre-gain
+            Log.i(TAG, "PreGainStage initialized: +6 dB before RNNoise");
+            
+            deRinger = new PostRNNoiseDeRinger();
+            Log.i(TAG, "PostRNNoiseDeRinger initialized: 32-sample edge smoothing");
+            
+            wdrcCompressor = new SimpleWdrc(AudioConfig.SAMPLE_RATE);
+            Log.i(TAG, "SimpleWdrc initialized: threshold=-28dBFS, ratio=2.5:1, knee=6dB");
+            
+            gainSmoother = new GainSmoother(AudioConfig.SAMPLE_RATE, 10.0f, 80.0f);
+            Log.i(TAG, "GainSmoother initialized: attack=10ms, release=80ms");
+            
+            limiter = new LookaheadLimiter(AudioConfig.SAMPLE_RATE, -3.0f, 5.0f);
+            Log.i(TAG, "LookaheadLimiter initialized: ceiling=-3dBFS, lookahead=5ms");
+            
+            dither = new TpdfDither();
+            Log.i(TAG, "TpdfDither initialized: TPDF dither for float→short conversion");
+            
+            // Set max amplification based on mode
+            maxAmplificationDb = (currentMode == AudioMode.MIC) ? MAX_GAIN_MIC_DB : MAX_GAIN_MEDIA_DB;
+            Log.i(TAG, String.format("Max amplification: %.1f dB (%s mode)", maxAmplificationDb, currentMode));
             
             // Phase 5: Initialize Multiband WDRC + Dual-Stage Limiters
             if (phase2Enabled) {
@@ -730,42 +776,96 @@ public final class SimpleAudioEngine {
     }
     
     /**
-     * Phase 1 processing: Global gain + stereo duplicate
+     * Phase 1 processing: NEW DSP PIPELINE (robotic sound fix)
+     * 
+     * Pipeline: normalize→pregain→RNNoise→deringing→WDRC→smoothed postgain→limiter→dither→output
+     * 
+     * Float-only processing until final conversion to prevent quantization artifacts.
      */
     private void processPhase1() {
-        // Convert float to short with amplification
-        float currentGain = amplificationGain.get();
+        AudioMode mode = audioMode.get();
+        float currentUserGain = amplificationGain.get();
         
-        for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
-            float amplified = floatProcessed[i] * 32768.0f * currentGain;
-            
-            // Clamp to short range
-            if (amplified > 32767f) amplified = 32767f;
-            if (amplified < -32768f) amplified = -32768f;
-            
-            outputBuffer[i] = (short) amplified;
-        }
+        // Step 1: Pre-gain stage (0-10 dB, default 6 dB)
+        // Raises SNR before RNNoise, with safety clamp to ±0.9
+        preGainStage.process(floatProcessed, preGainOutput, AudioConfig.FRAME_SIZE_SAMPLES);
         
-        // Apply safety limiter
-        for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
-            if (outputBuffer[i] > 32767 * LIMITER_THRESHOLD) {
-                outputBuffer[i] = (short) (32767 * LIMITER_THRESHOLD);
-            } else if (outputBuffer[i] < -32768 * LIMITER_THRESHOLD) {
-                outputBuffer[i] = (short) (-32768 * LIMITER_THRESHOLD);
+        // Step 2: RNNoise processing (MIC mode only)
+        // Working on slightly amplified signal for better SNR
+        if (mode == AudioMode.MIC && noiseReductionEnabled.get()) {
+            // RNNoise expects non-normalized float (raw short values as float)
+            for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
+                floatInput[i] = preGainOutput[i] * 32768.0f;  // Scale back to short range
             }
+            
+            RNNoise.ProcessResult result = rnnoise.processFrame(floatInput);
+            
+            // Convert back to normalized float
+            for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
+                rnnoiseOutput[i] = result.audio[i] / 32768.0f;
+            }
+        } else {
+            // Passthrough (no noise reduction)
+            System.arraycopy(preGainOutput, 0, rnnoiseOutput, 0, AudioConfig.FRAME_SIZE_SAMPLES);
         }
         
-        // Duplicate to stereo
+        // Step 3: Post-RNNoise de-ringing (reduce overlap-add artifacts)
+        // Applies 32-sample raised-cosine window to frame edges
+        deRinger.process(rnnoiseOutput, deRingedOutput, AudioConfig.FRAME_SIZE_SAMPLES);
+        
+        // Step 4: Single-band WDRC compression
+        // Reduces dynamic range before user amplification
+        wdrcCompressor.process(deRingedOutput, wdrcOutput, AudioConfig.FRAME_SIZE_SAMPLES);
+        
+        // Step 5: Smoothed user amplification (post-gain)
+        // Apply user gain with smooth transitions to avoid zipper noise
+        float targetGainDb = Math.min(currentUserGain * maxAmplificationDb, maxAmplificationDb);
+        gainSmoother.setTargetDb(targetGainDb);
+        gainSmoother.process(wdrcOutput, postGainOutput, AudioConfig.FRAME_SIZE_SAMPLES);
+        
+        // Step 6: Lookahead soft limiter (final safety)
+        // Prevents any samples exceeding -3 dBFS
+        limiter.process(postGainOutput, limiterOutput, AudioConfig.FRAME_SIZE_SAMPLES);
+        
+        // Step 7: TPDF dither + float→short conversion
+        // Adds ±1 LSB triangular dither to reduce quantization noise
+        dither.process(limiterOutput, outputBuffer, AudioConfig.FRAME_SIZE_SAMPLES);
+        
+        // Step 8: Duplicate to stereo
         short[] stereoBuffer = new short[AudioConfig.FRAME_SIZE_SAMPLES * 2];
         for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
             stereoBuffer[i * 2] = outputBuffer[i];     // Left
             stereoBuffer[i * 2 + 1] = outputBuffer[i]; // Right
         }
         
-        // Write to AudioTrack
+        // Step 9: Write to AudioTrack
         int written = audioTrack.write(stereoBuffer, 0, stereoBuffer.length);
         if (written != stereoBuffer.length) {
             Log.w(TAG, "AudioTrack write incomplete: " + written + " / " + stereoBuffer.length);
+        }
+        
+        // DSP_METRICS: Log telemetry every 100 frames (~1 second)
+        dspMetricsFrameCounter++;
+        if (dspMetricsFrameCounter >= DSP_METRICS_LOG_INTERVAL) {
+            float avgEnvelopeDb = wdrcCompressor.getEnvelopeDb();
+            float limiterGrDb = limiter.getCurrentGainReduction();
+            float maxPeakDb = limiter.getMaxPeakDb();
+            float limitingPct = limiter.getLimitingPercentage();
+            float preGainClampPct = preGainStage.getClampingPercentage();
+            
+            Log.i("DSP_METRICS", String.format(
+                "Frame=%d | UserGain=%.1fdB | PreGain=%.1fdB | WDRC_env=%.1fdB WDRC_GR=%.1fdB | " +
+                "Limiter_GR=%.1fdB peak=%.1fdB limiting=%.1f%% | PreClamp=%.1f%%",
+                framesProcessed, targetGainDb, preGainStage.getGainDb(),
+                avgEnvelopeDb, wdrcCompressor.getMaxGainReduction(),
+                limiterGrDb, maxPeakDb, limitingPct, preGainClampPct
+            ));
+            
+            // Reset statistics
+            limiter.resetStats();
+            wdrcCompressor.resetStats();
+            preGainStage.resetStats();
+            dspMetricsFrameCounter = 0;
         }
     }
     

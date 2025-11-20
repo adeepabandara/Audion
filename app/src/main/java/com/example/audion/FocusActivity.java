@@ -1,6 +1,8 @@
 // FocusActivity.java
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;

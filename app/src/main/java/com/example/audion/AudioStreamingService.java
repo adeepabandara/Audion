@@ -29,7 +29,7 @@ import com.example.audion.data.HearingProfile;
 import com.example.audion.data.HearingProfileDao;
 import com.example.audion.data.HearingTestResult;
 import com.example.audion.data.HearingTestResultDao;
-import com.example.audion.R;
+import com.audion.psap.R;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -239,39 +239,16 @@ public class AudioStreamingService extends Service {
                 }
                 for (int i = 0; i < r; i++) rnOut[i] /= Short.MAX_VALUE;
 
-                // ─── 4-Band Filterbank Split → Gain → Recombine ───────────────
-                float[][] bandBufs = new float[4][r];
-                for (int b = 0; b < 4; b++) {
-                    filterbank[b].process(rnOut, bandBufs[b], r);
-                }
-                // per-band gain prescription
-                String ear = bandOverrides.keySet().stream().findFirst().orElse("LEFT");
-                Map<Integer,Integer> ov = bandOverrides.getOrDefault(ear, new HashMap<>());
-                int baseStep = baselineMap.getOrDefault(ear, 100);
-                Map<Integer,Integer> ag = audiogramMap.getOrDefault(ear, new HashMap<>());
-
-                // calculate one gain per band (average of overrides + calibration + audiogram)
-                float[] bandGains = new float[4];
-                for (int b = 0; b < 4; b++) {
-                    float gainSum = globalAmp;
-                    gainSum *= (baseStep / 100f);
-                    // override average
-                    if (!ov.isEmpty()) {
-                        float s=0; for (int v:ov.values()) s+=v/100f; gainSum *= s/ov.size();
-                    }
-                    // audiogram average
-                    if (!ag.isEmpty()) {
-                        float s=0; for (int v:ag.values()) s+=v/100f; gainSum *= s/ag.size();
-                    }
-                    bandGains[b] = gainSum;
-                }
-                // apply gains & sum
+                // ═══ SIMPLIFIED GAIN APPLICATION (No 4-band filterbank, no tanh()) ═══
+                // When RNNoise is active, avoid double spectral processing
+                // The new SimpleAudioEngine pipeline handles proper DSP chain
+                // Legacy AudioStreamingService: Just apply global gain
                 for (int i = 0; i < r; i++) {
-                    float sum = 0;
-                    for (int b = 0; b < 4; b++) {
-                        sum += bandBufs[b][i] * bandGains[b];
-                    }
-                    procBuf[i] = (float)Math.tanh(sum);  // soft-clip immediately
+                    procBuf[i] = rnOut[i] * globalAmp;
+                    
+                    // Soft clamp to ±0.95 (no tanh waveshaping - prevents harmonic distortion)
+                    if (procBuf[i] > 0.95f) procBuf[i] = 0.95f;
+                    if (procBuf[i] < -0.95f) procBuf[i] = -0.95f;
                 }
 
                 // waveform broadcast remains intact

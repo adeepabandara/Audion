@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -73,7 +75,7 @@ public class OnboardingActivity extends AppCompatActivity {
             // Navigate to NameActivity
             Intent intent = new Intent(this, NameActivity.class);
             startActivity(intent);
-            overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+            overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
         });
         
         // Start carousel

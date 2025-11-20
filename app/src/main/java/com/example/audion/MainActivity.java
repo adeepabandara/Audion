@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -42,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
             
                     Intent intent = new Intent(MainActivity.this, UserCreationActivity.class);
                     startActivity(intent);
+                    overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                     finish();
                 });
             } else {
@@ -65,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
                 // Launch the next Activity on the main thread.
                 runOnUiThread(() -> {
                     startActivity(intent);
+                    overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                     finish();
                 });
             }

@@ -151,7 +151,7 @@
             android:elevation="6dp"
             android:stateListAnimator="@null"
             android:text=""
-            android:textColor="@android:color/white"
+            android:textColor="@color/primary"
             android:textSize="18sp"
             android:textStyle="bold"
             android:gravity="center"
@@ -177,7 +177,7 @@
             android:layout_marginTop="40dp"
             android:fontFamily="@font/poppins"
             android:text="Tap here"
-            android:textColor="@android:color/white"
+            android:textColor="@color/primary"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -201,7 +201,7 @@
             android:layout_marginTop="40dp"
             android:fontFamily="@font/poppins"
             android:text="Start again"
-            android:textColor="@android:color/white"
+            android:textColor="@color/primary"
             android:textSize="16sp"
             android:textStyle="bold"
             android:visibility="gone" />

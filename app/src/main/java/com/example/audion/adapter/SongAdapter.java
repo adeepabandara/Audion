@@ -11,7 +11,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.audion.R;
+import com.audion.psap.R;
 import com.example.audion.model.Song;
 
 import java.util.List;

@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -523,6 +525,7 @@ public class CalibrationTestActivity extends AppCompatActivity {
                         intent.putExtra("USER_ID", userId);
                         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
                         startActivity(intent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                         finish();
                     } else if (!hasRightEar) {
                         // RIGHT ear still needs calibration
@@ -532,6 +535,7 @@ public class CalibrationTestActivity extends AppCompatActivity {
                         intent.putExtra("USER_ID", userId);
                         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
                         startActivity(intent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                         finish();
                     } else {
                         // Both ears calibrated - NEW WORKFLOW: Navigate to Test Completion Animation
@@ -541,6 +545,7 @@ public class CalibrationTestActivity extends AppCompatActivity {
                         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
                         Log.d("FlowDebug", "NEW WORKFLOW: Calibration complete → showing completion animation");
                         startActivity(intent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                         finish();
                     }
                 });
@@ -555,12 +560,14 @@ public class CalibrationTestActivity extends AppCompatActivity {
                         intent.putExtra("USER_ID", userId);
                         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
                         startActivity(intent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                         finish();
                     } else {
                         Intent intent = new Intent(this, RightEarInstructionActivity.class);
                         intent.putExtra("USER_ID", userId);
                         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
                         startActivity(intent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                         finish();
                     }
                 });

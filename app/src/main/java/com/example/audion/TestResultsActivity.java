@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -181,6 +183,7 @@ public class TestResultsActivity extends AppCompatActivity {
             Intent intent = new Intent(TestResultsActivity.this, HomeActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+            overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
             finish();
         });
     }

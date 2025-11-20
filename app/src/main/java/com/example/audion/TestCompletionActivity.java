@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -45,6 +47,7 @@ public class TestCompletionActivity extends AppCompatActivity {
             intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
             intent.putExtra("FROM_NEW_PROFILE", fromNewProfile); // Pass flag to final activity
             startActivity(intent);
+            overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
             finish();
         }, 3000);
     }

@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -37,7 +39,7 @@ public class SplashActivity extends AppCompatActivity {
     private void checkForExistingUsers() {
         executorService.execute(() -> {
             try {
-                // Query database for users
+                // Query database for users and hearing profiles
                 AppDatabase db = AppDatabase.getInstance(getApplicationContext());
                 List<User> users = db.userDao().getAllUsers();
                 
@@ -53,8 +55,19 @@ public class SplashActivity extends AppCompatActivity {
                     }
                 }
                 
-                final boolean shouldShowOnboarding = !hasExistingUser;
-                Log.d(TAG, "Has existing users: " + hasExistingUser + ", Show onboarding: " + shouldShowOnboarding);
+                // Also check if hearing profiles exist
+                boolean hasHearingProfiles = false;
+                try {
+                    List<com.example.audion.data.HearingProfile> profiles = db.hearingProfileDao().getAllProfiles();
+                    hasHearingProfiles = (profiles != null && !profiles.isEmpty());
+                    Log.d(TAG, "Found " + (profiles != null ? profiles.size() : 0) + " hearing profiles");
+                } catch (Exception e) {
+                    Log.e(TAG, "Error checking hearing profiles: " + e.getMessage());
+                }
+                
+                // Show onboarding only if no users AND no hearing profiles exist
+                final boolean shouldShowOnboarding = !hasExistingUser && !hasHearingProfiles;
+                Log.d(TAG, "Has existing users: " + hasExistingUser + ", Has profiles: " + hasHearingProfiles + ", Show onboarding: " + shouldShowOnboarding);
                 
                 // Navigate after 3 second delay
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {

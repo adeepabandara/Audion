@@ -25,7 +25,7 @@ import com.example.audion.data.HearingTestResult;
 import com.example.audion.data.HearingTestResultDao;
 import com.example.audion.data.CalibrationProfileDao;
 import com.example.audion.data.CalibrationProfileEntity;
-import com.example.audion.R;
+import com.audion.psap.R;
 import com.google.android.material.button.MaterialButton;
 
 import org.json.JSONObject;
@@ -913,6 +913,7 @@ public class PureToneTestActivity extends AppCompatActivity {
             
             Log.d(TAG, "Starting next activity: " + next.getComponent().getClassName());
             startActivity(next);
+            overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
             finish();
             return;
         }

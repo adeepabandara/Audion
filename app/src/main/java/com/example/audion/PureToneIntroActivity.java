@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
@@ -31,6 +33,7 @@ public class PureToneIntroActivity extends AppCompatActivity {
             intent.putExtra("USER_ID", userId);
             intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
             startActivity(intent);
+            overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
         });
 
         btnContinueLater.setOnClickListener(v -> {
@@ -40,6 +43,7 @@ public class PureToneIntroActivity extends AppCompatActivity {
             intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+            overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
             finish();
         });
     }

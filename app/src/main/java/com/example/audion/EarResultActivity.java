@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -131,7 +133,7 @@ public class EarResultActivity extends AppCompatActivity {
             try {
                 startActivity(intent);
                 // Add animation
-                overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
+                overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                 finish();
                 Log.d("EarResultActivity", "Successfully started LEFT ear calibration");
             } catch (Exception e) {
@@ -161,7 +163,7 @@ public class EarResultActivity extends AppCompatActivity {
                 intent.putExtra("HEARING_PROFILE_ID", profileId);
                 
                 startActivity(intent);
-                overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
+                overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                 finish();
                 Log.d("EarResultActivity", "Successfully navigated to General Instruction");
             } catch (Exception e) {
@@ -195,6 +197,7 @@ public class EarResultActivity extends AppCompatActivity {
             Intent intent = new Intent(this, NameActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+            overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
             finish();
             Log.d("EarResultActivity", "Successfully navigated to main menu");
         } catch (Exception e) {

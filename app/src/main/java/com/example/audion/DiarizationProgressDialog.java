@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.app.Dialog;
 import android.os.Bundle;
 import android.os.Handler;

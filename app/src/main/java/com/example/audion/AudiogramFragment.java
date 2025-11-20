@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.graphics.Color;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -59,11 +61,11 @@ public class AudiogramFragment extends Fragment {
                     .hearingTestResultDao()
                     .getResultsForEar(earSide, 1);
 
-            // 2) Build entries using clinical dB HL values
+            // 2) Build entries using dB HL values
             List<Entry> entries = new ArrayList<>();
             for (HearingTestResult r : pts) {
                 // Use frequency directly (chart will handle display)
-                // Use thresholdDbHL for clinical audiogram (NOT amplitudeStep)
+                // Use thresholdDbHL for consumer audiogram (NOT amplitudeStep)
                 entries.add(new Entry(r.getFrequency(), r.getThresholdDbHL()));
             }
 
@@ -99,7 +101,7 @@ public class AudiogramFragment extends Fragment {
                 chart.setDrawGridBackground(true);
                 chart.setGridBackgroundColor(Color.WHITE);
 
-                // 5) Configure axes for clinical audiogram
+                // 5) Configure axes for consumer audiogram
                 float minX = entries.get(0).getX();
                 float maxX = entries.get(entries.size() - 1).getX();
 
@@ -110,7 +112,7 @@ public class AudiogramFragment extends Fragment {
                 x.setGranularity(1f);
                 x.setGranularityEnabled(true);
 
-                // Clinical audiogram Y-axis: inverted (0 dB at top = better hearing)
+                // Consumer audiogram Y-axis: inverted (0 dB at top = better hearing)
                 YAxis left = chart.getAxisLeft();
                 left.setAxisMinimum(-10f);    // Allow slight negative values
                 left.setAxisMaximum(120f);     // Maximum hearing loss

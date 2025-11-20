@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-11-10T20:22:26.144148400Z">
+        <DropdownSelection timestamp="2025-11-16T16:08:02.604284300Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\adeepa.bandara_rootc\.android\avd\Audion_Test.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\adeepa.bandara_rootc\.android\avd\Pixel_9_Pro_API_35.avd" />
             </handle>
           </Target>
         </DropdownSelection>

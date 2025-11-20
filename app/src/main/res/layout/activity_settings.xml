@@ -25,6 +25,47 @@
                 android:text="Start Calibration Test"
                 android:textAllCaps="false"
                 app:cornerRadius="20dp"/>
+
+            <!-- Data Storage Info Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="Data &amp; Privacy"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/data_storage_info"
+                android:textSize="14sp"
+                android:textColor="@color/onboarding_text_secondary"
+                android:lineSpacingExtra="4dp" />
+
+            <!-- Privacy Policy Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPrivacyPolicy"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:text="@string/privacy_policy_title"
+                android:textAllCaps="false"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                app:cornerRadius="20dp"/>
+
+            <!-- Delete All Data Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteAllData"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:text="@string/delete_all_data"
+                android:textAllCaps="false"
+                android:backgroundTint="@android:color/holo_red_light"
+                app:cornerRadius="20dp"/>
         </LinearLayout>
     </ScrollView>
 

@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -13,10 +15,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.example.audion.data.AppDatabase;
-import com.example.audion.data.AudiometryResult;
-import com.example.audion.data.AudiometryResultDao;
-import com.example.audion.data.CalibrationDao;
-import com.example.audion.data.CalibrationEntry;
+import com.example.audion.data.HearingTestResult;
+import com.example.audion.data.HearingTestResultDao;
+import com.example.audion.data.CalibrationProfileDao;
+import com.example.audion.data.CalibrationProfileEntity;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
@@ -95,23 +97,26 @@ public class HearingProfileActivity extends AppCompatActivity {
         new Thread(() -> {
             try {
                 AppDatabase db = AppDatabase.getInstance(this);
-                AudiometryResultDao audiometryDao = db.audiometryResultDao();
-                CalibrationDao calibrationDao = db.calibrationDao();
+                HearingTestResultDao hearingTestDao = db.hearingTestResultDao();
+                CalibrationProfileDao calibrationDao = db.calibrationProfileDao();
 
-                // Load audiometry data
-                List<AudiometryResult> audiometryResults = audiometryDao.getAll();
+                // Load hearing test data (pure tone audiometry)
+                List<HearingTestResult> hearingTestResults = hearingTestDao.getResultsForUserAndProfile(userId, hearingProfileId);
                 
                 // Load calibration data
-                List<CalibrationEntry> calibrationEntries = calibrationDao.getForUserProfile(userId, hearingProfileId);
+                List<CalibrationProfileEntity> calibrationProfiles = calibrationDao.getProfilesForUser(userId, hearingProfileId);
+
+                Log.d(TAG, "Loaded " + hearingTestResults.size() + " hearing test results for profile " + hearingProfileId);
+                Log.d(TAG, "Loaded " + calibrationProfiles.size() + " calibration profiles for profile " + hearingProfileId);
 
                 runOnUiThread(() -> {
-                    if (audiometryResults.isEmpty() && calibrationEntries.isEmpty()) {
+                    if (hearingTestResults.isEmpty() && calibrationProfiles.isEmpty()) {
                         showNoDataState();
                     } else {
                         showDataState();
-                        displayAudiogramData(audiometryResults);
-                        displayCalibrationData(calibrationEntries);
-                        updateLastTestDate(audiometryResults, calibrationEntries);
+                        displayAudiogramData(hearingTestResults);
+                        displayCalibrationData(calibrationProfiles);
+                        updateLastTestDate(hearingTestResults, calibrationProfiles);
                     }
                 });
 
@@ -143,7 +148,7 @@ public class HearingProfileActivity extends AppCompatActivity {
         recalibrateButton.setVisibility(View.VISIBLE);
     }
 
-    private void displayAudiogramData(List<AudiometryResult> results) {
+    private void displayAudiogramData(List<HearingTestResult> results) {
         if (results.isEmpty()) {
             leftEarSummary.setText("No audiogram data available");
             rightEarSummary.setText("No audiogram data available");
@@ -159,7 +164,7 @@ public class HearingProfileActivity extends AppCompatActivity {
         int[] frequencies = {250, 500, 1000, 2000, 3000, 4000, 8000};
         
         // Group results by ear and frequency
-        for (AudiometryResult result : results) {
+        for (HearingTestResult result : results) {
             int freqIndex = getFrequencyIndex(result.getFrequency(), frequencies);
             if (freqIndex >= 0) {
                 Entry entry = new Entry(freqIndex, result.getThresholdDbHL());
@@ -276,8 +281,8 @@ public class HearingProfileActivity extends AppCompatActivity {
         else return "Profound Loss";
     }
 
-    private void displayCalibrationData(List<CalibrationEntry> entries) {
-        if (entries.isEmpty()) {
+    private void displayCalibrationData(List<CalibrationProfileEntity> profiles) {
+        if (profiles.isEmpty()) {
             calibrationSummary.setText("No calibration data available");
             return;
         }
@@ -285,28 +290,29 @@ public class HearingProfileActivity extends AppCompatActivity {
         StringBuilder summary = new StringBuilder();
         summary.append("Calibration Levels:\n");
         
-        for (CalibrationEntry entry : entries) {
+        for (CalibrationProfileEntity profile : profiles) {
             summary.append(String.format(Locale.getDefault(),
-                "%s Ear: %d dB baseline\n", 
-                entry.getEarSide(), entry.getBaselineStep()));
+                "%s Ear: MCL=%.1f dB, UCL=%.1f dB\n", 
+                profile.getEarSide(), profile.getMclDbSpl(), profile.getUclDbSpl()));
         }
 
         calibrationSummary.setText(summary.toString().trim());
     }
 
-    private void updateLastTestDate(List<AudiometryResult> audiometryResults, 
-                                   List<CalibrationEntry> calibrationEntries) {
+    private void updateLastTestDate(List<HearingTestResult> hearingTestResults, 
+                                   List<CalibrationProfileEntity> calibrationProfiles) {
         long latestTimestamp = 0;
         
-        for (AudiometryResult result : audiometryResults) {
+        for (HearingTestResult result : hearingTestResults) {
             if (result.getTestTimestamp() > latestTimestamp) {
                 latestTimestamp = result.getTestTimestamp();
             }
         }
         
-        for (CalibrationEntry entry : calibrationEntries) {
-            // Note: CalibrationEntry might not have timestamp, using current approach
-            // If timestamp is available, add similar check
+        for (CalibrationProfileEntity profile : calibrationProfiles) {
+            if (profile.getLastUpdated() > latestTimestamp) {
+                latestTimestamp = profile.getLastUpdated();
+            }
         }
 
         if (latestTimestamp > 0) {
@@ -324,7 +330,7 @@ public class HearingProfileActivity extends AppCompatActivity {
             intent.putExtra("USER_ID", userId);
             intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
             startActivity(intent);
-            overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+            overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
         });
 
         recalibrateButton.setOnClickListener(v -> {
@@ -333,7 +339,7 @@ public class HearingProfileActivity extends AppCompatActivity {
             intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
             intent.putExtra("EAR", "RIGHT"); // Start with right ear
             startActivity(intent);
-            overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
+            overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
         });
     }
 

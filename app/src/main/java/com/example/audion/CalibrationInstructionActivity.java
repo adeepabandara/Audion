@@ -1,5 +1,7 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.content.Intent;
@@ -123,6 +125,7 @@ public class CalibrationInstructionActivity extends AppCompatActivity {
                         intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
                         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(intent);
+                        overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                         finish(); // Prevent back navigation to bypass pure tone test
                     }
                     // If pure tone results exist, allow calibration to proceed normally
@@ -137,6 +140,7 @@ public class CalibrationInstructionActivity extends AppCompatActivity {
                     intent.putExtra("USER_ID", getIntent().getIntExtra("USER_ID", 1));
                     intent.putExtra("HEARING_PROFILE_ID", getIntent().getIntExtra("HEARING_PROFILE_ID", 1));
                     startActivity(intent);
+                    overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
                     finish();
                 });
             }

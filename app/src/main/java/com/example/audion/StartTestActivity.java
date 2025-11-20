@@ -1,16 +1,16 @@
 package com.example.audion;
 
+import com.audion.psap.R;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 public class StartTestActivity extends AppCompatActivity {
 
     private Button btnStartTest;
-    private TextView tvTestLater;
     private int userId;
     private int hearingProfileId;
 
@@ -21,7 +21,6 @@ public class StartTestActivity extends AppCompatActivity {
 
         // Initialize views
         btnStartTest = findViewById(R.id.btnStartTest);
-        tvTestLater = findViewById(R.id.tvTestLater);
 
         // Get USER_ID and HEARING_PROFILE_ID from intent
         userId = getIntent().getIntExtra("USER_ID", -1);
@@ -40,20 +39,7 @@ public class StartTestActivity extends AppCompatActivity {
             intent.putExtra("USER_ID", userId);
             intent.putExtra("HEARING_PROFILE_ID", hearingProfileId);
             startActivity(intent);
-            finish();
-        });
-
-        // Test Later link click
-        tvTestLater.setOnClickListener(v -> {
-            // Mark onboarding as completed but skip test
-            getSharedPreferences("AudionPrefs", MODE_PRIVATE)
-                .edit()
-                .putBoolean("onboarding_completed", true)
-                .apply();
-
-            // Navigate to main home activity
-            Intent intent = new Intent(StartTestActivity.this, HomeActivity.class);
-            startActivity(intent);
+            overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
             finish();
         });
     }

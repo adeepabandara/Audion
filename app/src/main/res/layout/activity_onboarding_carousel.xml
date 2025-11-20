@@ -63,8 +63,25 @@
         android:layout_width="0dp"
         android:layout_marginStart="@dimen/onboarding_horizontal_padding"
         android:layout_marginEnd="@dimen/onboarding_horizontal_padding"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="8dp"
         android:text="Get Started"
+        app:layout_constraintBottom_toTopOf="@id/tvLegal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Legal Text with Clickable Links -->
+    <TextView
+        android:id="@+id/tvLegal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/onboarding_horizontal_padding"
+        android:layout_marginEnd="@dimen/onboarding_horizontal_padding"
+        android:layout_marginBottom="24dp"
+        android:text="@string/name_legal_text"
+        android:textSize="11sp"
+        android:textColor="@color/onboarding_text_secondary"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
