@@ -16,7 +16,7 @@
     <string name="name_question">What\'s your name?</string>
     <string name="name_hint">Your name</string>
     <string name="name_continue_text">Continue</string>
-    <string name="name_legal_text">By tapping "Continue", you agree to our Terms of Service and Privacy Policy</string>
+    <string name="name_legal_text">By tapping "Get Started", you agree to our\nTerms of Service and Privacy Policy</string>
     
     <!-- New Onboarding Carousel Strings -->
     <string name="whats_your_name_title">What\'s your name?</string>
@@ -28,4 +28,39 @@
     <string name="test_later_link">Continue Later</string>
     <string name="onboarding_illustration_desc">Onboarding illustration</string>
     <string name="hearing_test_illustration_desc">Hearing test illustration</string>
+    
+    <!-- Medical Disclaimer Strings -->
+    <string name="medical_disclaimer_onboarding">Audion is a personal sound amplification tool, not a medical device. It does not diagnose, treat, or cure hearing loss. For hearing concerns, please consult a licensed audiologist or healthcare professional.</string>
+    <string name="medical_disclaimer_test">This hearing check is for personal use only and should not replace a professional hearing test.</string>
+    <string name="medical_disclaimer_results">For informational purposes only. Not a medical diagnosis.</string>
+    
+    <!-- Privacy Policy Strings -->
+    <string name="privacy_policy_url">https://www.audion.live/privacy-policy</string>
+    <string name="privacy_policy_title">Privacy Policy</string>
+    <string name="terms_of_service_title">Terms of Service</string>
+    
+    <!-- Consent Strings -->
+    <string name="carousel_consent_notice">By clicking "Get Started", you consent to Audion storing your hearing test and hearing profile data locally on this device for personalization. This data is not uploaded or shared.</string>
+    <string name="data_consent_text">I consent to Audion storing my hearing test and hearing profile data locally on this device for personalization. This data is not uploaded or shared.</string>
+    <string name="name_legal_text_clickable">By tapping "Continue", you agree to our &lt;a href="#">Terms of Service&lt;/a> and &lt;a href="#">Privacy Policy&lt;/a></string>
+    <string name="consent_required">Please review and accept the consent to continue.</string>
+    
+    <!-- Settings - Data Storage Info -->
+    <string name="data_storage_info">Your hearing data (tests and calibration) is stored only on this device. It is not uploaded or shared.</string>
+    <string name="delete_all_data">Delete All Data</string>
+    <string name="delete_data_confirmation_title">Delete all data?</string>
+    <string name="delete_data_confirmation_message">This will permanently delete your hearing tests, calibration data, profiles, and app settings from this device. This cannot be undone.</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="data_deleted_toast">All data deleted from this device</string>
+    <string name="deleting_data">Deleting data…</string>
+    
+    <!-- MediaProjection Dialog - Improved Wording -->
+    <string name="audio_capture_permission_title">Audio Capture Permission</string>
+    <string name="audio_capture_permission_message">To amplify music, videos, and calls from your phone, Audion needs access to your device\'s internal audio.\n\nAndroid will show a \'Screen Recording\' permission because internal audio capture uses the same system dialog.\n\n<b>What Audion does:</b>\n• Captures audio only (no visuals)\n• Applies your personalized amplification\n• Plays the enhanced sound to your earbuds\n\n<b>What Audion does NOT do:</b>\n• Record your screen\n• Capture images or text\n• Upload or share your audio</string>
+    <string name="i_understand_allow">I Understand - Allow</string>
+    <string name="phone_audio_permission_required">Phone audio mode requires permission</string>
+    
+    <!-- Amplification Warning Text Updates -->
+    <string name="amplification_warning_strong">This amplification level is quite strong. Please make sure it feels comfortable and lower it if any sound feels harsh or uncomfortable.</string>
 </resources>
