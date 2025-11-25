@@ -10,8 +10,8 @@ import android.os.Build;
 import android.os.Process;
 import android.util.Log;
 
-import com.example.audion.RNNoise;
-import com.example.audion.data.HearingTestResult;
+import com.audion.app.RNNoise;
+import com.audion.app.data.HearingTestResult;
 
 import java.util.Arrays;
 import java.util.List;
@@ -640,7 +640,7 @@ public final class SimpleAudioEngine {
                 
                 // Focus Mode: Process audio frame for diarization
                 try {
-                    com.example.audion.FocusModeManager.getInstance().processAudioFrame(floatInput);
+                    com.audion.app.FocusModeManager.getInstance().processAudioFrame(floatInput);
                 } catch (Exception e) {
                     // Don't let diarization errors crash audio processing
                     Log.w(TAG, "Diarization processing error: " + e.getMessage());
@@ -978,7 +978,7 @@ public final class SimpleAudioEngine {
             
             try {
                 // Check with FocusModeManager for real-time speaker activity
-                speakerActive = com.example.audion.FocusModeManager.getInstance().isSelectedSpeakerActive();
+                speakerActive = com.audion.app.FocusModeManager.getInstance().isSelectedSpeakerActive();
             } catch (Exception e) {
                 // On error, don't mute (safety default)
                 speakerActive = true;

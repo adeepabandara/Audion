@@ -133,8 +133,12 @@
     <!-- Circular Button with Progress Container -->
     <FrameLayout
         android:id="@+id/circleContainer"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="48dp"
+        android:layout_marginEnd="48dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintWidth_max="280dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -144,27 +148,31 @@
         <!-- White Circular Button (Behind) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnHeard"
-            android:layout_width="180dp"
-            android:layout_height="180dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
             android:layout_gravity="center"
             android:background="@drawable/circle_heard_button"
             android:elevation="6dp"
             android:stateListAnimator="@null"
             android:text=""
             android:textColor="@color/primary"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold"
             android:gravity="center"
             app:backgroundTint="@null"
-            app:cornerRadius="90dp" />
+            app:cornerRadius="140dp" />
 
         <!-- Tick Mark Icon -->
         <ImageView
             android:id="@+id/ivTickMark"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
             android:layout_gravity="center"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="28dp"
+            android:layout_marginStart="80dp"
+            android:layout_marginEnd="80dp"
+            android:layout_marginTop="40dp"
             android:src="@drawable/tick_mark"
             android:contentDescription="Tick mark" />
 
@@ -174,20 +182,23 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="56dp"
             android:fontFamily="@font/poppins"
             android:text="Tap here"
             android:textColor="@color/primary"
-            android:textSize="16sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <!-- Retry Icon (Initially Hidden) -->
         <ImageView
             android:id="@+id/ivRetry"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
             android:layout_gravity="center"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="28dp"
+            android:layout_marginStart="80dp"
+            android:layout_marginEnd="80dp"
+            android:layout_marginTop="40dp"
             android:src="@drawable/retry"
             android:contentDescription="Retry"
             android:visibility="gone" />
@@ -198,11 +209,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="56dp"
             android:fontFamily="@font/poppins"
             android:text="Start again"
             android:textColor="@color/primary"
-            android:textSize="16sp"
+            android:textSize="20sp"
             android:textStyle="bold"
             android:visibility="gone" />
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Selected speaker card with animated border -->
-<com.example.audion.RotatingBorderView
+<com.audion.app.RotatingBorderView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rotatingBorder"
@@ -65,4 +65,4 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-</com.example.audion.RotatingBorderView>
+</com.audion.app.RotatingBorderView>

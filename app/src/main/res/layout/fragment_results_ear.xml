@@ -46,7 +46,7 @@
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp">
 
-            <com.example.audion.views.AudiogramView
+            <com.audion.app.views.AudiogramView
                 android:id="@+id/audiogramView"
                 android:layout_width="match_parent"
                 android:layout_height="400dp"
@@ -73,7 +73,7 @@
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp">
 
-            <com.example.audion.views.CalibrationSummaryView
+            <com.audion.app.views.CalibrationSummaryView
                 android:id="@+id/calibrationSummaryView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@android:color/white"
+    android:fitsSystemWindows="true"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -50,8 +51,10 @@
                 android:layout_height="wrap_content"
                 android:visibility="visible"
                 app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintVertical_bias="0.4">
 
                 <!-- Image centered -->
                 <ImageView
@@ -229,7 +232,7 @@
                 app:layout_constraintTop_toTopOf="parent"/>
 
             <!-- Waveform View - ALWAYS VISIBLE static section -->
-            <com.example.audion.WaveformView
+            <com.audion.app.WaveformView
                 android:id="@+id/focusWaveform"
                 android:layout_width="0dp"
                 android:layout_height="60dp"
@@ -245,9 +248,9 @@
                 layout="@layout/selected_speaker_card"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginStart="@dimen/card_spacing_horizontal"
+                android:layout_marginEnd="@dimen/card_spacing_horizontal"
+                android:layout_marginTop="@dimen/card_spacing_vertical"
                 android:visibility="gone"
                 app:layout_constraintTop_toBottomOf="@id/focusWaveform"
                 app:layout_constraintStart_toStartOf="parent"
@@ -258,9 +261,10 @@
                 android:id="@+id/seekBarContainer"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginTop="@dimen/card_spacing_vertical"
+                android:layout_marginStart="@dimen/card_spacing_horizontal"
+                android:layout_marginEnd="@dimen/card_spacing_horizontal"
+                android:minHeight="@dimen/card_min_height"
                 android:visibility="visible"
                 app:cardBackgroundColor="@android:color/white"
                 app:cardCornerRadius="12dp"
@@ -314,9 +318,9 @@
                 android:id="@+id/noiseReductionCard"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginTop="@dimen/card_spacing_vertical"
+                android:layout_marginStart="@dimen/card_spacing_horizontal"
+                android:layout_marginEnd="@dimen/card_spacing_horizontal"
                 app:cardBackgroundColor="@android:color/white"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"

@@ -40,9 +40,9 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/toggleButton"
             style="@style/Widget.MaterialComponents.Button"
-            android:layout_width="160dp"
-            android:layout_height="160dp"
-            android:layout_marginTop="0dp"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_marginTop="32dp"
             android:background="@drawable/circle_button_background"
             android:elevation="6dp"
             android:stateListAnimator="@null"
@@ -55,18 +55,18 @@
             app:icon="@drawable/ic_play"
             app:iconGravity="top"
             app:iconPadding="0dp"
-            app:iconSize="85dp"
+            app:iconSize="100dp"
             app:iconTint="@null"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <!-- Waveform View - Always visible with fixed space -->
-        <com.example.audion.WaveformView
+        <com.audion.app.WaveformView
             android:id="@+id/waveformView"
             android:layout_width="0dp"
             android:layout_height="60dp"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="32dp"
             android:visibility="visible"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -133,24 +133,27 @@
             android:id="@+id/amplificationCard"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="24dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
+            android:minHeight="@dimen/card_min_height"
             app:cardBackgroundColor="@color/white"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp"
             app:contentPadding="16dp"
             app:cardMaxElevation="6dp"
+            app:strokeWidth="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/waveformView">
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="28dp"
+                android:layout_height="match_parent"
+                android:minHeight="@dimen/card_min_height"
                 android:layout_gravity="center"
                 android:maxWidth="500dp"
-                android:gravity="center_vertical"
+                android:gravity="center"
                 android:orientation="horizontal">
 
                 <ImageView
@@ -185,24 +188,27 @@
             android:id="@+id/noiseReductionCard"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="20dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
+            android:minHeight="@dimen/card_min_height"
             app:cardBackgroundColor="@color/white"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp"
             app:contentPadding="16dp"
             app:cardMaxElevation="6dp"
+            app:strokeWidth="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/amplificationCard">
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="28dp"
+                android:layout_height="match_parent"
+                android:minHeight="@dimen/card_min_height"
                 android:layout_gravity="center"
                 android:maxWidth="500dp"
-                android:gravity="center_vertical"
+                android:gravity="center"
                 android:orientation="horizontal">
 
                 <TextView
@@ -231,14 +237,16 @@
             android:id="@+id/profileCard"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="20dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
+            android:minHeight="@dimen/card_min_height"
             app:cardBackgroundColor="@color/white"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp"
             app:contentPadding="16dp"
             app:cardMaxElevation="6dp"
+            app:strokeWidth="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/noiseReductionCard"
@@ -247,10 +255,11 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="28dp"
+                android:layout_height="match_parent"
+                android:minHeight="@dimen/card_min_height"
                 android:layout_gravity="center"
                 android:maxWidth="500dp"
-                android:gravity="center_vertical"
+                android:gravity="center"
                 android:orientation="horizontal">
 
                 <LinearLayout

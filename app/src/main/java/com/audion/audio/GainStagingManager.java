@@ -207,13 +207,15 @@ public class GainStagingManager {
             if (avgRMS_dBFS < -18.0f && error > 2.0f) {
                 // Too quiet: increase gain
                 currentAdaptiveGain_dB = Math.min(currentAdaptiveGain_dB + 2.0f, 6.0f);
-                Log.d(TAG, String.format("Adaptive gain increased: %.1f dB (RMS=%.1f dBFS)", 
-                    currentAdaptiveGain_dB, avgRMS_dBFS));
+                // Debug logging removed for production
+                // Log.d(TAG, String.format("Adaptive gain increased: %.1f dB (RMS=%.1f dBFS)", 
+                //     currentAdaptiveGain_dB, avgRMS_dBFS));
             } else if (avgRMS_dBFS > -10.0f && error < -2.0f) {
                 // Too loud: reduce gain
                 currentAdaptiveGain_dB = Math.max(currentAdaptiveGain_dB - 2.0f, -6.0f);
-                Log.d(TAG, String.format("Adaptive gain reduced: %.1f dB (RMS=%.1f dBFS)", 
-                    currentAdaptiveGain_dB, avgRMS_dBFS));
+                // Debug logging removed for production
+                // Log.d(TAG, String.format("Adaptive gain reduced: %.1f dB (RMS=%.1f dBFS)", 
+                //     currentAdaptiveGain_dB, avgRMS_dBFS));
             }
             
             // Recalculate band gains with new adaptive offset

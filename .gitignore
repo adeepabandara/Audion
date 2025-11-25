@@ -13,3 +13,12 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Keystore files - NEVER commit these!
+*.jks
+*.keystore
+release.properties
+keystore.properties
+
+# ProGuard mapping files (backup separately)
+# mapping.txt

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ Splash Screen Theme -->
+    <style name="Theme.Audion.Splash" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <!-- Fullscreen splash -->
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+        
+        <!-- Android 12+ Splash Screen API - Disable icon to avoid double logo -->
+        <item name="android:windowSplashScreenBackground">@android:color/white</item>
+        <item name="android:windowSplashScreenAnimationDuration">0</item>
+        <!-- Use transparent icon to hide it completely -->
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon_transparent</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+        
+        <!-- Force light mode -->
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
+</resources>

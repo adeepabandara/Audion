@@ -2,8 +2,8 @@ package com.audion.audio;
 
 import android.util.Log;
 
-import com.example.audion.data.CalibrationProfileEntity;
-import com.example.audion.data.HearingTestResult;
+import com.audion.app.data.CalibrationProfileEntity;
+import com.audion.app.data.HearingTestResult;
 
 import java.util.List;
 
@@ -41,7 +41,8 @@ public class GainPrescriptionHelper {
                 float threshold = result.getThresholdDbHL();
                 sum += threshold;
                 count++;
-                Log.d(TAG, "PTA calculation: " + freq + " Hz = " + threshold + " dB HL");
+                // Debug logging removed for production
+                // Log.d(TAG, "PTA calculation: " + freq + " Hz = " + threshold + " dB HL");
             }
         }
         
@@ -151,16 +152,19 @@ public class GainPrescriptionHelper {
         if (leftCal != null && rightCal != null) {
             // Both ears have calibration
             avgUCL = (leftCal.getUclDbSpl() + rightCal.getUclDbSpl()) / 2.0f;
-            Log.d(TAG, String.format("UCL: Left=%.1f dB SPL, Right=%.1f dB SPL → Avg=%.1f dB SPL",
-                leftCal.getUclDbSpl(), rightCal.getUclDbSpl(), avgUCL));
+            // Debug logging removed for production
+            // Log.d(TAG, String.format("UCL: Left=%.1f dB SPL, Right=%.1f dB SPL → Avg=%.1f dB SPL",
+            //     leftCal.getUclDbSpl(), rightCal.getUclDbSpl(), avgUCL));
         } else if (leftCal != null) {
             // Only left ear
             avgUCL = leftCal.getUclDbSpl();
-            Log.d(TAG, "UCL: Left only = " + avgUCL + " dB SPL");
+            // Debug logging removed for production
+            // Log.d(TAG, "UCL: Left only = " + avgUCL + " dB SPL");
         } else {
             // Only right ear
             avgUCL = rightCal.getUclDbSpl();
-            Log.d(TAG, "UCL: Right only = " + avgUCL + " dB SPL");
+            // Debug logging removed for production
+            // Log.d(TAG, "UCL: Right only = " + avgUCL + " dB SPL");
         }
         
         // Calculate safe max gain: UCL - typical input level (65 dB SPL)
@@ -282,21 +286,24 @@ public class GainPrescriptionHelper {
                 
                 // Clamp to reasonable bounds (0-40 dB)
                 if (gainDb < 0) {
-                    Log.d(TAG, String.format("Band %d: Threshold %.1f dB HL is above 80 dB - using 0 dB gain", 
-                        band, threshold));
+                    // Debug logging removed for production
+                    // Log.d(TAG, String.format("Band %d: Threshold %.1f dB HL is above 80 dB - using 0 dB gain", 
+                    //     band, threshold));
                     gainDb = 0;
                 }
                 if (gainDb > 40.0f) {
-                    Log.d(TAG, String.format("Band %d: Calculated gain %.1f dB exceeds limit - clamping to 40 dB",
-                        band, gainDb));
+                    // Debug logging removed for production
+                    // Log.d(TAG, String.format("Band %d: Calculated gain %.1f dB exceeds limit - clamping to 40 dB",
+                    //     band, gainDb));
                     gainDb = 40.0f;
                 }
                 
                 // Convert dB to linear gain: gain = 10^(dB/20)
                 gains[band] = (float) Math.pow(10.0, gainDb / 20.0);
                 
-                Log.d(TAG, String.format("Band %d (%d Hz): Threshold=%.1f dB HL → Gain=%.1f dB (%.2fx)",
-                    band, targetFreqs[band], threshold, gainDb, gains[band]));
+                // Debug logging removed for production
+                // Log.d(TAG, String.format("Band %d (%d Hz): Threshold=%.1f dB HL → Gain=%.1f dB (%.2fx)",
+                //     band, targetFreqs[band], threshold, gainDb, gains[band]));
             } else {
                 Log.w(TAG, String.format("Band %d (%d Hz): No threshold data - using unity gain",
                     band, targetFreqs[band]));

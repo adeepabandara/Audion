@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-11-16T16:08:02.604284300Z">
+        <DropdownSelection timestamp="2025-11-23T20:17:56.778220Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\adeepa.bandara_rootc\.android\avd\Pixel_9_Pro_API_35.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CX14AAE9F" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -15,12 +15,12 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\adeepa.bandara_rootc\.android\avd\Small_Phone_API_35.avd" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CX14AAE9F" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\adeepa.bandara_rootc\.android\avd\Audion_Test.avd" />
+                <DeviceId pluginId="LocalEmulator" identifier="path=/Users/adeepabandara/.android/avd/Medium_Phone.avd" />
               </handle>
             </Target>
           </targets>

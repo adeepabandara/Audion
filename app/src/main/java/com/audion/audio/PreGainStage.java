@@ -55,7 +55,8 @@ public class PreGainStage {
         // Convert to linear
         this.gainLinear = (float) Math.pow(10.0, this.gainDb / 20.0);
         
-        Log.d(TAG, String.format("Pre-gain set: %.1f dB (%.3fx linear)", this.gainDb, this.gainLinear));
+        // Debug logging removed for production
+        // Log.d(TAG, String.format("Pre-gain set: %.1f dB (%.3fx linear)", this.gainDb, this.gainLinear));
     }
     
     /**

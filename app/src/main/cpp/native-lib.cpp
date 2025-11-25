@@ -15,13 +15,13 @@ extern "C" {
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "RNNoiseJNI", __VA_ARGS__)
 
 JNIEXPORT jlong JNICALL
-Java_com_example_audion_RNNoise_createState(JNIEnv *env, jobject /* this */) {
+Java_com_audion_app_RNNoise_createState(JNIEnv *env, jobject /* this */) {
     DenoiseState *st = rnnoise_create(nullptr);
     return reinterpret_cast<jlong>(st);
 }
 
 JNIEXPORT void JNICALL
-Java_com_example_audion_RNNoise_destroyState(JNIEnv *env, jobject /* this */, jlong state) {
+Java_com_audion_app_RNNoise_destroyState(JNIEnv *env, jobject /* this */, jlong state) {
     if (state != 0) {
         DenoiseState *st = reinterpret_cast<DenoiseState *>(state);
         rnnoise_destroy(st);
@@ -29,7 +29,7 @@ Java_com_example_audion_RNNoise_destroyState(JNIEnv *env, jobject /* this */, jl
 }
 
 JNIEXPORT jobject JNICALL
-Java_com_example_audion_RNNoise_processFrame(JNIEnv *env, jobject /* this */,
+Java_com_audion_app_RNNoise_processFrame(JNIEnv *env, jobject /* this */,
                                                jlong state, jfloatArray input) {
     if (state == 0) {
         LOGE("Invalid state pointer");

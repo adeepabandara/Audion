@@ -8,27 +8,41 @@
     android:fitsSystemWindows="true"
     android:paddingHorizontal="@dimen/onboarding_horizontal_padding">
 
-    <!-- Main Title: Let's get -->
+    <!-- Greeting with User Name -->
+    <TextView
+        android:id="@+id/tvGreeting"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/onboarding_title_margin_top"
+        android:fontFamily="@font/poppins"
+        android:text="Hi!"
+        android:textColor="@color/onboarding_text_primary"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Main Title -->
     <TextView
         android:id="@+id/tvMainTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/onboarding_title_margin_top"
-        android:fontFamily="sans-serif"
-        android:text="Let's get"
+        android:layout_marginTop="8dp"
+        android:fontFamily="@font/poppins"
+        android:text="Let's personalize"
         android:textColor="@color/onboarding_text_primary"
         android:textSize="@dimen/onboarding_main_title_size"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/tvGreeting" />
 
-    <!-- Started -->
+    <!-- Your Hearing -->
     <TextView
         android:id="@+id/tvStarted"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif"
+        android:fontFamily="@font/poppins"
         android:lineSpacingExtra="@dimen/onboarding_title_line_spacing"
-        android:text="Started!"
+        android:text="your hearing"
         android:textColor="@color/onboarding_text_primary"
         android:textSize="@dimen/onboarding_bold_title_size"
         android:textStyle="bold"

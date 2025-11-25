@@ -23,7 +23,7 @@
         android:theme="@style/Theme.Audion"
         tools:targetApi="31">
         <activity
-            android:name=".SplashActivity"
+            android:name="com.audion.app.SplashActivity"
             android:theme="@style/Theme.Audion.Splash"
             android:exported="true">
             <intent-filter>
@@ -33,165 +33,194 @@
         </activity>
 
         <activity
-            android:name=".OnboardingActivity"
+            android:name="com.audion.app.OnboardingActivity"
             android:theme="@style/Theme.Audion"
             android:exported="true">
         </activity>
 
         <!-- New Onboarding Flow Activities -->
         <activity
-            android:name=".OnboardingCarouselActivity"
+            android:name="com.audion.app.OnboardingCarouselActivity"
             android:theme="@style/Theme.Audion.NoActionBar"
             android:exported="false">
         </activity>
 
         <activity
-            android:name=".WhatsYourNameActivity"
+            android:name="com.audion.app.WhatsYourNameActivity"
             android:theme="@style/Theme.Audion.NoActionBar"
             android:windowSoftInputMode="adjustResize"
             android:exported="false">
         </activity>
 
         <activity
-            android:name=".StartTestActivity"
+            android:name="com.audion.app.StartTestActivity"
             android:theme="@style/Theme.Audion.NoActionBar"
             android:exported="false">
         </activity>
 
         <activity
-            android:name=".PureToneIntroActivity"
+            android:name="com.audion.app.PureToneIntroActivity"
             android:theme="@style/Theme.Audion.NoActionBar"
             android:exported="false">
         </activity>
 
         <activity
-            android:name=".NameActivity"
+            android:name="com.audion.app.NameActivity"
             android:theme="@style/Theme.Audion"
             android:windowSoftInputMode="adjustPan"
             android:exported="false">
         </activity>
 
-          <activity android:name=".UserCreationActivity" 
+          <activity android:name="com.audion.app.UserCreationActivity" 
+          android:exported="false"
           android:windowSoftInputMode="adjustResize"/>
 
 
-          <activity android:name=".CaptionActivity" 
+          <activity android:name="com.audion.app.CaptionActivity" 
+          android:exported="false"
           android:windowSoftInputMode="adjustResize"/>
 
-          <activity android:name=".HomeActivity" />
+          <activity android:name="com.audion.app.HomeActivity" 
+          android:exported="false" />
           
           <activity 
-              android:name=".MainNavActivity"
+              android:name="com.audion.app.MainNavActivity"
+              android:exported="false"
               android:theme="@style/Theme.Audion.NoActionBar" />
           
           <activity 
-              android:name=".ProfileActivity"
+              android:name="com.audion.app.ProfileActivity"
+              android:exported="false"
               android:theme="@style/Theme.Audion.NoActionBar" />
 
           <activity
-              android:name=".PureToneTestActivity"
+              android:name="com.audion.app.PureToneTestActivity"
+              android:exported="false"
               android:theme="@style/Theme.Audion.NoActionBar"
               android:windowSoftInputMode="adjustResize" />
 
 
 
-                <activity android:name=".FrequencyActivity" 
+                <activity android:name="com.audion.app.FrequencyActivity" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"/>
 
            
-                <activity android:name=".GraphActivity" 
+                <activity android:name="com.audion.app.GraphActivity" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"/>
 
-                           <activity android:name=".BaselineCalibrationActivity" 
+                           <activity android:name="com.audion.app.BaselineCalibrationActivity" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"/>
 
 
-                                      <activity android:name=".FrequencySweepActivity" 
+                                      <activity android:name="com.audion.app.FrequencySweepActivity" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"/>
 
-           <activity android:name=".TestResultsActivity" 
+           <activity android:name="com.audion.app.TestResultsActivity" 
+           android:exported="false"
            android:theme="@style/Theme.Audion.NoActionBar"
            android:windowSoftInputMode="adjustResize"/>
 
-           <activity android:name=".TestCompletionSplashActivity" 
+           <activity android:name="com.audion.app.TestCompletionSplashActivity" 
+           android:exported="false"
            android:theme="@style/Theme.Audion" />
 
            
-                <activity android:name=".HelpActivity" 
+                <activity android:name="com.audion.app.HelpActivity" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"/>
 
 
-                <activity android:name=".CalibrationRepo" 
+                <activity android:name="com.audion.app.CalibrationRepo" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"/>
 
 
-           <activity android:name=".SettingsActivity" />
+           <activity android:name="com.audion.app.SettingsActivity" 
+           android:exported="false" />
 <activity 
-    android:name=".CalibrationInstructionActivity"
+    android:name="com.audion.app.CalibrationInstructionActivity"
+    android:exported="false"
     android:theme="@style/Theme.Audion.NoActionBar" />
-<activity android:name=".CalibrationTestActivity" />
+<activity android:name="com.audion.app.CalibrationTestActivity" 
+    android:exported="false" />
 <!-- Test Completion Animation Screen -->
 <activity 
-    android:name=".TestCompletionActivity"
+    android:name="com.audion.app.TestCompletionActivity"
+    android:exported="false"
     android:screenOrientation="portrait"
     android:theme="@style/Theme.Audion.NoActionBar" />
 <!-- Refactored SeekBar-based calibration with stereo separation and MCL/UCL workflow -->
 <activity 
-    android:name=".CalibrationTestActivityRefactored"
+    android:name="com.audion.app.CalibrationTestActivityRefactored"
+    android:exported="false"
     android:screenOrientation="portrait"
     android:theme="@style/Theme.Audion.NoActionBar"
     android:windowSoftInputMode="adjustResize" />
-<activity android:name=".HearingProfileActivity" 
+<activity android:name="com.audion.app.HearingProfileActivity" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"
            android:theme="@style/Theme.Audion" />
 
 
-           <activity android:name=".GeneralInstructionActivity" 
+           <activity android:name="com.audion.app.GeneralInstructionActivity" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"/>
            
-           <activity android:name=".EarResultActivity" 
+           <activity android:name="com.audion.app.EarResultActivity" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"/>
            
-           <activity android:name=".LeftEarInstructionActivity" 
+           <activity android:name="com.audion.app.LeftEarInstructionActivity" 
+           android:exported="false"
            android:theme="@style/Theme.Audion.NoActionBar"
            android:windowSoftInputMode="adjustResize"/>
-           <activity android:name=".RightEarInstructionActivity" 
+           <activity android:name="com.audion.app.RightEarInstructionActivity" 
+           android:exported="false"
            android:theme="@style/Theme.Audion.NoActionBar"
            android:windowSoftInputMode="adjustResize"/>
 
 
-            <activity android:name=".VariationOneActivity" 
+            <activity android:name="com.audion.app.VariationOneActivity" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"/>
 
-            <activity android:name=".VariationTwoActivity" 
+            <activity android:name="com.audion.app.VariationTwoActivity" 
+           android:exported="false"
            android:windowSoftInputMode="adjustResize"/>
 
-            <activity android:name=".MusicPlayerActivity"/>
-        <service android:name=".MusicPlayerService"/>
+            <activity android:name="com.audion.app.MusicPlayerActivity"
+            android:exported="false"/>
+        <service 
+            android:name="com.audion.app.MusicPlayerService"
+            android:exported="false"/>
 
         <service
-        android:name=".AudioStreamingService"
+        android:name="com.audion.app.AudioStreamingService"
         android:exported="false"
         android:foregroundServiceType="microphone|mediaPlayback" />
 
         <service
-        android:name=".SimpleAudioStreamingService"
+        android:name="com.audion.app.SimpleAudioStreamingService"
         android:exported="false"
         android:foregroundServiceType="microphone|mediaPlayback" />
 
     
         <activity
         
-            android:name=".MainActivity"
-            android:exported="true" />
+            android:name="com.audion.app.MainActivity"
+            android:exported="false" />
 
                     <activity
         
-            android:name=".FocusActivity"
-            android:exported="true" />
+            android:name="com.audion.app.FocusActivity"
+            android:exported="false" />
 
                 <activity
-            android:name=".EnrollmentActivity"
+            android:name="com.audion.app.EnrollmentActivity"
             android:exported="false"
 
             

@@ -43,4 +43,8 @@
     
     <!-- Button Dimensions -->
     <dimen name="button_min_height">64dp</dimen>
+    
+    <!-- Card Spacing (Home & Focus Pages) -->
+    <dimen name="card_spacing_vertical">20dp</dimen>
+    <dimen name="card_spacing_horizontal">16dp</dimen>
 </resources>

@@ -19,11 +19,11 @@ import java.util.List;
 public class ANSI_AudiometryEngine {
     private static final String TAG = "ANSI_AudiometryEngine";
     
-    // Simple logging utility
-    private void logD(String message) { System.out.println("[DEBUG] " + TAG + ": " + message); }
-    private void logI(String message) { System.out.println("[INFO] " + TAG + ": " + message); }
-    private void logW(String message) { System.out.println("[WARN] " + TAG + ": " + message); }
-    private void logE(String message) { System.out.println("[ERROR] " + TAG + ": " + message); }
+    // Debug logging removed for production - no-op methods
+    private void logD(String message) { /* Debug logging disabled */ }
+    private void logI(String message) { /* Info logging disabled */ }
+    private void logW(String message) { /* Warn logging disabled */ }
+    private void logE(String message) { /* Error logging disabled */ }
     
     // ANSI S3.6 standard test frequencies (Hz) - expanded to include 3000Hz
     public static final List<Integer> STANDARD_FREQUENCIES = Arrays.asList(

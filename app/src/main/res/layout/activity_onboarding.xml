@@ -57,7 +57,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/onboarding_spacing_title_to_paragraph"
-        android:fontFamily="sans-serif"
+        android:fontFamily="@font/poppins"
         android:lineSpacingExtra="@dimen/onboarding_paragraph_line_spacing"
         android:maxWidth="@dimen/onboarding_paragraph_max_width"
         android:text="@string/onboarding_description"

@@ -1,0 +1,77 @@
+package com.audion.app;
+
+import com.audion.app.R;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.Toast;
+
+import com.audion.app.data.AppDatabase;
+import com.audion.app.data.HearingTestResult;
+import com.audion.app.data.HearingTestResultDao;
+import com.audion.app.data.User;
+import com.audion.app.data.UserDao;
+
+import java.util.List;
+
+public class MainActivity extends AppCompatActivity {
+
+    // Constant user ID 1 throughout the app.
+    private static final int USER_ID = 1;
+
+    private UserDao userDao;
+    private HearingTestResultDao hearingTestResultDao;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Optionally, set a content view if needed:
+        // setContentView(R.layout.activity_main);
+
+        // Get the AppDatabase instance (using your singleton method)
+        AppDatabase db = AppDatabase.getInstance(this);
+        userDao = db.userDao();
+        hearingTestResultDao = db.hearingTestResultDao();
+
+        // Run all database logic on a background thread.
+        new Thread(() -> {
+            // 1. Check if a user with ID 1 exists.
+            User user = userDao.getUserById(USER_ID);
+            if (user == null) {
+                // No user found, so navigate to UserCreationActivity.
+                runOnUiThread(() -> {
+            
+                    Intent intent = new Intent(MainActivity.this, UserCreationActivity.class);
+                    startActivity(intent);
+                    overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
+                    finish();
+                });
+            } else {
+                // 2. User exists. Check the hearing test records.
+                List<HearingTestResult> results = hearingTestResultDao.getResultsForUser(USER_ID);
+                int recordCount = results.size();
+
+                Intent intent;
+                if (recordCount >= 16) {  // Now checks if eight or more records exist.
+                    // Navigate to HomeActivity (with new bottom navigation).
+                    intent = new Intent(MainActivity.this, HomeActivity.class);
+                } else {
+                    // If fewer than 16 records exist, delete all records for user 1
+                    // and navigate to GeneralInstructionActivity (to restart the test).
+                    hearingTestResultDao.deleteResultsForUser(USER_ID);
+                    intent = new Intent(MainActivity.this, GeneralInstructionActivity.class);
+                }
+                intent.putExtra("USER_ID", USER_ID);
+
+
+                // Launch the next Activity on the main thread.
+                runOnUiThread(() -> {
+                    startActivity(intent);
+                    overridePendingTransition(R.anim.smooth_fade_in, R.anim.smooth_fade_out);
+                    finish();
+                });
+            }
+        }).start();
+    }
+}

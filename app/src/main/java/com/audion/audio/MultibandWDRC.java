@@ -154,8 +154,9 @@ public class MultibandWDRC {
         }
         
         compressors[bandIndex].setParameters(thresholdDb, ratio);
-        Log.d(TAG, String.format("[%s] Band %d: threshold=%.1f dBFS, ratio=%.1f:1",
-            channelName, bandIndex, thresholdDb, ratio));
+        // Debug logging removed for production
+        // Log.d(TAG, String.format("[%s] Band %d: threshold=%.1f dBFS, ratio=%.1f:1",
+        //     channelName, bandIndex, thresholdDb, ratio));
     }
     
     /**

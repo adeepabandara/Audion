@@ -1,7 +1,7 @@
 package com.audion.audio;
 
 import android.util.Log;
-import com.example.audion.data.HearingTestResult;
+import com.audion.app.data.HearingTestResult;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

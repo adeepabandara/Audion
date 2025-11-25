@@ -156,7 +156,7 @@
         app:layout_constraintWidth_max="@dimen/onboarding_paragraph_max_width" />
 
     <!-- Waveform Visualization -->
-    <com.example.audion.WaveformView
+    <com.audion.app.WaveformView
         android:id="@+id/waveformView"
         android:layout_width="0dp"
         android:layout_height="50dp"
@@ -170,7 +170,7 @@
         android:id="@+id/volumeCard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="@dimen/card_spacing_vertical"
         android:background="@drawable/rounded_mint_card"
         android:gravity="center_vertical"
         android:minHeight="60dp"
@@ -209,7 +209,7 @@
         android:id="@+id/noiseCard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/card_spacing_vertical"
         android:background="@drawable/rounded_mint_card"
         android:gravity="center_vertical"
         android:minHeight="60dp"

@@ -1,86 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white"
-    android:padding="@dimen/onboarding_horizontal_padding"
     android:fitsSystemWindows="true">
 
+    <!-- Greeting with User Name -->
+    <TextView
+        android:id="@+id/tvGreeting"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="64dp"
+        android:fontFamily="@font/poppins"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:text="Hi!"
+        android:textColor="@android:color/black"
+        android:textSize="28sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Title -->
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:autoSizeMaxTextSize="@dimen/start_test_title_max_text_size"
-        android:autoSizeMinTextSize="@dimen/start_test_title_min_text_size"
-        android:autoSizeStepGranularity="1sp"
-        android:autoSizeTextType="uniform"
-        android:ellipsize="end"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="8dp"
         android:fontFamily="@font/poppins"
-        android:gravity="center_horizontal"
-        android:maxLines="2"
-        android:text="@string/ready_to_test_title"
-        android:textColor="@android:color/black"
-        android:textSize="@dimen/start_test_title_text_size"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@id/ivIllustration"
+        android:gravity="center"
+        android:text="Let's personalize your hearing"
+        android:textColor="@android:color/black"
+        android:textSize="20sp"
+        android:maxLines="1"
+        android:ellipsize="end"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.5"
-        app:layout_constraintVertical_chainStyle="packed" />
+        app:layout_constraintTop_toBottomOf="@id/tvGreeting" />
 
-    <ImageView
+    <!-- Ear Image -->
+    <pl.droidsonroids.gif.GifImageView
         android:id="@+id/ivIllustration"
-        android:layout_width="295dp"
-        android:layout_height="296dp"
-        android:layout_marginStart="@dimen/slide_image_horizontal_margin"
-        android:layout_marginTop="@dimen/slide_image_top_margin"
-        android:layout_marginEnd="@dimen/slide_image_horizontal_margin"
-        android:adjustViewBounds="true"
-        android:contentDescription="@string/hearing_test_illustration_desc"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="48dp"
         android:scaleType="fitCenter"
         android:src="@drawable/start_test"
-        app:layout_constraintBottom_toTopOf="@id/tvDescription"
-        app:layout_constraintDimensionRatio="H,1:1"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:contentDescription="@string/hearing_test_illustration_desc"
+        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvTitle"
-        app:layout_constraintVertical_bias="0.3"
+        app:layout_constraintBottom_toTopOf="@id/tvDescription"
         app:layout_constraintVertical_chainStyle="packed" />
 
-
+    <!-- Description -->
     <TextView
         android:id="@+id/tvDescription"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/start_test_description_top_margin"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="48dp"
         android:fontFamily="@font/poppins"
         android:gravity="center"
-        android:lineSpacingExtra="4dp"
-        android:maxLines="3"
-        android:ellipsize="end"
-        android:autoSizeTextType="uniform"
-        android:autoSizeMinTextSize="@dimen/slide_description_min_text_size"
-        android:autoSizeMaxTextSize="@dimen/slide_description_max_text_size"
-        android:autoSizeStepGranularity="1sp"
         android:text="@string/hearing_test_description"
         android:textColor="@android:color/black"
-        android:textSize="@dimen/slide_description_text_size"
+        android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ivIllustration" />
+        app:layout_constraintTop_toBottomOf="@id/ivIllustration"
+        app:layout_constraintBottom_toTopOf="@id/btnStartTest" />
 
+    <!-- Start Test Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnStartTest"
         style="@style/PrimaryButton"
         android:layout_width="0dp"
-        android:layout_marginTop="40dp"
+        android:layout_marginStart="@dimen/onboarding_horizontal_padding"
+        android:layout_marginEnd="@dimen/onboarding_horizontal_padding"
+        android:layout_marginBottom="32dp"
         android:text="@string/start_test_button"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvDescription" />
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

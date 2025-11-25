@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@drawable/dialog_rounded_background"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_gravity="center">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Delete Profile?"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#DC3545"
+        android:gravity="center"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Description -->
+    <TextView
+        android:id="@+id/dialogDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="This will permanently delete all your hearing profile data including:\n\n• Hearing test results\n• Calibration settings\n• Audiogram data\n\nThis action cannot be undone."
+        android:textSize="13sp"
+        android:textColor="#000000"
+        android:lineSpacingExtra="2dp"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"/>
+
+    <!-- Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <!-- Delete Button (Destructive) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogDelete"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Delete Profile"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp"
+            app:cornerRadius="8dp"
+            app:backgroundTint="#DC3545"/>
+
+        <!-- Cancel Button (Secondary) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogCancel"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Cancel"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary"
+            app:cornerRadius="8dp"
+            app:strokeColor="@color/text_secondary"
+            app:strokeWidth="1dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>
