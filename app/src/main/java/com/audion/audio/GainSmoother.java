@@ -46,15 +46,31 @@ public class GainSmoother {
     }
     
     /**
+     * Set target gain in dB and immediately snap to it (no smoothing).
+     * Use this when initializing or resetting to prevent transients.
+     * 
+     * @param gainDb Target gain in decibels
+     */
+    public void setTargetDbImmediate(float gainDb) {
+        targetLinearGain = (float) Math.pow(10.0, gainDb / 20.0);
+        currentLinearGain = targetLinearGain;
+    }
+    
+    /**
      * Get next smoothed gain value (per-sample processing).
+     * Simple exponential smoothing - no complex adaptive behavior.
      * 
      * @return Current smoothed linear gain
      */
     public float nextSample() {
-        // Choose attack or release based on whether we're increasing or decreasing
-        float coeff = (targetLinearGain > currentLinearGain) ? attackCoeff : releaseCoeff;
+        // If already very close to target, snap to it
+        if (Math.abs(currentLinearGain - targetLinearGain) < 0.0001f) {
+            currentLinearGain = targetLinearGain;
+            return currentLinearGain;
+        }
         
-        // Exponential smoothing: current = coeff * current + (1 - coeff) * target
+        // Use attack for increases, release for decreases (simple and predictable)
+        float coeff = (targetLinearGain > currentLinearGain) ? attackCoeff : releaseCoeff;
         currentLinearGain = coeff * currentLinearGain + (1.0f - coeff) * targetLinearGain;
         
         return currentLinearGain;
@@ -81,6 +97,15 @@ public class GainSmoother {
      */
     public float getCurrentLinearGain() {
         return currentLinearGain;
+    }
+    
+    /**
+     * Set current linear gain directly (for external smoothing).
+     * 
+     * @param linearGain Current linear gain value
+     */
+    public void setCurrentLinearGain(float linearGain) {
+        this.currentLinearGain = linearGain;
     }
     
     /**

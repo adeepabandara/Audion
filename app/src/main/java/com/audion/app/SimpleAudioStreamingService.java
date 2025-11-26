@@ -78,10 +78,54 @@ public class SimpleAudioStreamingService extends Service {
     private CalibrationProfileEntity leftCalibration;
     private CalibrationProfileEntity rightCalibration;
     private float safeMaxGainDb = 100.0f; // Default max, updated from UCL
+    
+    // Static instance for direct callback (bypasses broadcast delay)
+    private static SimpleAudioStreamingService instance = null;
+    
+    /**
+     * Direct gain update - bypasses broadcast system for instant response
+     * Always updates engine if it exists, even if not running yet (will apply on next frame)
+     * Returns true if engine exists, false if service not started
+     */
+    public static boolean updateGainDirect(float gainDb) {
+        if (instance != null && instance.audioEngine != null) {
+            instance.audioEngine.setAmplificationDb(gainDb);
+            boolean running = instance.audioEngine.isRunning();
+            if (running) {
+                Log.e(TAG, String.format("★★★ DIRECT GAIN UPDATE: %.2f dB (applied to running engine)", gainDb));
+            } else {
+                Log.e(TAG, String.format("★★★ DIRECT GAIN UPDATE: %.2f dB (stored in atomic var, will apply when engine starts)", gainDb));
+            }
+            return true;
+        }
+        Log.e(TAG, String.format("⚠️ DIRECT GAIN UPDATE FAILED: service not started (gain=%.2f dB queued in SharedPrefs)", gainDb));
+        return false;
+    }
+    
+    /**
+     * Direct noise reduction update - bypasses broadcast system for instant response
+     * Always updates engine if it exists, even if not running yet (will apply on next frame)
+     * Returns true if engine exists, false if service not started
+     */
+    public static boolean updateNoiseReductionDirect(boolean enabled) {
+        if (instance != null && instance.audioEngine != null) {
+            instance.audioEngine.setNoiseReductionEnabled(enabled);
+            boolean running = instance.audioEngine.isRunning();
+            if (running) {
+                Log.e(TAG, String.format("★★★ DIRECT NOISE UPDATE: %s (applied to running engine)", enabled ? "ON" : "OFF"));
+            } else {
+                Log.e(TAG, String.format("★★★ DIRECT NOISE UPDATE: %s (stored, will apply when engine starts)", enabled ? "ON" : "OFF"));
+            }
+            return true;
+        }
+        Log.e(TAG, String.format("⚠️ DIRECT NOISE UPDATE FAILED: service not started (%s queued in SharedPrefs)", enabled ? "ON" : "OFF"));
+        return false;
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        instance = this;  // Set static reference for direct callbacks
         createNotificationChannelIfNeeded();
         
         // Initialize SharedPreferences
@@ -92,7 +136,7 @@ public class SimpleAudioStreamingService extends Service {
         IntentFilter filter = new IntentFilter("com.audion.app.PREFERENCES_CHANGED");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(prefReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
+        } else{
             registerReceiver(prefReceiver, filter);
         }
         
@@ -163,9 +207,10 @@ public class SimpleAudioStreamingService extends Service {
                 }
             });
             
-            // Phase 2: Enable per-ear 4-band processing
-            audioEngine.setPhase2Enabled(true);
-            Log.i(TAG, "[Phase 2] Enabled per-ear 4-band processing mode");
+            // Phase 2: DISABLED - Using clean Phase1 pipeline instead
+            // Phase2 has aggressive filterbanks and compression that reduce clarity
+            audioEngine.setPhase2Enabled(false);
+            Log.i(TAG, "[Phase 1] Using clean single-band DSP pipeline");
             
             if (!audioEngine.initialize()) {
                 Log.e(TAG, "Failed to initialize audio engine");
@@ -229,6 +274,7 @@ public class SimpleAudioStreamingService extends Service {
         }
         
         stopForeground(true);
+        instance = null;  // Clear static reference
         super.onDestroy();
         
         Log.i(TAG, "SimpleAudioStreamingService destroyed");
@@ -259,16 +305,20 @@ public class SimpleAudioStreamingService extends Service {
             }
         }
         
-        audioEngine.setAmplificationDb(amplificationDb);
-        
         // Read noise removal (boolean, default true)
         boolean noiseRemoval = prefs.getBoolean(KEY_NOISE_REMOVAL, true);
-        audioEngine.setNoiseReductionEnabled(noiseRemoval);
         
         Log.e(TAG, "════════════════════════════════════════════════════════");
-        Log.e(TAG, "★★★ SETTINGS APPLIED ★★★");
-        Log.e(TAG, String.format("[Personalization] Applied Gain: %.1f dB", amplificationDb));
-        Log.e(TAG, String.format("Noise Removal: %s", noiseRemoval ? "ON" : "OFF"));
+        Log.e(TAG, "★★★★★ APPLYING SETTINGS TO AUDIO ENGINE ★★★★★");
+        Log.e(TAG, String.format("  Reading from SharedPrefs: Gain=%.1f dB, Noise=%s", amplificationDb, noiseRemoval ? "ON" : "OFF"));
+        
+        audioEngine.setAmplificationDb(amplificationDb);
+        Log.e(TAG, String.format("  ✓ Called setAmplificationDb(%.1f)", amplificationDb));
+        
+        audioEngine.setNoiseReductionEnabled(noiseRemoval);
+        Log.e(TAG, String.format("  ✓ Called setNoiseReductionEnabled(%s)", noiseRemoval));
+        
+        Log.e(TAG, "★★★★★ SETTINGS APPLIED SUCCESSFULLY ★★★★★");
         Log.e(TAG, "════════════════════════════════════════════════════════");
     }
     
@@ -280,12 +330,14 @@ public class SimpleAudioStreamingService extends Service {
     private void loadPersonalizationData() {
         Log.i(TAG, "[Personalization] Loading clinical data...");
         
-        try {
-            AppDatabase db = AppDatabase.getInstance(this);
-            
-            // Get or create hearing profile
-            HearingProfileDao profileDao = db.hearingProfileDao();
-            List<HearingProfile> profiles = profileDao.getAllProfiles();
+        // Run database access on background thread to avoid blocking main thread
+        new Thread(() -> {
+            try {
+                AppDatabase db = AppDatabase.getInstance(this);
+                
+                // Get or create hearing profile
+                HearingProfileDao profileDao = db.hearingProfileDao();
+                List<HearingProfile> profiles = profileDao.getAllProfiles();
             
             if (profiles.isEmpty()) {
                 // Create default profile
@@ -338,6 +390,25 @@ public class SimpleAudioStreamingService extends Service {
             // Notify engine of personalization status
             if (audioEngine != null) {
                 audioEngine.setPersonalizationAvailable(hasAudiogram, hasCalibration);
+                
+                // Phase 1: Load audiogram data for frequency-specific gains
+                if (hasAudiogram && (leftEarAudiogram != null && !leftEarAudiogram.isEmpty())) {
+                    // Convert audiogram to frequency-threshold map
+                    java.util.Map<Integer, Integer> audiogramMap = new java.util.HashMap<>();
+                    for (HearingTestResult result : leftEarAudiogram) {
+                        // Convert amplitude step to approximate dB HL
+                        // Assuming each step is 5 dB (adjust based on your calibration)
+                        int thresholdDbHL = result.getAmplitudeStep() * 5;
+                        audiogramMap.put(result.getFrequency(), thresholdDbHL);
+                    }
+                    
+                    Log.i(TAG, "[Phase 1] Loading audiogram data for frequency-specific gains:");
+                    for (java.util.Map.Entry<Integer, Integer> entry : audiogramMap.entrySet()) {
+                        Log.i(TAG, String.format("  %d Hz: %d dB HL", entry.getKey(), entry.getValue()));
+                    }
+                    
+                    audioEngine.setAudiogramData(audiogramMap);
+                }
                 
                 // Phase 2: Pass audiogram data to engine for per-ear processing
                 if (audioEngine.isPhase2Enabled() && hasAudiogram) {
@@ -393,6 +464,7 @@ public class SimpleAudioStreamingService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "[Personalization] Error loading clinical data: " + e.getMessage(), e);
         }
+        }).start();  // End background thread
     }
     
     /**
@@ -401,7 +473,11 @@ public class SimpleAudioStreamingService extends Service {
     private class PreferenceChangeReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.e(TAG, "★★★ PREFERENCES CHANGED - Updating audio engine ★★★");
+            Log.e(TAG, "═══════════════════════════════════════════════════════════");
+            Log.e(TAG, "★★★★★ BROADCAST RECEIVED IN SERVICE ★★★★★");
+            Log.e(TAG, "  Intent Action: " + intent.getAction());
+            Log.e(TAG, "  Audio Engine Running: " + (audioEngine != null && audioEngine.isRunning()));
+            Log.e(TAG, "═══════════════════════════════════════════════════════════");
             applySettings();
         }
     }

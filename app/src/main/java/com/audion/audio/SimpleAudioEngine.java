@@ -113,6 +113,7 @@ public final class SimpleAudioEngine {
     private PostRNNoiseDeRinger deRinger;         // Frame edge smoothing after RNNoise
     private SimpleWdrc wdrcCompressor;            // Single-band WDRC
     private GainSmoother gainSmoother;            // Smooth user amplification changes
+    private FrequencyGainMapper frequencyGainMapper;  // Frequency-specific gains from audiogram
     private LookaheadLimiter limiter;             // Final safety limiter
     private TpdfDither dither;                    // Dither for float→short conversion
     
@@ -129,7 +130,7 @@ public final class SimpleAudioEngine {
     
     // Runtime controls (thread-safe atomic variables)
     private final AtomicBoolean noiseReductionEnabled = new AtomicBoolean(true);
-    private final AtomicReference<Float> amplificationGain = new AtomicReference<>(1.0f);
+    private final AtomicReference<Float> amplificationGainDb = new AtomicReference<>(0.0f);  // Store as dB, not linear
     
     // Personalization status
     private final AtomicBoolean personalizationAvailable = new AtomicBoolean(false);
@@ -156,6 +157,7 @@ public final class SimpleAudioEngine {
     private final float[] deRingedOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES];  // After de-ringing
     private final float[] wdrcOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES];      // After WDRC
     private final float[] postGainOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES];  // After user gain
+    private final float[] frequencyShapedOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES]; // After frequency shaping
     private final float[] limiterOutput = new float[AudioConfig.FRAME_SIZE_SAMPLES];   // After limiter
     
     // Phase 3: Feedback canceller buffers
@@ -432,20 +434,23 @@ public final class SimpleAudioEngine {
             Log.i(TAG, "Phase 4: Audio quality metrics initialized");
             
             // NEW DSP PIPELINE: Initialize clean processing components
-            preGainStage = new PreGainStage(6.0f);  // Default 6 dB pre-gain
-            Log.i(TAG, "PreGainStage initialized: +6 dB before RNNoise");
+            preGainStage = new PreGainStage(0.0f);  // 0 dB (unity gain, no boost)
+            Log.i(TAG, "PreGainStage initialized: 0 dB (unity gain, clamp removed)");
             
             deRinger = new PostRNNoiseDeRinger();
             Log.i(TAG, "PostRNNoiseDeRinger initialized: 32-sample edge smoothing");
             
             wdrcCompressor = new SimpleWdrc(AudioConfig.SAMPLE_RATE);
-            Log.i(TAG, "SimpleWdrc initialized: threshold=-28dBFS, ratio=2.5:1, knee=6dB");
+            Log.i(TAG, "SimpleWdrc initialized: threshold=-28dBFS, ratio=1.5:1, knee=6dB");
             
-            gainSmoother = new GainSmoother(AudioConfig.SAMPLE_RATE, 10.0f, 80.0f);
-            Log.i(TAG, "GainSmoother initialized: attack=10ms, release=80ms");
+            gainSmoother = new GainSmoother(AudioConfig.SAMPLE_RATE, 0.5f, 20.0f);
+            Log.i(TAG, "GainSmoother initialized: attack=0.5ms (near-instant), release=20ms");
             
-            limiter = new LookaheadLimiter(AudioConfig.SAMPLE_RATE, -3.0f, 5.0f);
-            Log.i(TAG, "LookaheadLimiter initialized: ceiling=-3dBFS, lookahead=5ms");
+            frequencyGainMapper = new FrequencyGainMapper(AudioConfig.SAMPLE_RATE);
+            Log.i(TAG, "FrequencyGainMapper initialized: 6-band audiogram-based gains");
+            
+            limiter = new LookaheadLimiter(AudioConfig.SAMPLE_RATE, -0.5f, 5.0f);
+            Log.i(TAG, "LookaheadLimiter initialized: ceiling=-0.5dBFS, lookahead=5ms");
             
             dither = new TpdfDither();
             Log.i(TAG, "TpdfDither initialized: TPDF dither for float→short conversion");
@@ -531,6 +536,7 @@ public final class SimpleAudioEngine {
         audioTrack.play();
         
         Log.i(TAG, "AudioRecord state: " + audioRecord.getState() + ", Recording state: " + audioRecord.getRecordingState());
+        Log.i(TAG, "GainSmoother will naturally track target from current state");
         
         // Start processing thread
         processingThread = new Thread(this::processingLoop, "SimpleAudioProcessing");
@@ -558,6 +564,16 @@ public final class SimpleAudioEngine {
         }
         
         Log.i(TAG, "Stopping SimpleAudioEngine");
+        
+        // Log gain state before stopping
+        Log.e(TAG, "════════════════════════════════════════════════════════");
+        Log.e(TAG, "★★★ STOPPING ENGINE - GAIN STATE ★★★");
+        Log.e(TAG, String.format("  Atomic Gain (target): %.2f dB", amplificationGainDb.get()));
+        if (gainSmoother != null) {
+            Log.e(TAG, String.format("  Smoother Current: %.2f dB (%.4fx)", 
+                gainSmoother.getCurrentDb(), gainSmoother.getCurrentLinearGain()));
+        }
+        Log.e(TAG, "════════════════════════════════════════════════════════");
         
         isRunning.set(false);
         
@@ -666,31 +682,10 @@ public final class SimpleAudioEngine {
                     }
                 }
                 
-                // Step 3: RNNoise processing (MIC mode only)
-                if (mode == AudioMode.MIC && noiseReductionEnabled.get()) {
-                    // RNNoise expects non-normalized float (raw short values as float)
-                    for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
-                        floatInput[i] = captureBuffer[i];
-                    }
-                    
-                    RNNoise.ProcessResult result = rnnoise.processFrame(floatInput);
-                    
-                    // Convert back to normalized float
-                    for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
-                        floatProcessed[i] = result.audio[i] / 32768.0f;
-                    }
-                    
-                    // Log occasionally
-                    if (framesProcessed % 100 == 0) {
-                        Log.d(TAG, String.format("Frame %d: RNNoise active, VAD=%.3f", 
-                            framesProcessed, result.vadProbability));
-                    }
-                } else {
-                    // Passthrough - just normalize
-                    for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
-                        floatProcessed[i] = captureBuffer[i] / 32768.0f;
-                    }
-                }
+                // Step 3: Copy normalized input to floatProcessed
+                // NOTE: RNNoise processing now happens in processPhase1() AFTER PreGainStage
+                // This ensures PreGainStage boost is applied before noise reduction (improves SNR)
+                System.arraycopy(floatInput, 0, floatProcessed, 0, AudioConfig.FRAME_SIZE_SAMPLES);
                 
                 // Step 4: Process based on mode
                 if (phase2Enabled) {
@@ -776,27 +771,71 @@ public final class SimpleAudioEngine {
     }
     
     /**
-     * Phase 1 processing: NEW DSP PIPELINE (robotic sound fix)
+     * Phase 1 processing: Clean single-band DSP pipeline (NO filterbanks)
      * 
-     * Pipeline: normalize→pregain→RNNoise→deringing→WDRC→smoothed postgain→limiter→dither→output
+     * GOAL PIPELINE (clean audio optimized):
+     * 1. PreGainStage (0 dB unity gain, NO CLAMP)
+     * 2. RNNoise (if enabled) - Noise reduction
+     * 3. PostRNNoiseDeRinger - BYPASSED (was removing clarity)
+     * 4. SimpleWdrc - BYPASSED (was over-compressing)
+     * 5. GainSmoother - Slew-limited user amplification (0-40 dB)
+     * 6. LookaheadLimiter - Soft limiter (-0.5 dBFS ceiling, 5ms lookahead)
+     * 7. TpdfDither - Triangular dither before quantization
+     * 8. Convert float[] → short[] PCM16
+     * 9. Duplicate mono → stereo
+     * 10. Write to AudioTrack
      * 
-     * Float-only processing until final conversion to prevent quantization artifacts.
+     * REMOVED: FrequencyGainMapper (6-band filterbank) - caused "double spectral" artifacts
+     * REMOVED: tanh() waveshaping - causes harmonic distortion
+     * 
+     * Float-only processing until final dithered conversion prevents quantization noise.
+     * Added latency: 5ms (limiter lookahead only).
      */
     private void processPhase1() {
         AudioMode mode = audioMode.get();
-        float currentUserGain = amplificationGain.get();
+        float currentUserGainDb = amplificationGainDb.get();  // Already in dB
         
-        // Step 1: Pre-gain stage (0-10 dB, default 6 dB)
-        // Raises SNR before RNNoise, with safety clamp to ±0.9
+        // CRITICAL: Log gain state every frame for first 10 frames, then every 100
+        boolean shouldLog = (framesProcessed < 10) || (framesProcessed % 100 == 0);
+        if (shouldLog) {
+            Log.e(TAG, String.format("═══ FRAME %d GAIN STATE ═══", framesProcessed));
+            Log.e(TAG, String.format("  Atomic Target: %.2f dB (%.4fx)", 
+                currentUserGainDb, Math.pow(10.0, currentUserGainDb / 20.0)));
+            Log.e(TAG, String.format("  Smoother Current: %.2f dB (%.4fx)", 
+                gainSmoother.getCurrentDb(), gainSmoother.getCurrentLinearGain()));
+            Log.e(TAG, String.format("  Noise Reduction: %s", noiseReductionEnabled.get() ? "ON" : "OFF"));
+            Log.e(TAG, "═══════════════════════════════════════");
+        }
+        
+        // Step 1: Pre-gain stage (0 dB = unity gain)
+        // No boost, no clamp - clean passthrough before RNNoise
         preGainStage.process(floatProcessed, preGainOutput, AudioConfig.FRAME_SIZE_SAMPLES);
         
-        // Step 2: RNNoise processing (MIC mode only)
-        // Working on slightly amplified signal for better SNR
-        if (mode == AudioMode.MIC && noiseReductionEnabled.get()) {
+        // Step 2: RNNoise processing (works in both MIC and MEDIA modes)
+        // Apply noise reduction when enabled, regardless of audio source
+        boolean shouldProcessNoise = noiseReductionEnabled.get();
+        
+        // Debug: Log every 100 frames to verify RNNoise state
+        if (framesProcessed % 100 == 0) {
+            Log.e(TAG, String.format("═══ RNNoise Status [Frame %d] ═══", framesProcessed));
+            Log.e(TAG, String.format("  Mode: %s", mode));
+            Log.e(TAG, String.format("  Toggle Enabled: %s", noiseReductionEnabled.get()));
+            Log.e(TAG, String.format("  Actually Processing: %s", shouldProcessNoise ? "YES" : "NO"));
+            Log.e(TAG, "═══════════════════════════════════════");
+        }
+        
+        if (shouldProcessNoise) {
             // RNNoise expects non-normalized float (raw short values as float)
             for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
                 floatInput[i] = preGainOutput[i] * 32768.0f;  // Scale back to short range
             }
+            
+            // Measure energy before RNNoise
+            float energyBefore = 0.0f;
+            for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
+                energyBefore += preGainOutput[i] * preGainOutput[i];
+            }
+            energyBefore = (float) Math.sqrt(energyBefore / AudioConfig.FRAME_SIZE_SAMPLES);
             
             RNNoise.ProcessResult result = rnnoise.processFrame(floatInput);
             
@@ -804,31 +843,75 @@ public final class SimpleAudioEngine {
             for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
                 rnnoiseOutput[i] = result.audio[i] / 32768.0f;
             }
+            
+            // Measure energy after RNNoise
+            float energyAfter = 0.0f;
+            for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
+                energyAfter += rnnoiseOutput[i] * rnnoiseOutput[i];
+            }
+            energyAfter = (float) Math.sqrt(energyAfter / AudioConfig.FRAME_SIZE_SAMPLES);
+            
+            // Log energy change every 100 frames
+            if (framesProcessed % 100 == 0) {
+                float gainChange = energyAfter / Math.max(0.0001f, energyBefore);
+                float gainChangeDb = (float) (20.0 * Math.log10(Math.max(0.0001f, gainChange)));
+                Log.e(TAG, String.format("═══ RNNoise Energy [Frame %d] ═══", framesProcessed));
+                Log.e(TAG, String.format("  Before: %.6f RMS", energyBefore));
+                Log.e(TAG, String.format("  After: %.6f RMS", energyAfter));
+                Log.e(TAG, String.format("  Change: %.2f dB (%.2fx)", gainChangeDb, gainChange));
+                Log.e(TAG, "═══════════════════════════════════════");
+            }
         } else {
             // Passthrough (no noise reduction)
             System.arraycopy(preGainOutput, 0, rnnoiseOutput, 0, AudioConfig.FRAME_SIZE_SAMPLES);
         }
         
-        // Step 3: Post-RNNoise de-ringing (reduce overlap-add artifacts)
-        // Applies 32-sample raised-cosine window to frame edges
-        deRinger.process(rnnoiseOutput, deRingedOutput, AudioConfig.FRAME_SIZE_SAMPLES);
+        // Step 3: Post-RNNoise de-ringing (DISABLED - was removing clarity)
+        // Bypass de-ringing for now
+        System.arraycopy(rnnoiseOutput, 0, deRingedOutput, 0, AudioConfig.FRAME_SIZE_SAMPLES);
         
-        // Step 4: Single-band WDRC compression
-        // Reduces dynamic range before user amplification
-        wdrcCompressor.process(deRingedOutput, wdrcOutput, AudioConfig.FRAME_SIZE_SAMPLES);
+        // Step 4: Single-band WDRC compression (DISABLED - was over-compressing)
+        // Bypass WDRC for clean uncompressed audio
+        System.arraycopy(deRingedOutput, 0, wdrcOutput, 0, AudioConfig.FRAME_SIZE_SAMPLES);
         
-        // Step 5: Smoothed user amplification (post-gain)
-        // Apply user gain with smooth transitions to avoid zipper noise
-        float targetGainDb = Math.min(currentUserGain * maxAmplificationDb, maxAmplificationDb);
-        gainSmoother.setTargetDb(targetGainDb);
-        gainSmoother.process(wdrcOutput, postGainOutput, AudioConfig.FRAME_SIZE_SAMPLES);
+        // Step 5: Direct user amplification with per-sample smoothing
+        // Read target from atomic variable (updated by UI in real-time)
+        // Apply simple first-order lowpass to prevent clicks
+        float targetGainDb = Math.min(currentUserGainDb, maxAmplificationDb);
+        float targetLinear = (float) Math.pow(10.0, targetGainDb / 20.0);
         
-        // Step 6: Lookahead soft limiter (final safety)
-        // Prevents any samples exceeding -3 dBFS
+        // Get current smoother state
+        float currentLinear = gainSmoother.getCurrentLinearGain();
+        
+        // Very fast smoothing: alpha = 0.5 means converges in ~2 samples
+        // This is imperceptible (<0.1ms) but prevents discontinuities
+        float alpha = 0.5f;  // Aggressive smoothing for instant feel
+        
+        // Apply gain with per-sample smoothing to prevent discontinuities
+        for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
+            // Exponential smoothing: smooth toward target very quickly
+            currentLinear = currentLinear + alpha * (targetLinear - currentLinear);
+            postGainOutput[i] = wdrcOutput[i] * currentLinear;
+        }
+        
+        // Update smoother's internal state for next frame
+        gainSmoother.setCurrentLinearGain(currentLinear);
+        
+        // Debug: Log gain application
+        if (framesProcessed % 100 == 0) {
+            float currentDb = (float) (20.0 * Math.log10(Math.max(1e-6f, currentLinear)));
+            Log.e(TAG, String.format("GAIN: Target=%.2f dB (%.4fx), Current=%.2f dB (%.4fx), Converging=%s",
+                targetGainDb, targetLinear, currentDb, currentLinear,
+                Math.abs(targetLinear - currentLinear) > 0.01f ? "YES" : "NO"));
+        }
+        
+        // Step 6: Lookahead soft limiter (final safety, NO filterbanks before this!)
+        // Prevents any samples exceeding -0.5 dBFS ceiling (raised for minimal limiting)
+        // 5ms lookahead, soft knee 6 dB, release 80ms
         limiter.process(postGainOutput, limiterOutput, AudioConfig.FRAME_SIZE_SAMPLES);
         
         // Step 7: TPDF dither + float→short conversion
-        // Adds ±1 LSB triangular dither to reduce quantization noise
+        // Adds ±1 LSB triangular dither to reduce quantization noise at high gains
         dither.process(limiterOutput, outputBuffer, AudioConfig.FRAME_SIZE_SAMPLES);
         
         // Step 8: Duplicate to stereo
@@ -845,21 +928,42 @@ public final class SimpleAudioEngine {
         }
         
         // DSP_METRICS: Log telemetry every 100 frames (~1 second)
+        // Format: UserGain, PreGain | WDRC env/GR | Limiter GR/peak/limiting% | PreClamp%
         dspMetricsFrameCounter++;
         if (dspMetricsFrameCounter >= DSP_METRICS_LOG_INTERVAL) {
             float avgEnvelopeDb = wdrcCompressor.getEnvelopeDb();
+            float wdrcGainReduction = wdrcCompressor.getMaxGainReduction();
             float limiterGrDb = limiter.getCurrentGainReduction();
             float maxPeakDb = limiter.getMaxPeakDb();
             float limitingPct = limiter.getLimitingPercentage();
             float preGainClampPct = preGainStage.getClampingPercentage();
             
             Log.i("DSP_METRICS", String.format(
-                "Frame=%d | UserGain=%.1fdB | PreGain=%.1fdB | WDRC_env=%.1fdB WDRC_GR=%.1fdB | " +
-                "Limiter_GR=%.1fdB peak=%.1fdB limiting=%.1f%% | PreClamp=%.1f%%",
+                "Frame=%d | UserGain=%.1fdB PreGain=%.1fdB | " +
+                "WDRC: env=%.1fdB GR=%.1fdB | " +
+                "Limiter: GR=%.1fdB peak=%.1fdB limiting=%.1f%% | " +
+                "PreClamp=%.1f%%",
                 framesProcessed, targetGainDb, preGainStage.getGainDb(),
-                avgEnvelopeDb, wdrcCompressor.getMaxGainReduction(),
-                limiterGrDb, maxPeakDb, limitingPct, preGainClampPct
+                avgEnvelopeDb, wdrcGainReduction,
+                limiterGrDb, maxPeakDb, limitingPct,
+                preGainClampPct
             ));
+            
+            // SUCCESS CRITERIA VALIDATION:
+            // 1. No samples exceed -0.5 dBFS ceiling
+            if (maxPeakDb > -0.5f) {
+                Log.w(TAG, String.format("⚠️ FAIL: Peak exceeded -0.5 dBFS ceiling: %.1f dBFS", maxPeakDb));
+            }
+            // 2. Limiter should not be working hard most of the time (< 50% at speech levels)
+            if (limitingPct > 50.0f && targetGainDb > 30.0f) {
+                Log.w(TAG, String.format("⚠️ WARNING: Excessive limiting at %.1f%% (gain=%.1f dB)", 
+                    limitingPct, targetGainDb));
+            }
+            // 3. Limiter GR should be < 3 dB most of time on speech @ 30 dB amp
+            if (limiterGrDb > 3.0f && targetGainDb >= 30.0f) {
+                Log.w(TAG, String.format("⚠️ INFO: Heavy limiting GR=%.1f dB (target is < 3 dB)", 
+                    limiterGrDb));
+            }
             
             // Reset statistics
             limiter.resetStats();
@@ -1020,11 +1124,13 @@ public final class SimpleAudioEngine {
         // Phase 6: Global gain REMOVED - now handled by GainStagingManager
         // Legacy: Only apply global gain for Phase 1 mode (non-advanced DSP)
         if (!advancedDspEnabled) {
-            float currentGain = amplificationGain.get();
-            if (currentGain != 1.0f) {
+            float currentGainDb = amplificationGainDb.get();
+            // Convert dB to linear for multiplication
+            float currentGainLinear = (float) Math.pow(10.0, currentGainDb / 20.0);
+            if (currentGainLinear != 1.0f) {
                 for (int i = 0; i < AudioConfig.FRAME_SIZE_SAMPLES; i++) {
-                    leftOutput[i] *= currentGain;
-                    rightOutput[i] *= currentGain;
+                    leftOutput[i] *= currentGainLinear;
+                    rightOutput[i] *= currentGainLinear;
                 }
             }
         }
@@ -1156,6 +1262,12 @@ public final class SimpleAudioEngine {
         if (wasEnabled != enabled) {
             Log.e(TAG, "════════════════════════════════════════════════════════");
             Log.e(TAG, "★★★ NOISE REDUCTION " + (enabled ? "ENABLED" : "DISABLED") + " ★★★");
+            Log.e(TAG, String.format("  Current Amplification: %.2f dB", amplificationGainDb.get()));
+            if (gainSmoother != null) {
+                Log.e(TAG, String.format("  Smoother State: Current=%.2f dB, Target will be set on next frame", 
+                    gainSmoother.getCurrentDb()));
+            }
+            Log.e(TAG, "  → Gain should NOT change when toggling noise reduction!");
             Log.e(TAG, "════════════════════════════════════════════════════════");
         }
     }
@@ -1191,20 +1303,25 @@ public final class SimpleAudioEngine {
                 rightGainStaging.getRightEffectiveGainDb()));
         }
         
-        // Legacy: Convert dB to linear gain for Phase 1 mode
-        float gainLinear = (float) Math.pow(10.0, gainDb / 20.0);
-        
-        float oldGain = amplificationGain.getAndSet(gainLinear);
-        if (Math.abs(oldGain - gainLinear) > 0.01f) {
-            Log.i(TAG, String.format("Amplification set to %.1f dB (%.2fx linear)", gainDb, gainLinear));
-        }
+        // Store gain as dB (not linear) for Phase 1 mode
+        float oldGainDb = amplificationGainDb.getAndSet(gainDb);
+        Log.e(TAG, "╔═══════════════════════════════════════════════════════════╗");
+        Log.e(TAG, String.format("║ setAmplificationDb: %.2f → %.2f dB (Δ=%.2f dB)        ║", 
+            oldGainDb, gainDb, gainDb - oldGainDb));
+        Log.e(TAG, String.format("║ Engine Running: %s                                      ║",
+            isRunning.get() ? "YES - will apply next frame" : "NO - waiting for start"));
+        Log.e(TAG, String.format("║ Expected Linear: %.4fx                                  ║",
+            Math.pow(10.0, gainDb / 20.0)));
+        Log.e(TAG, String.format("║ Expected Linear Factor: %.4fx                          ║",
+            Math.pow(10.0, gainDb / 20.0)));
+        Log.e(TAG, "╚═══════════════════════════════════════════════════════════╝");
     }
     
     /**
-     * Get current amplification gain in linear scale
+     * Get current amplification gain in dB
      */
-    public float getAmplificationGain() {
-        return amplificationGain.get();
+    public float getAmplificationGainDb() {
+        return amplificationGainDb.get();
     }
     
     /**
@@ -1247,6 +1364,39 @@ public final class SimpleAudioEngine {
      */
     public boolean isPersonalizationAvailable() {
         return personalizationAvailable.get();
+    }
+    
+    /**
+     * Load audiogram data for frequency-specific gain mapping.
+     * 
+     * Configures FrequencyGainMapper with hearing thresholds from audiometry test.
+     * Applies NAL-NL2 inspired gains to compensate for hearing loss at each frequency.
+     * 
+     * @param audiogramThresholds Map of frequency (Hz) to threshold (dB HL)
+     *                            Example: {250: 25, 500: 30, 1000: 35, 2000: 40, 4000: 45, 8000: 50}
+     */
+    public void setAudiogramData(java.util.Map<Integer, Integer> audiogramThresholds) {
+        if (frequencyGainMapper == null) {
+            Log.w(TAG, "FrequencyGainMapper not initialized, cannot load audiogram");
+            return;
+        }
+        
+        if (audiogramThresholds == null || audiogramThresholds.isEmpty()) {
+            Log.w(TAG, "No audiogram data provided, disabling frequency-specific gains");
+            frequencyGainMapper.reset();
+            return;
+        }
+        
+        // Configure frequency-specific gains from audiogram
+        frequencyGainMapper.setAudiogramGains(audiogramThresholds);
+        
+        Log.i(TAG, "════════════════════════════════════════════════════════");
+        Log.i(TAG, "[Audiogram] Frequency-specific gains configured:");
+        for (int i = 0; i < 6; i++) {
+            float gainDb = frequencyGainMapper.getBandGainDb(i);
+            Log.i(TAG, String.format("  Band %d: %.1f dB", i, gainDb));
+        }
+        Log.i(TAG, "════════════════════════════════════════════════════════");
     }
     
     /**

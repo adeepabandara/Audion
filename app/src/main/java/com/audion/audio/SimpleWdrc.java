@@ -7,7 +7,7 @@ import android.util.Log;
  * 
  * Lightweight compressor to reduce dynamic range before user amplification:
  * - Threshold: -28 dBFS
- * - Ratio: 2.5:1
+ * - Ratio: 1.5:1 (gentle compression for clarity)
  * - Knee: 6 dB (soft knee)
  * - Attack: 8 ms
  * - Release: 120 ms
@@ -19,7 +19,7 @@ public class SimpleWdrc {
     
     // Compressor parameters
     private final float thresholdDb;     // -28 dBFS
-    private final float ratio;           // 2.5:1
+    private final float ratio;           // 1.5:1 (reduced for cleaner audio)
     private final float kneeDb;          // 6 dB soft knee
     private final float attackTimeMs;    // 8 ms
     private final float releaseTimeMs;   // 120 ms
@@ -43,7 +43,7 @@ public class SimpleWdrc {
     public SimpleWdrc(int sampleRate) {
         this.sampleRate = sampleRate;
         this.thresholdDb = -28.0f;
-        this.ratio = 2.5f;
+        this.ratio = 1.5f;
         this.kneeDb = 6.0f;
         this.attackTimeMs = 8.0f;
         this.releaseTimeMs = 120.0f;

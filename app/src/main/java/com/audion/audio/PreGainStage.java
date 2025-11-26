@@ -5,10 +5,10 @@ import android.util.Log;
 /**
  * PreGainStage - Pre-amplification before RNNoise.
  * 
- * Applies moderate gain (0-10 dB, default 6 dB) to raise SNR
- * before noise reduction, with safety clamping to prevent clipping.
+ * Applies configurable gain (0-10 dB) before noise reduction.
+ * Default 0 dB (unity gain) for clean passthrough.
  * 
- * Safety: Clamps output to ±0.9 to maintain headroom for RNNoise.
+ * NOTE: Clamp removed - downstream limiter handles peak control.
  */
 public class PreGainStage {
     private static final String TAG = "PreGainStage";
@@ -39,8 +39,8 @@ public class PreGainStage {
      */
     public PreGainStage(float gainDb) {
         setGainDb(gainDb);
-        Log.i(TAG, String.format("PreGainStage initialized: gain=%.1f dB (%.3fx linear), safety clamp=±%.2f",
-            this.gainDb, this.gainLinear, SAFETY_CLAMP));
+        Log.i(TAG, String.format("PreGainStage initialized: gain=%.1f dB (%.3fx linear), NO CLAMP",
+            this.gainDb, this.gainLinear));
     }
     
     /**
@@ -77,19 +77,9 @@ public class PreGainStage {
      */
     public void process(float[] input, float[] output, int length) {
         for (int i = 0; i < length; i++) {
-            float amplified = input[i] * gainLinear;
-            
-            // Safety clamp to ±0.9
-            if (amplified > SAFETY_CLAMP) {
-                output[i] = SAFETY_CLAMP;
-                samplesClamped++;
-            } else if (amplified < -SAFETY_CLAMP) {
-                output[i] = -SAFETY_CLAMP;
-                samplesClamped++;
-            } else {
-                output[i] = amplified;
-            }
-            
+            // Apply gain without clamping - let downstream limiter handle peaks
+            // This prevents hard clipping distortion from the clamp
+            output[i] = input[i] * gainLinear;
             samplesProcessed++;
         }
     }

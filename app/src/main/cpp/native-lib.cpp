@@ -73,7 +73,7 @@ Java_com_audion_app_RNNoise_processFrame(JNIEnv *env, jobject /* this */,
     LOGD("VAD probability: %f", vad);
 
     // Create ProcessResult object to return both the processed audio and VAD probability
-    jclass processResultClass = env->FindClass("com/example/audion/RNNoise$ProcessResult");
+    jclass processResultClass = env->FindClass("com/audion/app/RNNoise$ProcessResult");
     if (processResultClass == nullptr) {
         LOGE("Failed to find ProcessResult class");
         return nullptr;

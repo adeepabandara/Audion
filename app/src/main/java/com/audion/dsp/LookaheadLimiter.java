@@ -7,7 +7,7 @@ import android.util.Log;
  * 
  * Prevents hard clipping with smooth gain reduction:
  * - Lookahead: 5 ms (240 samples @ 48kHz)
- * - Ceiling: -3 dBFS (0.7071 linear)
+ * - Ceiling: Configurable (e.g., -0.5 dBFS = 0.9441 linear for minimal limiting)
  * - Soft knee: 6 dB
  * - Release: 80 ms
  * 

@@ -15,6 +15,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
@@ -343,9 +345,8 @@ public class HomeActivity extends AppCompatActivity {
                                 () -> {
                                     allowAbove70 = true;
                                     sb.setEnabled(true);
-                                    sb.setProgress(progress);
-                                    lastProgress = progress;
-                                    applyGain(progress, maxProgress, maxDb);
+                                    // SMOOTH RAMP: Gradually increase gain to avoid click
+                                    rampGainSmoothly(threshold70, progress, maxProgress, maxDb, sb);
                                     sb.setOnSeekBarChangeListener(gainChangeListener);
                                 },
                                 () -> {
@@ -369,9 +370,8 @@ public class HomeActivity extends AppCompatActivity {
                                 () -> {
                                     allowAbove40 = true;
                                     sb.setEnabled(true);
-                                    sb.setProgress(progress);
-                                    lastProgress = progress;
-                                    applyGain(progress, maxProgress, maxDb);
+                                    // SMOOTH RAMP: Gradually increase gain to avoid click
+                                    rampGainSmoothly(threshold40, progress, maxProgress, maxDb, sb);
                                     sb.setOnSeekBarChangeListener(gainChangeListener);
                                 },
                                 () -> {
@@ -389,12 +389,11 @@ public class HomeActivity extends AppCompatActivity {
 
                     // finally apply the new gain
                     sb.setProgress(progress);
-                    applyGain(progress, maxProgress, maxDb);
-                    lastProgress = progress;
-                } else {
-                    // programmatic update: just sync lastProgress
                     lastProgress = progress;
                 }
+                
+                // Apply gain immediately - 15ms smoothing prevents artifacts
+                applyGain(progress, maxProgress, maxDb);
             }
 
             @Override public void onStartTrackingTouch(SeekBar sb) { }
@@ -451,14 +450,17 @@ public class HomeActivity extends AppCompatActivity {
             getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                     .edit()
                     .putBoolean(KEY_NOISE_REMOVAL, checked)
-                    .apply();
+                    .commit();  // Use commit() for immediate write
             noiseStatusText.setText(
                     checked ? "Noise Cancellation ON" : "Noise Cancellation OFF"
             );
-            // Notify service of preference change
-            Intent broadcast = new Intent("com.audion.app.PREFERENCES_CHANGED");
-            sendBroadcast(broadcast);
-            Log.e("HomeActivity", "★★★ Broadcast sent: Noise Removal = " + (checked ? "ON" : "OFF"));
+            
+            // DIRECT UPDATE: Call service method directly (instant, no broadcast delay)
+            SimpleAudioStreamingService.updateNoiseReductionDirect(checked);
+            
+            // NOTE: Broadcast removed to prevent race conditions with direct updates
+            // Service reads SharedPrefs on startup via applySettings()
+            Log.e("HomeActivity", "★★★★★ TOGGLE SWITCHED: Noise = " + (checked ? "ON" : "OFF") + " → Direct update sent");
         });
         // Read with default true (noise reduction ON by default)
         boolean isOn = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
@@ -616,13 +618,59 @@ public class HomeActivity extends AppCompatActivity {
 
     private void applyGain(int progress, int maxProgress, float maxDb) {
         float curDb = (progress / (float) maxProgress) * maxDb;
+        
+        Log.e(TAG, "════════════════════════════════════════════════════════");
+        Log.e(TAG, String.format("applyGain() CALLED: progress=%d, maxProgress=%d, curDb=%.2f", progress, maxProgress, curDb));
+        Log.e(TAG, String.format("  isStreaming=%s (audio %s)", isStreaming, isStreaming ? "RUNNING" : "STOPPED"));
+        
         // Store as dB directly (not linear factor) for SimpleAudioEngine
-        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                .edit()
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean saved = prefs.edit()
                 .putFloat(KEY_AMPLIFICATION, curDb)  // Store dB value directly
-                .apply();
-        // Notify service of preference change
-        sendBroadcast(new Intent("com.audion.app.PREFERENCES_CHANGED"));
+                .commit();  // Use commit() for immediate write
+        
+        Log.e(TAG, String.format("SharedPrefs WRITE: saved=%s, key=%s, value=%.2f", saved, KEY_AMPLIFICATION, curDb));
+        
+        // Verify it was written
+        float readBack = prefs.getFloat(KEY_AMPLIFICATION, -999f);
+        Log.e(TAG, String.format("SharedPrefs READ-BACK: %.2f dB (should be %.2f)", readBack, curDb));
+        
+        // DIRECT UPDATE: Call service static method (instant, no broadcast delay)
+        if (isStreaming) {
+            boolean serviceExists = SimpleAudioStreamingService.updateGainDirect(curDb);
+            if (serviceExists) {
+                Log.e(TAG, String.format("★★★★★ GAIN UPDATE SENT: %.1f dB (real-time or queued for engine start)", curDb));
+            } else {
+                Log.e(TAG, "⚠️ SERVICE STARTING - gain saved to SharedPrefs, will apply when ready");
+            }
+        } else {
+            Log.e(TAG, "⚠️ AUDIO STOPPED - gain saved to SharedPrefs, will apply when you press Start");
+        }
+        
+        // NOTE: Broadcast removed to prevent race conditions with direct updates
+        // Service reads SharedPrefs on startup via applySettings()
+        Log.e(TAG, "════════════════════════════════════════════════════════");
+    }
+
+    /**
+     * Ramp gain smoothly from start to end position to avoid clicks.
+     * Used when confirming high gain warnings.
+     */
+    private void rampGainSmoothly(int startProgress, int endProgress, int maxProgress, float maxDb, SeekBar seekBar) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        int steps = 10; // 10 steps over ~200ms = smooth ramp
+        int stepDelay = 20; // 20ms between steps
+        
+        for (int i = 0; i <= steps; i++) {
+            final int currentStep = i;
+            handler.postDelayed(() -> {
+                // Linear interpolation from start to end
+                int currentProgress = startProgress + (int)((endProgress - startProgress) * (currentStep / (float)steps));
+                seekBar.setProgress(currentProgress);
+                lastProgress = currentProgress;
+                applyGain(currentProgress, maxProgress, maxDb);
+            }, i * stepDelay);
+        }
     }
 
     private void showThresholdDialog(
@@ -710,12 +758,12 @@ public class HomeActivity extends AppCompatActivity {
         }
         updateToggleUi(isStreaming);
 
-        float ampFactor = sp.getFloat(KEY_AMPLIFICATION, 1f);
-        double curDb = 20 * Math.log10(ampFactor);
-        int prog = Math.round((float) ((curDb / 70f) * amplificationSeekBar.getMax()));
+        float ampDb = sp.getFloat(KEY_AMPLIFICATION, 0.0f);  // Read as dB directly
+        int maxDb = 40;  // 0-40 dB range
+        int prog = Math.round((ampDb / maxDb) * amplificationSeekBar.getMax());
         amplificationSeekBar.setProgress(prog);
 
-        noiseRemovalSwitch.setChecked(sp.getBoolean(KEY_NOISE_REMOVAL, false));
+        noiseRemovalSwitch.setChecked(sp.getBoolean(KEY_NOISE_REMOVAL, true));  // Default true
 
         int saved = sp.getInt(KEY_SELECTED_PROFILE_ID, -1);
         if (saved != -1 && saved != currentProfileId) {
